@@ -1,0 +1,46 @@
+services:
+  # =======================================================
+  # 1. SERVICIO DE BASE DE DATOS (mssql2025)
+  # =======================================================
+  mssql2025:
+    image: mcr.microsoft.com/mssql/server:2025-RC1-ubuntu-24.04
+    container_name: mssql2025
+    hostname: mssql2025
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Pass123!
+    ports:
+      - "1433:1433"
+    volumes:
+      # We need to define correct permitons for folders
+      # - sudo chown -R 10001:10001 mssql2025/data
+      # - sudo chown -R 10001:10001 mssql2025/log
+      # - sudo chown -R 10001:10001 mssql2025/secrets
+      - ./mssql2025/data:/var/opt/mssql/data
+      - ./mssql2025/log:/var/opt/mssql/log
+      - ./mssql2025/secrets:/var/opt/mssql/secrets
+    networks:
+      - dev-network
+
+  # =======================================================
+  # 2. SERVICIO DE APLICACIÓN (biblioteca_web)
+  # =======================================================
+  cineflow:
+    build:
+      context: .
+    container_name: cineflow
+    ports:
+      - "2224:22"
+    volumes:
+      - .:/root/cineflow
+    networks:
+      - dev-network
+    depends_on:
+      - mssql2025
+
+# =======================================================
+# 3. REDES (Las define Docker Compose)
+# =======================================================
+networks:
+  dev-network:
+    driver: bridge
