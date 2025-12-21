@@ -1,86 +1,98 @@
 # Cine Flow
 
-Este repositorio contiene todo el código para adminitrar salas de cine de manera digital.
+Sistema digital para administración de cines y venta de tickets.
 
-## Definiendo User Flows
+## 👥 Roles de Usuario
 
-La aplicación esta dirigida a dos tipos de usurios:
+### **Cliente**
+- Usuario final que compra tickets para funciones
+- Necesita consultar información y realizar compras
 
-- Los que comprar tickets para asistir la funciones (Cliente)
-- Los que administran las funciones a ser presentadas (Administrador)
+### **Administrador**
+- Personal del cine que gestiona operaciones
+- Requiere herramientas de gestión y reportes
 
-Como hay algunas tareas son comunes para **clientes** y **administradores** las vamos a definir bajo la etiqueta de **usuarios**.
+## 🔄 User Flows
 
-### Usurios
+### **Usuarios (Flujos Comunes)**
+1. **Registrar cuenta** - Crear nuevo usuario
+2. **Iniciar sesión** - Autenticación en el sistema
+3. **Recuperar contraseña** - Restablecer credenciales
+4. **Cerrar sesión** - Finalizar sesión activa
+5. **Actualizar perfil** - Modificar información personal
 
-#### Crear Usurio
+### **Administrador**
+1. **Gestionar películas**
+   - Agregar nuevas películas
+   - Actualizar información existente
+   - Eliminar películas del catálogo
+   
+2. **Gestionar salas**
+   - Crear/configurar nuevas salas
+   - Definir capacidad y distribución
+   - Mantenimiento de salas
 
-#### Cambiar contraseña
+3. **Programar funciones**
+   - Vincular películas con salas
+   - Establecer horarios y fechas
+   - Modificar/cancelar funciones
 
+4. **Reportes y métricas**
+   - Ventas por período
+   - Ocupación de salas
+   - Popularidad de películas
+   - Ingresos por combos
 
-### Administrador
+### **Cliente**
+1. **Búsqueda y consulta**
+   - Consultar horarios por película
+   - Ver funciones por día
+   - Explorar cartelera completa
+   - Ver detalles de películas
 
-#### Agregar Películas
+2. **Proceso de compra**
+   - Seleccionar función y horario
+   - Elegir asientos disponibles
+   - Agregar combos de comida
+   - Completar pago seguro
+   - Recibir confirmación
 
-#### Vincular películas con salas por día y hora
+3. **Gestionar reservas**
+   - Ver historial de compras
+   - Modificar reservas existentes
+   - Cancelar reservas (con políticas)
+   - Recibir recordatorios
 
+4. **Experiencia post-compra**
+   - Recibir QR de acceso (24h antes)
+   - Valorar experiencia
+   - Obtener recomendaciones
 
-### Cliente
-
-#### Consultar horarios de una película
-
-#### Consultar todos disponibles de un día
-
-#### Cambiar contraseña
-
-#### Crear usuario
-
-#### Comprar tickets para película
-
-# Ejemplo de diagrama
+## 📊 Diagrama de Flujo Ejemplo (Proceso de Compra Cliente)
 
 ```mermaid
 flowchart TD
-    Start([Inicio]) --> Step1[Usuario abre la aplicación]
-    Step1 --> Step2[Usuario ingresa credenciales]
-    Step2 --> Step3[Sistema valida credenciales]
-    Step3 --> Step4[Usuario navega al dashboard]
-    Step4 --> Step5[Usuario selecciona 'Crear nuevo proyecto']
-    Step5 --> Step6[Sistema muestra formulario]
-    Step6 --> Step7[Usuario completa información del proyecto]
-    Step7 --> Step8[Usuario hace clic en 'Guardar']
-    Step8 --> Step9[Sistema procesa y guarda datos]
-    Step9 --> Step10[Sistema muestra confirmación]
-    Step10 --> Step11[Usuario ve proyecto en lista]
-    Step11 --> End([Fin])
+    Start([Cliente busca película]) --> Step1[Explora cartelera]
+    Step1 --> Step2[Selecciona función]
+    Step2 --> Step3[Elige cantidad de tickets]
+    Step3 --> Step4[Selecciona asientos en mapa]
+    Step4 --> Step5[Añade combos opcionales]
+    Step5 --> Step6[Revisa resumen]
+    Step6 --> Step7[Proceso de pago]
+    Step7 --> Step8[Pago exitoso]
+    Step8 --> Step9[Recibe confirmación por email]
+    Step9 --> Step10[QR generado 24h antes]
+    Step10 --> End([Asiste a función])
     
-    %% Estilos por tipo de acción
+    %% Flujos alternativos
+    Step6 -->|Modificar| Step3
+    Step7 -->|Pago fallido| Step7
+    Step10 -->|Perdió QR| Step11[Solicitar nuevo QR]
+    Step11 --> Step10
+    
+    %% Estilos
     style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
     style End fill:#4CAF50,stroke:#2E7D32,color:#fff
-    style Step1 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step2 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step4 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step5 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step7 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step8 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step11 fill:#2196F3,stroke:#1565C0,color:#fff
-    style Step3 fill:#FF9800,stroke:#E65100,color:#fff
-    style Step6 fill:#FF9800,stroke:#E65100,color:#fff
-    style Step9 fill:#FF9800,stroke:#E65100,color:#fff
-    style Step10 fill:#FF9800,stroke:#E65100,color:#fff
-    
-    %% Leyenda
-    subgraph Legend[" LEYENDA "]
-        L1[Acción del Usuario]
-        L2[Acción del Sistema]
-        L3[Inicio/Fin]
-        
-        style L1 fill:#2196F3,stroke:#1565C0,color:#fff
-        style L2 fill:#FF9800,stroke:#E65100,color:#fff
-        style L3 fill:#4CAF50,stroke:#2E7D32,color:#fff
-    end
-    
-    style Legend fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
 
