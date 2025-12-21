@@ -12,7 +12,7 @@ Sistema digital para administración de cines y venta de tickets.
 - Personal del cine que gestiona operaciones
 - Requiere herramientas de gestión y reportes
 
-## 🔄 User Flows
+## 🔄 Task Flows
 
 ### **Usuarios (Flujos Comunes)**
 1. **Registrar cuenta** - Crear nuevo usuario
@@ -68,7 +68,7 @@ Sistema digital para administración de cines y venta de tickets.
    - Valorar experiencia
    - Obtener recomendaciones
 
-## 📊 Diagrama de Flujo Ejemplo (Proceso de Compra Cliente)
+## 📊 Task Flow (Ejemplo)
 
 ```mermaid
 flowchart TD
@@ -99,3 +99,56 @@ flowchart TD
 
 https://templatemo.com/tm-559-zay-shop
 
+# Otras notas
+
+* Para Registrar cuenta: ¿Qué campos como nombre, email, contraseña, etc.? ¿Hay campos adicionales como teléfono o fecha de nacimiento?
+
+ 
+Nombre, Sexo, email, contraseña, Dirección, telefono, fecha de nacimiento
+ 
+
+* Para Iniciar sesión: ¿Solo email y contraseña, o algo más?
+
+Creo que email y contraseña. Tambien pueden acceder por cuenta de google
+ 
+
+* Para Recuperar contraseña: ¿Proceso paso a paso, como email para enviar link, luego nueva contraseña?
+
+Correcto, quiero un email con un codigo que sirva para por 2 horas para recuperar la contraseña
+ 
+
+* Para Actualizar perfil: ¿Qué campos se pueden editar?
+
+Pueden cambiar todo, desde el email, nombre y hasta el sexo
+ 
+
+* Para Gestionar películas (agregar/actualizar): ¿Campos como título, descripción, duración, género, poster URL, etc.?
+
+Titulo, descripcion carta, descripcion larga, varias etiquetas para el genero, image rectangular para poner en banner, imagen cuadrada para poner los catalogos de busqueda, un link al trailer, duracion de la pelicula
+ 
+
+* Para Gestionar salas: ¿Campos como nombre de sala, capacidad, filas/columnas, tipo (2D/3D), etc.?
+
+Nombre de sala, cantidad de filas, cantidad de asientos por cada fila, estado de la sala (activo/inactivo), tipo 2d/3d
+ 
+
+* Para Programar funciones: ¿Campos como película ID, sala ID, fecha, hora, precio, etc.?
+  película ID, sala ID, fecha en sala, hora de inicio, precio por dia de la semana (los domingos son mas caros, que los miercoles)
+
+ 
+
+* Para Proceso de compra: En selección de asientos, combos, pago – ¿Campos de pago como tipo (tarjeta/crédito), detalles de tarjeta (número, expiry, CVV), dirección de facturación?
+  selección de asientos, combos, pago (tarjeta/crédito), detalles de tarjeta (número, expiry, CVV), dirección de facturación
+
+ 
+
+* Para Gestionar reservas: Para modificar/cancelar, ¿qué confirmaciones o campos?
+
+las personas pueden cambiar de funcion siempre y cuando no hayan usado su QR para ingresar a la pelicula y no haya pasado una semana desde que se emitió el ticket, en en caso de reclamo el administrador puede hacer el cambio en el sistema sin importar esta regla. En caso de que haya diferencia de precio entre los tickets, los clientes pueden usar la diferencia en el maket de comida o pagar solo por la diferencia
+ 
+
+* Para Valorar experiencia: ¿Campos como calificación (estrellas), comentario?
+
+Quiero que califiquen con estrellas su experiencia con la pagina luego de cada compra y luego de asistir a la función puedan calificar la pelicula y su experiencia en el cine.
+ 
+Creo que nos falta otro perfil de administrador que se encargue de confirmar sin el cliente asistió a la función y si tomó la comida que compró
