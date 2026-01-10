@@ -7,7 +7,8 @@ let
       ipykernel
       pandas
       flask
-      diagrams
+      flask-login
+      flask-bcrypt
       sqlalchemy
       pymssql;
   };
