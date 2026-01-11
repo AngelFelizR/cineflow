@@ -21,7 +21,7 @@ class Database:
         """
         # Obtener la URL de conexión desde Config
         connection_url = Config.get_sqlalchemy_url(use_windows_auth)
-        # connection_url = r"mssql+pymssql://sa:Pass123!@mssql2025:1433/BibliotecaDB?charset=utf8&tds_version=7.4"
+        # connection_url = r"mssql+pymssql://sa:Pass123!@mssql2025:1433/CineFlow?charset=utf8&tds_version=7.4"
 
         # Crear el engine
         # echo=True muestra las consultas SQL en consola (útil para debug)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         print(f"\n[ERROR] {message}")
         print("\nVerifica:")
         print("1. Que SQL Server esté corriendo")
-        print("2. Que la base de datos BibliotecaDB exista")
+        print("2. Que la base de datos CineFlow exista")
         print("3. Que la configuración en config.py sea correcta")
 
     print("\n" + "=" * 80)

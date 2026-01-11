@@ -1,29 +1,58 @@
 services:
   # =======================================================
-  # 1. SERVICIO DE BASE DE DATOS (mssql2025)
+  # 1. SQL SERVER
   # =======================================================
   mssql2025:
     image: mcr.microsoft.com/mssql/server:2025-RC1-ubuntu-24.04
     container_name: mssql2025
     hostname: mssql2025
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Pass123!
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Pass123!"
     ports:
       - "1433:1433"
-    volumes:
-      # We need to define correct permitons for folders
-      # - sudo chown -R 10001:10001 mssql2025/data
-      # - sudo chown -R 10001:10001 mssql2025/log
-      # - sudo chown -R 10001:10001 mssql2025/secrets
-      - ./mssql2025/data:/var/opt/mssql/data
-      - ./mssql2025/log:/var/opt/mssql/log
-      - ./mssql2025/secrets:/var/opt/mssql/secrets
     networks:
       - dev-network
+    volumes:
+      - ./cineflow_setup.sql:/tmp/mssql-init.sql
+    healthcheck:
+      test: >
+        /opt/mssql-tools18/bin/sqlcmd
+        -S localhost
+        -C
+        -U sa
+        -P Pass123!
+        -Q "SELECT 1"
+        -b -o /dev/null
+      interval: 1s
+      timeout: 30s
+      retries: 30
+      start_period: 20s
 
   # =======================================================
-  # 2. SERVICIO DE APLICACIÓN (biblioteca_web)
+  # 2. INICIALIZACIÓN DE BASE DE DATOS
+  # =======================================================
+  mssql-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: mssql-init
+    restart: "no"
+    depends_on:
+      mssql2025:
+        condition: service_healthy
+    networks:
+      - dev-network
+    volumes:
+      - ./cineflow_setup.sql:/tmp/mssql-init.sql
+    command: >
+      /bin/sh -c "
+        /opt/mssql-tools/bin/sqlcmd -S mssql2025 -U sa -P Pass123! -Q \"IF DB_ID('CineFlow') IS NULL CREATE DATABASE CineFlow\" &&
+        until /opt/mssql-tools/bin/sqlcmd -S mssql2025 -U sa -P Pass123! -Q \"SELECT name FROM sys.databases WHERE name='CineFlow'\" | grep -q CineFlow;
+        do echo 'Esperando que CineFlow esté disponible...'; sleep 2; done &&
+        /opt/mssql-tools/bin/sqlcmd -S mssql2025 -U sa -P Pass123! -d CineFlow -i /tmp/mssql-init.sql
+      "
+
+  # =======================================================
+  # 3. APLICACIÓN
   # =======================================================
   cineflow:
     build:
@@ -38,9 +67,6 @@ services:
     depends_on:
       - mssql2025
 
-# =======================================================
-# 3. REDES (Las define Docker Compose)
-# =======================================================
 networks:
   dev-network:
     driver: bridge

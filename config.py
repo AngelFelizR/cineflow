@@ -14,7 +14,7 @@ class Config:
     SERVER = 'mssql2025'  # Configurado para el servidor especificado
     PORT = 1433  # Puerto por defecto para SQL Server
 
-    DATABASE = 'BibliotecaDB'
+    DATABASE = 'CineFlow'
 
     # Autenticación SQL Server
     USERNAME = 'sa'  # Usuario SQL Server
@@ -139,7 +139,7 @@ class ProductionConfig(Config):
     # En producción, usar variables de entorno
     SERVER = os.environ.get('DB_SERVER', 'mssql2025')
     PORT = int(os.environ.get('DB_PORT', '1433'))
-    DATABASE = os.environ.get('DB_NAME', 'BibliotecaDB')
+    DATABASE = os.environ.get('DB_NAME', 'CineFlow')
     USERNAME = os.environ.get('DB_USER', 'sa')
     PASSWORD = os.environ.get('DB_PASSWORD', 'Pass123!')
     CHARSET = os.environ.get('DB_CHARSET', 'utf8')
