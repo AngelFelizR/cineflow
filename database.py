@@ -12,16 +12,12 @@ Base = declarative_base()
 class Database:
     """Clase para manejar la conexión con SQLAlchemy"""
 
-    def __init__(self, use_windows_auth=False):
+    def __init__(self):
         """
         Inicializa la conexión a la base de datos
-
-        Args:
-            use_windows_auth (bool): Usar autenticación de Windows
         """
         # Obtener la URL de conexión desde Config
-        connection_url = Config.get_sqlalchemy_url(use_windows_auth)
-        # connection_url = r"mssql+pymssql://sa:Pass123!@mssql2025:1433/CineFlow?charset=utf8&tds_version=7.4"
+        connection_url = Config.get_sqlalchemy_url()
 
         # Crear el engine
         # echo=True muestra las consultas SQL en consola (útil para debug)
@@ -112,8 +108,7 @@ class SessionContext:
 
 
 # Instancia global de la base de datos
-# Por defecto usa Windows Authentication
-db = Database(use_windows_auth=False)
+db = Database()
 
 
 if __name__ == "__main__":

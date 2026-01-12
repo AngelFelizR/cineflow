@@ -24,45 +24,32 @@ class Config:
     TDS_VERSION = '7.4'
 
     @staticmethod
-    def get_connection_string(use_windows_auth=True):
+    def get_connection_string():
         """
         Retorna la cadena de conexión apropiada.
-        Nota: Esta versión está adaptada para pymssql, por lo que la cadena de conexión es para referencia.
         Para pymssql, se usa directamente en la URL de SQLAlchemy.
 
-        Args:
-            use_windows_auth (bool): True para Windows Authentication, False para SQL Server Authentication
-
         Returns:
-            str: Cadena de conexión (adaptada)
+            str: Cadena de conexión
         """
-        if use_windows_auth:
-            # Autenticación de Windows no es directamente soportada en pymssql de la misma forma;
-            # para simplicidad, asumimos SQL Auth como predeterminado en esta adaptación.
-            raise NotImplementedError("Windows Authentication no implementada para pymssql en esta versión.")
-        else:
-            # Autenticación SQL Server
-            return (
-                f"server={Config.SERVER};"
-                f"port={Config.PORT};"
-                f"database={Config.DATABASE};"
-                f"user={Config.USERNAME};"
-                f"password={Config.PASSWORD};"
-            )
+        # Autenticación SQL Server
+        return (
+            f"server={Config.SERVER};"
+            f"port={Config.PORT};"
+            f"database={Config.DATABASE};"
+            f"user={Config.USERNAME};"
+            f"password={Config.PASSWORD};"
+        )
+            
 
     @staticmethod
-    def get_sqlalchemy_url(use_windows_auth=False):
+    def get_sqlalchemy_url():
         """
         Retorna la URL de conexión para SQLAlchemy usando pymssql
-
-        Args:
-            use_windows_auth (bool): True para Windows Authentication, False para SQL Server Authentication
 
         Returns:
             str: URL de conexión para SQLAlchemy
         """
-        if use_windows_auth:
-            raise NotImplementedError("Windows Authentication no implementada para pymssql en esta versión.")
         
         # Construir la URL para pymssql
         url = (
@@ -81,12 +68,9 @@ class Config:
         return []
 
     @staticmethod
-    def test_connection(use_windows_auth=True):
+    def test_connection():
         """
         Prueba la conexión a SQL Server usando pymssql
-
-        Args:
-            use_windows_auth (bool): Tipo de autenticación a probar
 
         Returns:
             tuple: (success: bool, message: str)
@@ -94,10 +78,7 @@ class Config:
         try:
             import pymssql
         except ImportError:
-            return (False, "pymssql no está instalado. Instala con: pip install pymssql")
-
-        if use_windows_auth:
-            return (False, "Windows Authentication no implementada para pymssql en esta versión.")
+            return (False, "pymssql no está instalado. Add the dependency in the default.nix file.")
 
         try:
             conn = pymssql.connect(
@@ -165,7 +146,7 @@ if __name__ == "__main__":
 
     # Imprimir la URL de SQLAlchemy al iniciar
     print("\nURL de SQLAlchemy:")
-    print(Config.get_sqlalchemy_url(use_windows_auth=False))
+    print(Config.get_sqlalchemy_url())
 
     # Verificar drivers disponibles (adaptado)
     Config.verificar_drivers_disponibles()
@@ -175,7 +156,7 @@ if __name__ == "__main__":
     print("PROBANDO CONEXIÓN CON SQL SERVER AUTHENTICATION")
     print("=" * 80)
 
-    success, message = Config.test_connection(use_windows_auth=False)
+    success, message = Config.test_connection()
 
     if success:
         print(f"\n[OK] {message}")
