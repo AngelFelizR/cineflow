@@ -117,7 +117,7 @@ CREATE TABLE Usuarios (
     Apellidos NVARCHAR(100) NOT NULL,
     CorreoElectrónico NVARCHAR(150) NOT NULL UNIQUE,
     Teléfono NVARCHAR(20),
-    ContrasenaHash NVARCHAR(MAX) NOT NULL,
+    ContraseñaHash NVARCHAR(MAX) NOT NULL,
     FechaNacimiento DATE,
     FOREIGN KEY (IdRol) REFERENCES RolesDeUsuario(Id)
 );
