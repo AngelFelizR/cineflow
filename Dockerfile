@@ -31,10 +31,13 @@ RUN echo 'root:sbs' | chpasswd
 
 # Defining ports to share SSH and App
 EXPOSE 22
-EXPOSE 5001
+#EXPOSE 5001
+
+# Start SSH server
+CMD ["/usr/sbin/sshd", "-D"]
 
 # Running app and starting ssh server
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-WORKDIR /root/cineflow
-CMD ["/entrypoint.sh"]
+# COPY entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
+# WORKDIR /root/cineflow
+# CMD ["/entrypoint.sh"]

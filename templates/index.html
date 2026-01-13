@@ -1,0 +1,357 @@
+<!-- templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}CineFlow - Inicio{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para la página de inicio */
+    .hero-banner {
+        position: relative;
+        height: 70vh;
+        overflow: hidden;
+        border-radius: 0 0 20px 20px;
+        background: linear-gradient(to right, rgba(18, 18, 18, 0.9), rgba(18, 18, 18, 0.7));
+        margin-bottom: 3rem;
+    }
+    
+    .banner-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        background-size: cover;
+        background-position: center 12%;
+        background-repeat: no-repeat;
+    }
+    
+    .banner-slide.active {
+        opacity: 1;
+    }
+    
+    .banner-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(18, 18, 18, 1), transparent);
+        padding: 3rem;
+        color: white;
+    }
+    
+    .banner-controls {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+        display: flex;
+        justify-content: space-between;
+        padding: 0 2rem;
+        z-index: 10;
+    }
+    
+    .banner-btn {
+        background: rgba(255, 193, 7, 0.2);
+        border: 2px solid var(--accent-color);
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        backdrop-filter: blur(5px);
+    }
+    
+    .banner-btn:hover {
+        background: var(--accent-color);
+        color: #121212;
+        transform: scale(1.1);
+    }
+    
+    .banner-indicators {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        z-index: 10;
+    }
+    
+    .banner-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .banner-indicator.active {
+        background: var(--accent-color);
+        transform: scale(1.2);
+    }
+    
+    .section-title {
+        border-left: 4px solid var(--accent-color);
+        padding-left: 15px;
+        margin-bottom: 2rem;
+    }
+    
+    .movie-card {
+        background: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .movie-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 25px rgba(255, 193, 7, 0.1);
+        border-color: var(--accent-color);
+    }
+    
+    .movie-poster {
+        height: 300px;
+        width: 100%;
+        object-fit: cover;
+        border-bottom: 3px solid var(--accent-color);
+    }
+    
+    .movie-info {
+        padding: 1.5rem;
+    }
+    
+    .movie-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: white;
+    }
+    
+    .movie-meta {
+        color: var(--dark-text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .movie-description {
+        color: var(--dark-text);
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .genre-badge {
+        display: inline-block;
+        background: rgba(255, 193, 7, 0.1);
+        color: var(--accent-color);
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .movie-actions {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--dark-border);
+        display: flex;
+        gap: 10px;
+    }
+    
+    .popular-tag {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: #dc3545;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .countdown-timer {
+        background: rgba(13, 202, 240, 0.1);
+        border: 1px solid var(--info-color);
+        border-radius: 10px;
+        padding: 10px;
+        margin-top: 10px;
+        text-align: center;
+    }
+    
+    .timer-label {
+        font-size: 0.8rem;
+        color: var(--dark-text-secondary);
+        margin-bottom: 5px;
+    }
+    
+    .timer-value {
+        font-size: 1.1rem;
+        color: var(--info-color);
+        font-weight: bold;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero-banner {
+            height: 50vh;
+        }
+        
+        .banner-overlay {
+            padding: 1.5rem;
+        }
+        
+        .banner-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+        
+        .movie-poster {
+            height: 250px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .hero-banner {
+            height: 40vh;
+        }
+        
+        .banner-overlay {
+            padding: 1rem;
+        }
+        
+        .movie-card {
+            margin-bottom: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Banner Principal con Carrusel -->
+<div class="hero-banner">
+    <!-- Slides del Banner -->
+    {% for pelicula in peliculas_populares %}
+    {% if loop.first %}
+    <span class="popular-tag">#1 POPULAR</span>
+    {% endif %}
+    <div class="banner-slide {% if loop.first %}active{% endif %}" 
+         data-slide="{{ loop.index0 }}"
+         style="background-image: url('{{ pelicula.link_to_banner }}');">
+        <div class="banner-overlay">
+            <div class="container">
+                <div class="row align-items-end">
+                    <div class="col-lg-8">
+                        <span class="badge bg-warning text-dark mb-3">TOP {{ loop.index }}</span>
+                        <h1 class="display-4 fw-bold mb-3">{{ pelicula.titulo }}</h1>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="me-3">
+                                <i class="bi bi-clock me-1"></i> {{ pelicula.duracion_minutos }} min
+                            </span>
+                            <span class="me-3">
+                                <i class="bi bi-translate me-1"></i> {{ pelicula.idioma }}
+                            </span>
+                            <span>
+                                <i class="bi bi-ticket-detailed me-1"></i> {{ pelicula.clasificacion }}
+                            </span>
+                        </div>
+                        <p class="lead mb-4">{{ pelicula.descripcion_corta }}</p>
+                        <div class="mb-3">
+                            {% for genero in pelicula.generos[:3] %}
+                            <span class="genre-badge">{{ genero }}</span>
+                            {% endfor %}
+                        </div>
+                        <a href="#" class="btn btn-warning btn-lg me-2 trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}">
+                            <i class="bi bi-play-circle me-1"></i> Ver Tráiler
+                        </a>
+                        <a href="{{ url_for('funciones_pelicula', pelicula_id=pelicula.id) }}" class="btn btn-outline-warning btn-lg">
+                            <i class="bi bi-ticket-perforated me-1"></i> Comprar Boletos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Controles del Banner -->
+    <div class="banner-controls">
+        <button class="banner-btn prev-btn">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="banner-btn next-btn">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    </div>
+    
+    <!-- Indicadores del Banner -->
+    <div class="banner-indicators">
+        {% for pelicula in peliculas_populares %}
+        <div class="banner-indicator {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Sección de Películas Recientes -->
+<section class="container py-5">
+    <h2 class="section-title display-5 fw-bold">
+        <i class="bi bi-fire me-2"></i> Películas más recientes
+    </h2>
+    
+    <div class="row g-4">
+        {% for pelicula in ultimas_peliculas %}
+        <div class="col-lg-4 col-md-6">
+            <div class="movie-card">
+                <div class="position-relative">
+                    <img src="{{ pelicula.link_to_bajante }}" alt="{{ pelicula.titulo }}" class="movie-poster">
+                </div>
+                <div class="movie-info">
+                    <h3 class="movie-title">{{ pelicula.titulo }}</h3>
+                    <div class="movie-meta">
+                        <span class="me-3">
+                            <i class="bi bi-clock me-1"></i> {{ pelicula.duracion_minutos }} min
+                        </span>
+                        <span>
+                            <i class="bi bi-people me-1"></i> {{ pelicula.total_boletos }} boletos
+                        </span>
+                    </div>
+                    <p class="movie-description">{{ pelicula.descripcion_corta }}</p>
+                    <div class="mb-3">
+                        {% for genero in pelicula.generos[:2] %}
+                        <span class="genre-badge">{{ genero }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="movie-actions">
+                    <a href="{{ url_for('funciones_pelicula', pelicula_id=pelicula.id) }}" class="btn btn-warning flex-grow-1">
+                        <i class="bi bi-ticket-perforated me-1"></i> Comprar
+                    </a>
+                    <button class="btn btn-outline-warning trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}">
+                        <i class="bi bi-play-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

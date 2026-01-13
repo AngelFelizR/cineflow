@@ -65,7 +65,7 @@ services:
     networks:
       - dev-network
     depends_on:
-      - mssql2025
+      - mssql-init
 
 networks:
   dev-network:
