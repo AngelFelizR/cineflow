@@ -14,6 +14,7 @@ bcrypt.init_app(app)
 # ==================== RUTAS PRINCIPALES ====================
 
 @app.route('/')
+@app.route('/index')
 def index():
     """Página de inicio con estadísticas"""
     return render_template('base.html')
@@ -79,11 +80,11 @@ def boletos_devueltos():
 
 if __name__ == '__main__':
     print("=" * 80)
-    print("SISTEMA DE BIBLIOTECA - APLICACIÓN WEB")
+    print("CineFlow - APLICACIÓN WEB")
     print("=" * 80)
     print("\nIniciando servidor Flask...")
-    print("Accede a la aplicación en: http://localhost:5000")
+    print("Accede a la aplicación en: http://localhost:5001")
     print("\nPresiona Ctrl+C para detener el servidor")
     print("=" * 80)
 
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

@@ -22,14 +22,19 @@ COPY default.nix .
 # We now build the environment
 RUN nix-build
 
-# Defining password for SSH 
+# Defining SSH configuration
 RUN mkdir -p /var/run/sshd && \
     echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
     echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+
 RUN echo 'root:sbs' | chpasswd
 
-# Expose SSH port
+# Defining ports to share SSH and App
 EXPOSE 22
+EXPOSE 5001
 
-# Start SSH server
-CMD ["/usr/sbin/sshd", "-D"]
+# Running app and starting ssh server
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+WORKDIR /root/cineflow
+CMD ["/entrypoint.sh"]
