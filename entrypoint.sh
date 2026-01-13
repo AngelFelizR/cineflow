@@ -5,4 +5,4 @@ set -e
 /usr/sbin/sshd
 
 # Arrancar la app (proceso principal)
-#exec nix-shell --run "python app.py"
+exec nix-shell --run "python app.py"

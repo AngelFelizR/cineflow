@@ -60,6 +60,7 @@ services:
     container_name: cineflow
     ports:
       - "2224:22"
+      - "5000:5000"
     volumes:
       - .:/root/cineflow
     networks:
