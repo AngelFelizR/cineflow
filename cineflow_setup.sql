@@ -191,3 +191,20 @@ END;
 
 
 -- # Ingresar Datos
+
+
+-- # Create vistas a usar
+
+CREATE VIEW vw_PelículasPopulares AS
+SELECT TOP 3
+    p.Id, p.TítuloPelícula, p.DescripciónCorta, p.LinkToBanner,
+    p.DuraciónMinutos, i.Idioma, c.Clasificación,
+    COUNT(b.Id) as TotalBoletos
+FROM Películas p
+JOIN Idiomas i ON p.IdIdioma = i.Id
+JOIN Clasificaciones c ON p.IdClasificación = c.Id
+LEFT JOIN Funciones f ON p.Id = f.IdPelícula
+LEFT JOIN Boletos b ON f.Id = b.IdFunción
+WHERE p.Activo = 1
+GROUP BY p.Id, p.TítuloPelícula, p.DescripciónCorta, p.LinkToBanner, p.DuraciónMinutos, i.Idioma, c.Clasificación
+ORDER BY TotalBoletos DESC;
