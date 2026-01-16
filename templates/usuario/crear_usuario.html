@@ -1,0 +1,503 @@
+<!-- templates/usuario/crear_usuario.html -->
+{% extends "base.html" %}
+
+{% block title %}CineFlow - Registrarse{% endblock %}
+
+{% block extra_css %}
+<style>
+    .registro-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    
+    .registro-card {
+        background-color: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+    
+    .registro-header {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        color: #121212;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .registro-logo {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .registro-body {
+        padding: 2.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        color: var(--dark-text);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--dark-border);
+        color: var(--dark-text);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-color);
+        color: var(--dark-text);
+        box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .password-requirements {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-left: 3px solid var(--info-color);
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    .requirement-item i {
+        margin-right: 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .requirement-item.valid {
+        color: var(--success-color);
+    }
+    
+    .requirement-item.invalid {
+        color: var(--dark-text-secondary);
+    }
+    
+    .btn-registro {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        border: none;
+        color: #121212;
+        font-weight: bold;
+        padding: 1rem;
+        border-radius: 8px;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-registro:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: var(--dark-text-secondary);
+    }
+    
+    .login-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Indicadores de validación */
+    .is-invalid {
+        border-color: var(--danger-color) !important;
+    }
+    
+    .is-valid {
+        border-color: var(--success-color) !important;
+    }
+    
+    .invalid-feedback {
+        color: var(--danger-color);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    
+    /* Responsivo */
+    @media (max-width: 768px) {
+        .registro-container {
+            padding: 1rem;
+        }
+        
+        .registro-body {
+            padding: 1.5rem;
+        }
+        
+        .registro-header {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="registro-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <div class="registro-card">
+                    <!-- Encabezado -->
+                    <div class="registro-header">
+                        <div class="registro-logo">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <h2 class="fw-bold">Crear Cuenta</h2>
+                        <p class="mb-0">Únete a CineFlow y disfruta de la mejor experiencia cinematográfica</p>
+                    </div>
+                    
+                    <!-- Cuerpo del formulario -->
+                    <div class="registro-body">
+                        <form id="registroForm" method="POST" action="{{ url_for('crear_usuario') }}" novalidate>
+                            <div class="row">
+                                <!-- Correo Electrónico -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="correo_electronico" class="form-label">
+                                            <i class="bi bi-envelope me-1"></i> Correo Electrónico
+                                        </label>
+                                        <input type="email" 
+                                               class="form-control" 
+                                               id="correo_electronico" 
+                                               name="correo_electronico" 
+                                               required
+                                               placeholder="ejemplo@correo.com">
+                                        <div class="invalid-feedback">
+                                            Por favor ingresa un correo electrónico válido.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Confirmar Correo -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="correo_confirmacion" class="form-label">
+                                            <i class="bi bi-envelope-check me-1"></i> Confirmar Correo
+                                        </label>
+                                        <input type="email" 
+                                               class="form-control" 
+                                               id="correo_confirmacion" 
+                                               name="correo_confirmacion" 
+                                               required
+                                               placeholder="Repite tu correo">
+                                        <div class="invalid-feedback">
+                                            Los correos electrónicos deben coincidir.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Contraseña -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="contrasena" class="form-label">
+                                            <i class="bi bi-key me-1"></i> Contraseña
+                                        </label>
+                                        <input type="password" 
+                                               class="form-control" 
+                                               id="contrasena" 
+                                               name="contrasena" 
+                                               required
+                                               placeholder="Crea una contraseña segura">
+                                        <div class="invalid-feedback">
+                                            La contraseña no cumple con los requisitos.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Confirmar Contraseña -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="contrasena_confirmacion" class="form-label">
+                                            <i class="bi bi-key-fill me-1"></i> Confirmar Contraseña
+                                        </label>
+                                        <input type="password" 
+                                               class="form-control" 
+                                               id="contrasena_confirmacion" 
+                                               name="contrasena_confirmacion" 
+                                               required
+                                               placeholder="Repite tu contraseña">
+                                        <div class="invalid-feedback">
+                                            Las contraseñas deben coincidir.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Requisitos de la contraseña -->
+                            <div class="password-requirements">
+                                <p class="mb-2 text-info"><i class="bi bi-info-circle me-1"></i> La contraseña debe contener:</p>
+                                <div class="requirement-item invalid" id="req-longitud">
+                                    <i class="bi bi-circle"></i> Mínimo 10 caracteres
+                                </div>
+                                <div class="requirement-item invalid" id="req-mayuscula">
+                                    <i class="bi bi-circle"></i> Al menos una mayúscula
+                                </div>
+                                <div class="requirement-item invalid" id="req-minuscula">
+                                    <i class="bi bi-circle"></i> Al menos una minúscula
+                                </div>
+                                <div class="requirement-item invalid" id="req-numero">
+                                    <i class="bi bi-circle"></i> Al menos un número
+                                </div>
+                                <div class="requirement-item invalid" id="req-especial">
+                                    <i class="bi bi-circle"></i> Al menos un carácter especial
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Nombre -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nombre" class="form-label">
+                                            <i class="bi bi-person me-1"></i> Nombre
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="nombre" 
+                                               name="nombre" 
+                                               required
+                                               placeholder="Tu nombre">
+                                        <div class="invalid-feedback">
+                                            Por favor ingresa tu nombre.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Apellido -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="apellidos" class="form-label">
+                                            <i class="bi bi-person-badge me-1"></i> Apellido
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="apellidos" 
+                                               name="apellidos" 
+                                               required
+                                               placeholder="Tu apellido">
+                                        <div class="invalid-feedback">
+                                            Por favor ingresa tu apellido.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- Fecha de Nacimiento -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fecha_nacimiento" class="form-label">
+                                            <i class="bi bi-calendar3 me-1"></i> Fecha de Nacimiento
+                                        </label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="fecha_nacimiento" 
+                                               name="fecha_nacimiento" 
+                                               required>
+                                        <div class="invalid-feedback">
+                                            Debes tener al menos 13 años para registrarte.
+                                        </div>
+                                        <small class="form-text text-muted">
+                                            Debes tener al menos 13 años
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Teléfono -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="telefono" class="form-label">
+                                            <i class="bi bi-telephone me-1"></i> Teléfono (Opcional)
+                                        </label>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="telefono" 
+                                               name="telefono"
+                                               placeholder="1234567890">
+                                        <small class="form-text text-muted">
+                                            Solo números, sin espacios ni guiones
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Términos y Condiciones -->
+                            <div class="form-group form-check">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="terminos" 
+                                       name="terminos" 
+                                       required>
+                                <label class="form-check-label" for="terminos">
+                                    Soy mayor de 13 años y Acepto los <a href="#" class="text-accent">Términos y Condiciones</a> y la <a href="#" class="text-accent">Política de Privacidad</a>
+                                </label>
+                                <div class="invalid-feedback">
+                                    Debes aceptar los términos y condiciones.
+                                </div>
+                            </div>
+                            
+                            <!-- Botón de Registro -->
+                            <button type="submit" class="btn btn-registro mt-3">
+                                <i class="bi bi-person-plus me-2"></i> Crear Cuenta
+                            </button>
+                        </form>
+                        
+                        <!-- Enlace a Login -->
+                        <div class="login-link">
+                            ¿Ya tienes una cuenta? <a href="{{ url_for('login') }}">Inicia Sesión</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formulario = document.getElementById('registroForm');
+    const contrasenaInput = document.getElementById('contrasena');
+    const contrasenaConfirmInput = document.getElementById('contrasena_confirmacion');
+    const correoInput = document.getElementById('correo_electronico');
+    const correoConfirmInput = document.getElementById('correo_confirmacion');
+    const fechaNacimientoInput = document.getElementById('fecha_nacimiento');
+    
+    // Validar contraseña en tiempo real
+    contrasenaInput.addEventListener('input', function() {
+        validarContrasena(this.value);
+    });
+    
+    // Validar coincidencia de contraseñas
+    contrasenaConfirmInput.addEventListener('input', function() {
+        validarCoincidenciaContrasenas();
+    });
+    
+    // Validar coincidencia de correos
+    correoConfirmInput.addEventListener('input', function() {
+        validarCoincidenciaCorreos();
+    });
+    
+    // Establecer fecha máxima para fecha de nacimiento (hoy - 13 años)
+    const hoy = new Date();
+    const fechaMinima = new Date();
+    fechaMinima.setFullYear(hoy.getFullYear() - 120); // Máximo 120 años
+    const fechaMaxima = new Date();
+    fechaMaxima.setFullYear(hoy.getFullYear() - 13); // Mínimo 13 años
+    
+    fechaNacimientoInput.min = fechaMinima.toISOString().split('T')[0];
+    fechaNacimientoInput.max = fechaMaxima.toISOString().split('T')[0];
+    
+    // Validación del formulario al enviar
+    formulario.addEventListener('submit', function(event) {
+        if (!formulario.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Validaciones personalizadas
+        if (!validarContrasena(contrasenaInput.value)) {
+            event.preventDefault();
+            contrasenaInput.classList.add('is-invalid');
+        }
+        
+        if (!validarCoincidenciaContrasenas()) {
+            event.preventDefault();
+        }
+        
+        if (!validarCoincidenciaCorreos()) {
+            event.preventDefault();
+        }
+        
+        formulario.classList.add('was-validated');
+    });
+    
+    // Funciones de validación
+    function validarContrasena(contrasena) {
+        const requisitos = {
+            longitud: contrasena.length >= 10,
+            mayuscula: /[A-Z]/.test(contrasena),
+            minuscula: /[a-z]/.test(contrasena),
+            numero: /\d/.test(contrasena),
+            especial: /[!@#$%^&*()\-_=+{};:,<.>]/.test(contrasena)
+        };
+        
+        // Actualizar indicadores visuales
+        actualizarRequisito('longitud', requisitos.longitud);
+        actualizarRequisito('mayuscula', requisitos.mayuscula);
+        actualizarRequisito('minuscula', requisitos.minuscula);
+        actualizarRequisito('numero', requisitos.numero);
+        actualizarRequisito('especial', requisitos.especial);
+        
+        // Validar contraseña en el input
+        const esValida = Object.values(requisitos).every(req => req === true);
+        contrasenaInput.classList.toggle('is-valid', esValida);
+        contrasenaInput.classList.toggle('is-invalid', !esValida);
+        
+        return esValida;
+    }
+    
+    function actualizarRequisito(id, esValido) {
+        const elemento = document.getElementById(`req-${id}`);
+        if (esValido) {
+            elemento.classList.remove('invalid');
+            elemento.classList.add('valid');
+            elemento.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            elemento.classList.remove('valid');
+            elemento.classList.add('invalid');
+            elemento.querySelector('i').className = 'bi bi-circle';
+        }
+    }
+    
+    function validarCoincidenciaContrasenas() {
+        const coinciden = contrasenaInput.value === contrasenaConfirmInput.value;
+        
+        contrasenaConfirmInput.classList.toggle('is-valid', coinciden && contrasenaConfirmInput.value);
+        contrasenaConfirmInput.classList.toggle('is-invalid', !coinciden && contrasenaConfirmInput.value);
+        
+        return coinciden;
+    }
+    
+    function validarCoincidenciaCorreos() {
+        const coinciden = correoInput.value === correoConfirmInput.value;
+        
+        correoConfirmInput.classList.toggle('is-valid', coinciden && correoConfirmInput.value);
+        correoConfirmInput.classList.toggle('is-invalid', !coinciden && correoConfirmInput.value);
+        
+        return coinciden;
+    }
+    
+    // Inicializar validación de contraseña si ya hay un valor
+    if (contrasenaInput.value) {
+        validarContrasena(contrasenaInput.value);
+    }
+});
+</script>
+{% endblock %}

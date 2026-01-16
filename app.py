@@ -2,6 +2,7 @@
 # Aplicación web Flask para el Sistema de Biblioteca
 
 from controllers.pelicula_controller import PeliculaController
+from controllers.usuario_controller import UsuarioController
 from models import login_manager, bcrypt, db
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
@@ -92,11 +93,11 @@ def index():
 @app.route('/cartelera')
 def lista_cartelera():
     # Esta es la ruta que causaba el error BuildError
-    return render_template('lista_cartelera.html')
+    return render_template('funciones/lista_cartelera.html')
 
 @app.route('/proximamente')
 def lista_proximamente():
-    return render_template('lista_proximamente.html')
+    return render_template('funciones/lista_proximamente.html')
 
 # =========================
 # Rutas de Autenticación
@@ -104,11 +105,7 @@ def lista_proximamente():
 
 @app.route('/login')
 def login():
-    return render_template('login.html')
-
-@app.route('/signup')
-def signup():
-    return render_template('signup.html')
+    return render_template('usuario/inicio_sesion.html')
 
 @app.route('/logout')
 def logout():
@@ -119,13 +116,40 @@ def logout():
 # Rutas de Usuario
 # =========================
 
+@app.route('/crear_usuario', methods=['GET', 'POST'])
+def crear_usuario():
+    """Ruta para crear un nuevo usuario"""
+
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        data = {
+            'correo_electronico': request.form.get('correo_electronico'),
+            'correo_confirmacion': request.form.get('correo_confirmacion'),
+            'contrasena': request.form.get('contrasena'),
+            'contrasena_confirmacion': request.form.get('contrasena_confirmacion'),
+            'nombre': request.form.get('nombre'),
+            'apellidos': request.form.get('apellidos'),
+            'fecha_nacimiento': request.form.get('fecha_nacimiento'),
+            'telefono': request.form.get('telefono')
+        }
+        
+        # Crear usuario usando el controlador
+        success, message, usuario = UsuarioController.crear_usuario(data)
+        
+        if success:
+            # Redirigir a login después de registro exitoso
+            return redirect(url_for('login'))
+    
+    # Si es GET o si hubo error en POST, mostrar el formulario
+    return render_template('usuario/crear_usuario.html')
+
 @app.route('/perfil/actualizar')
 def usuario_actualizar_datos():
-    return render_template('usuario_actualizar_datos.html')
+    return render_template('usuario/actualizar_datos.html')
 
 @app.route('/perfil/password')
 def usuario_cambiar_password():
-    return render_template('usuario_cambiar_password.html')
+    return render_template('usuario/actualizar_contraseña.html')
 
 # =========================
 # Rutas de Boletos
