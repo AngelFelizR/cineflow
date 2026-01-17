@@ -125,6 +125,48 @@ class UsuarioController:
                 session.close()
     
     @staticmethod
+    def iniciar_sesion(correo, contrasena):
+        """
+        Inicia sesión para un usuario
+        
+        Args:
+            correo (str): Correo electrónico del usuario
+            contrasena (str): Contraseña del usuario
+        
+        Returns:
+            tuple: (success: bool, message: str, usuario: Usuario or None)
+        """
+        if not correo or not contrasena:
+            return False, "Por favor ingresa correo y contraseña", None
+        
+        # Validar formato de correo
+        if not UsuarioController._validar_correo(correo):
+            return False, "El correo electrónico no tiene un formato válido", None
+        
+        session = db.get_session()
+        try:
+            # Buscar usuario por correo
+            usuario = session.query(Usuario).filter_by(CorreoElectronico=correo.lower()).first()
+            
+            if not usuario:
+                return False, "Correo o contraseña incorrectos", None
+            
+            # Verificar contraseña
+            if not usuario.validar_contrasena(contrasena):
+                return False, "Correo o contraseña incorrectos", None
+            
+            # Expungir el objeto de la sesión para evitar problemas
+            session.expunge(usuario)
+            
+            return True, f"¡Bienvenido {usuario.Nombre}!", usuario
+            
+        except Exception as e:
+            print(f"Error al iniciar sesión: {e}")
+            return False, f"Error inesperado: {str(e)}", None
+        finally:
+            session.close()
+
+    @staticmethod
     def _validar_contrasena(contrasena):
         """
         Valida que la contraseña cumpla con los requisitos de seguridad

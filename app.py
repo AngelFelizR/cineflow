@@ -103,10 +103,6 @@ def lista_proximamente():
 # Rutas de Autenticación
 # =========================
 
-@app.route('/login')
-def login():
-    return render_template('usuario/inicio_sesion.html')
-
 @app.route('/logout')
 def logout():
     # Aquí usualmente rediriges tras cerrar sesión
@@ -142,6 +138,33 @@ def crear_usuario():
     
     # Si es GET o si hubo error en POST, mostrar el formulario
     return render_template('usuario/crear_usuario.html')
+
+@app.route('/inicio_sesion', methods=['GET', 'POST'])
+def inicio_sesion():
+    """Ruta para iniciar sesión"""
+    
+    # Si el usuario ya está autenticado, redirigir al inicio
+    # if current_user.is_authenticated:
+    #     return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        correo = request.form.get('correo')
+        contrasena = request.form.get('contrasena')
+        
+        # Intentar iniciar sesión usando el controlador
+        success, message, usuario = UsuarioController.iniciar_sesion(correo, contrasena)
+        
+        if success:
+            # Iniciar sesión con Flask-Login
+            # login_user(usuario, remember=False)
+            flash(message, 'success')
+            return redirect(url_for('index'))
+        else:
+            flash(message, 'danger')
+    
+    # Si es GET o si hubo error en POST, mostrar el formulario
+    return render_template('usuario/inicio_sesion.html')
 
 @app.route('/perfil/actualizar')
 def usuario_actualizar_datos():
