@@ -37,7 +37,7 @@ CREATE TABLE TipoDeSala (
     Id INT IDENTITY PRIMARY KEY,
     Tipo NVARCHAR(50) NOT NULL UNIQUE,
     PrecioAdulto DECIMAL(10,4) NOT NULL,
-    PrecioNino DECIMAL(10,4) NOT NULL,
+    PrecioNiño DECIMAL(10,4) NOT NULL,
     Activo BIT DEFAULT 1
 );
 
@@ -189,9 +189,45 @@ BEGIN
     END
 END;
 
+GO
 
 -- # Ingresar Datos
 
+INSERT INTO Clasificaciones (Clasificación) VALUES
+('N/S'),
+('NR'),
+('R/14'),
+('R/16'),
+('R/18');
+
+INSERT INTO Géneros (Género) VALUES
+('Acción'),
+('Comedia'),
+('Drama'),
+('Animación'),
+('Terror'),
+('Ciencia Ficción'),
+('Aventura');
+
+INSERT INTO RolesDeUsuario (Rol) VALUES
+('Administrador'),
+('Encargado de Entrada'),
+('Cliente');
+
+INSERT INTO TipoDeSala (Tipo, PrecioAdulto, PrecioNiño) VALUES
+('2D', 350.00, 200.00),
+('3D', 450.00, 250.00),
+('CxC', 600.00, 350.00);
+
+INSERT INTO Cines (Cine, Dirección, Teléfono, GoogleMapIframeSrc)
+VALUES (
+    'Caribbean Cinemas Megacentro',
+    'Megacentro, Santo Domingo Este',
+    '809-544-2622',
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d288.0811221625557!2d-69.85722296657518!3d18.506539050388852!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8eaf86298704b5c9%3A0x9311b9d6fbdff46!2sCaribbean%20Cinemas%20Megaplex%2010!5e0!3m2!1ses-419!2sdo!4v1768609435800!5m2!1ses-419!2sdo'
+);
+
+GO
 
 -- # Create vistas a usar
 
