@@ -2,3 +2,4 @@ result
 instructions
 mssql2025/
 __pycache__/
+crear_usuarios_hash.sql

@@ -3,7 +3,7 @@
 
 from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
-from models import login_manager, bcrypt, db
+from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
 import random
@@ -87,8 +87,8 @@ def index():
         flash('No hay películas disponibles en este momento', 'warning')
     
     return render_template('index.html',
-                         peliculas_populares=peliculas_populares,
-                         ultimas_peliculas=ultimas_peliculas)
+                           peliculas_populares=peliculas_populares,
+                           ultimas_peliculas=ultimas_peliculas)
 
 @app.route('/cartelera')
 def lista_cartelera():
