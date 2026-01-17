@@ -138,7 +138,7 @@ def crear_usuario():
         
         if success:
             # Redirigir a login después de registro exitoso
-            return redirect(url_for('login'))
+            return redirect(url_for('index'))
     
     # Si es GET o si hubo error en POST, mostrar el formulario
     return render_template('usuario/crear_usuario.html')

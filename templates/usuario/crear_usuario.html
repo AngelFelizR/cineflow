@@ -56,6 +56,12 @@
         transition: all 0.3s;
     }
     
+    .form-control::placeholder,
+    .form-select::placeholder {
+        color: rgba(200, 200, 200, 0.6) !important;
+        opacity: 1;
+    }
+    
     .form-control:focus, .form-select:focus {
         background-color: rgba(255, 255, 255, 0.1);
         border-color: var(--accent-color);
@@ -186,7 +192,7 @@
                                                name="correo_electronico" 
                                                required
                                                placeholder="ejemplo@correo.com">
-                                        <div class="invalid-feedback">
+                                        <div class="invalid-feedback" id="correo-error">
                                             Por favor ingresa un correo electrónico válido.
                                         </div>
                                     </div>
@@ -204,7 +210,7 @@
                                                name="correo_confirmacion" 
                                                required
                                                placeholder="Repite tu correo">
-                                        <div class="invalid-feedback">
+                                        <div class="invalid-feedback" id="correo-confirm-error">
                                             Los correos electrónicos deben coincidir.
                                         </div>
                                     </div>
@@ -389,6 +395,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const correoConfirmInput = document.getElementById('correo_confirmacion');
     const fechaNacimientoInput = document.getElementById('fecha_nacimiento');
     
+    // Función para validar formato de correo
+    function validarFormatoCorreo(correo) {
+        const patron = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return patron.test(correo);
+    }
+    
     // Validar contraseña en tiempo real
     contrasenaInput.addEventListener('input', function() {
         validarContrasena(this.value);
@@ -399,10 +411,51 @@ document.addEventListener('DOMContentLoaded', function() {
         validarCoincidenciaContrasenas();
     });
     
-    // Validar coincidencia de correos
-    correoConfirmInput.addEventListener('input', function() {
-        validarCoincidenciaCorreos();
+    // Validar formato y coincidencia de correos
+    correoInput.addEventListener('input', function() {
+        validarCorreos();
     });
+    
+    correoConfirmInput.addEventListener('input', function() {
+        validarCorreos();
+    });
+    
+    // Función para validar ambos correos
+    function validarCorreos() {
+        const correo1 = correoInput.value;
+        const correo2 = correoConfirmInput.value;
+        
+        // Validar formato del correo principal
+        const formatoValido1 = validarFormatoCorreo(correo1);
+        correoInput.classList.toggle('is-valid', formatoValido1 && correo1);
+        correoInput.classList.toggle('is-invalid', !formatoValido1 && correo1);
+        
+        // Validar formato del correo de confirmación y que coincidan
+        const formatoValido2 = validarFormatoCorreo(correo2);
+        const coinciden = correo1 === correo2;
+        
+        // El correo de confirmación solo es válido si tiene formato válido Y coincide
+        const confirmacionValida = formatoValido2 && coinciden;
+        correoConfirmInput.classList.toggle('is-valid', confirmacionValida && correo2);
+        correoConfirmInput.classList.toggle('is-invalid', !confirmacionValida && correo2);
+        
+        // Actualizar mensajes de error
+        if (correo1 && !formatoValido1) {
+            document.getElementById('correo-error').textContent = 'El correo electrónico no tiene un formato válido.';
+        } else {
+            document.getElementById('correo-error').textContent = 'Por favor ingresa un correo electrónico válido.';
+        }
+        
+        if (correo2 && !formatoValido2) {
+            document.getElementById('correo-confirm-error').textContent = 'El correo de confirmación no tiene un formato válido.';
+        } else if (correo2 && !coinciden) {
+            document.getElementById('correo-confirm-error').textContent = 'Los correos electrónicos no coinciden.';
+        } else {
+            document.getElementById('correo-confirm-error').textContent = 'Los correos electrónicos deben coincidir.';
+        }
+        
+        return formatoValido1 && formatoValido2 && coinciden;
+    }
     
     // Establecer fecha máxima para fecha de nacimiento (hoy - 13 años)
     const hoy = new Date();
@@ -431,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
         }
         
-        if (!validarCoincidenciaCorreos()) {
+        if (!validarCorreos()) {
             event.preventDefault();
         }
         
@@ -485,18 +538,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return coinciden;
     }
     
-    function validarCoincidenciaCorreos() {
-        const coinciden = correoInput.value === correoConfirmInput.value;
-        
-        correoConfirmInput.classList.toggle('is-valid', coinciden && correoConfirmInput.value);
-        correoConfirmInput.classList.toggle('is-invalid', !coinciden && correoConfirmInput.value);
-        
-        return coinciden;
-    }
-    
     // Inicializar validación de contraseña si ya hay un valor
     if (contrasenaInput.value) {
         validarContrasena(contrasenaInput.value);
+    }
+    
+    // Inicializar validación de correos si ya hay valores
+    if (correoInput.value || correoConfirmInput.value) {
+        validarCorreos();
     }
 });
 </script>

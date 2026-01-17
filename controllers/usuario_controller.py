@@ -9,35 +9,6 @@ from flask import flash
 
 class UsuarioController:
     """Controlador para operaciones de usuarios"""
-    
-    @staticmethod
-    def asegurar_roles_existentes(session):
-        """
-        Asegura que los roles básicos existan en la base de datos.
-        Si no existen, los crea.
-
-        Funcion tempral
-        
-        Args:
-            session: Sesión de base de datos
-        """
-        roles_necesarios = ["Cliente", "Administrador", "Encargado De Entrada"]
-        
-        for rol_nombre in roles_necesarios:
-            # Verificar si el rol ya existe
-            rol_existente = session.query(RolUsuario).filter_by(Rol=rol_nombre).first()
-            
-            if not rol_existente:
-                # Crear el rol si no existe
-                nuevo_rol = RolUsuario(
-                    Rol=rol_nombre,
-                    Activo=True
-                )
-                session.add(nuevo_rol)
-                print(f"Rol '{rol_nombre}' creado exitosamente.")
-        
-        # Guardar los cambios
-        session.commit()
 
     @staticmethod
     def crear_usuario(data):
@@ -74,11 +45,15 @@ class UsuarioController:
         if not contrasena_valida:
             errores.append(mensaje_contrasena)
         
-        # 4. Validar formato de correo
+        # 4. Validar formato de correo principal
         if not UsuarioController._validar_correo(data['correo_electronico']):
-            errores.append("El correo electrónico no tiene un formato válido.")
+            errores.append("El correo electrónico principal no tiene un formato válido.")
         
-        # 5. Validar fecha de nacimiento (debe ser una fecha válida y el usuario debe tener al menos 13 años)
+        # 5. Validar formato de correo de confirmación
+        if not UsuarioController._validar_correo(data['correo_confirmacion']):
+            errores.append("El correo de confirmación no tiene un formato válido.")
+        
+        # 6. Validar fecha de nacimiento (debe ser una fecha válida y el usuario debe tener al menos 13 años)
         try:
             fecha_nacimiento = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
             hoy = datetime.now().date()
@@ -100,9 +75,6 @@ class UsuarioController:
         try:
             # Obtener sesión de base de datos
             session = db.get_session()
-            
-            # Asegurar que los roles necesarios existan
-            UsuarioController.asegurar_roles_existentes(session)
             
             # Obtener el rol de Cliente
             rol_cliente = session.query(RolUsuario).filter_by(Rol="Cliente").first()
