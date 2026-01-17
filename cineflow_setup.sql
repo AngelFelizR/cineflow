@@ -215,16 +215,6 @@ INSERT INTO Géneros (Género) VALUES
 ('Ciencia Ficción'),
 ('Aventura');
 
-INSERT INTO RolesDeUsuario (Rol) VALUES
-('Administrador'),
-('Encargado de Entrada'),
-('Cliente');
-
-INSERT INTO TipoDeSala (Tipo, PrecioAdulto, PrecioNiño) VALUES
-('2D', 350.00, 200.00),
-('3D', 450.00, 250.00),
-('CxC', 600.00, 350.00);
-
 INSERT INTO Cines (Cine, Dirección, Teléfono, GoogleMapIframeSrc)
 VALUES (
     'Caribbean Cinemas Megacentro',
@@ -234,7 +224,23 @@ VALUES (
 );
 
 
--- Inserts generados para la tabla Usuarios
+INSERT INTO TipoDeSala (Tipo, PrecioAdulto, PrecioNiño) VALUES
+('2D', 350.00, 200.00),
+('3D', 450.00, 250.00),
+('CxC', 600.00, 350.00);
+
+
+INSERT INTO RolesDeUsuario (Rol) VALUES
+('Administrador'),
+('Encargado de Entrada'),
+('Cliente');
+
+INSERT INTO TipoBoletos (TipoBoleto) VALUES
+('Adulto'),
+('Niño');
+
+-- PENDING Insert Películas 
+
 INSERT INTO Usuarios (IdRol, Nombre, Apellidos, CorreoElectrónico, Teléfono, ContraseñaHash, FechaNacimiento) VALUES
 (1, 'Admin', 'CineFlow', 'admin@cineflow.com', '809-555-0001', '$2b$12$mdWsWi5RQ9QOo7kB1s/aOOWY6wLiV2uyPhHgy/bC91Q69ogQ/jpby', '1985-01-01'),
 (2, 'Encargado', 'Entrada', 'encargado_entrada@cineflow.com', '809-555-0002', '$2b$12$VIyGj7KskR3di7yFsM.KNe2jjrouEJBJ/yeE9ISkQbX7B8S1bw3eS', '1990-02-02'),
@@ -288,6 +294,21 @@ INSERT INTO Usuarios (IdRol, Nombre, Apellidos, CorreoElectrónico, Teléfono, C
 (3, 'Cliente48', 'Apellido', 'usuario_48@example.com', '809-000-0048', '$2b$12$K1vspCIFZpPOjjYYrLeGROdjqUu4za1JS/PvAspeaf6hSDcCXzwgO', '1995-01-01'),
 (3, 'Cliente49', 'Apellido', 'usuario_49@example.com', '809-000-0049', '$2b$12$B5b8iEuYTzPhSGdccnrPW.FDYzzc0j/vNrwCAhgs40iLrl8D452l2', '1995-01-01'),
 (3, 'Cliente50', 'Apellido', 'usuario_50@example.com', '809-000-0050', '$2b$12$msFyGTX27V6Tq2Q6Bg9zEeiAJVkLk8.oIIqVjE6oljDkC6uo/z5Iu', '1995-01-01');
+
+-- PENDING Insert PelículaGénero
+
+-- PENDING Insert Salas
+
+-- PENDING Insert Asientos
+
+-- PENDING Insert Funciones
+
+-- PENDING Insert Boleto
+
+-- PENDING Insert BoletosCancelados
+
+-- PENDING Insert BoletosUsados
+
 
 GO
 
