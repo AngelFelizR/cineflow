@@ -202,6 +202,10 @@ INSERT INTO Clasificaciones (Clasificación) VALUES
 ('R/16'),
 ('R/18');
 
+INSERT INTO Idiomas (Idioma) VALUES
+('Inglés'),
+('Español');
+
 INSERT INTO Géneros (Género) VALUES
 ('Acción'),
 ('Comedia'),
