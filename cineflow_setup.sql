@@ -302,3 +302,28 @@ LEFT JOIN Boletos b ON f.Id = b.IdFunción
 WHERE p.Activo = 1
 GROUP BY p.Id, p.TítuloPelícula, p.DescripciónCorta, p.LinkToBanner, p.DuraciónMinutos, i.Idioma, c.Clasificación
 ORDER BY TotalBoletos DESC;
+
+GO
+
+-- # Índices sugeridos para mejorar rendimiento de vw_PelículasPopulares
+
+-- ACTIVAR OPCIONES NECESARIAS PARA ÍNDICES FILTRADOS
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+
+GO
+
+-- Índice filtrado en Películas para la condición WHERE p.Activo = 1
+CREATE NONCLUSTERED INDEX IX_Peliculas_Activo_Filtered
+ON Películas([Activo])
+INCLUDE ([Id], [IdIdioma], [IdClasificación], [TítuloPelícula], [DescripciónCorta], [DuraciónMinutos])
+WHERE [Activo] = 1;
+
+-- Los demás índices no requieren estrictamente estas opciones, pero se ven beneficiados
+CREATE NONCLUSTERED INDEX IX_Funciones_IdPelicula
+ON Funciones([IdPelícula])
+INCLUDE ([Id], [FechaHora], [IdSala]);
+
+CREATE NONCLUSTERED INDEX IX_Boletos_IdFuncion
+ON Boletos([IdFunción])
+INCLUDE ([Id]);

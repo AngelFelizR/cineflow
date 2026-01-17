@@ -293,6 +293,22 @@ class BoletoUsado(Base):
     FechaUso: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 
+class VistaPeliculasPopulares(Base):
+    __tablename__ = "vw_PelículasPopulares"
+
+    Id: Mapped[int] = mapped_column(primary_key=True)
+    Titulo: Mapped[str] = mapped_column("TítuloPelícula", String(150))
+    DescripcionCorta: Mapped[str] = mapped_column("DescripciónCorta", String(255))
+    LinkToBanner: Mapped[str] = mapped_column("LinkToBanner", String)  # NVARCHAR(MAX) en DB
+    DuracionMinutos: Mapped[int] = mapped_column("DuraciónMinutos", Integer)
+    Idioma: Mapped[str] = mapped_column(String(50))
+    Clasificacion: Mapped[str] = mapped_column("Clasificación", String(50))
+    TotalBoletos: Mapped[int] = mapped_column(Integer)
+
+    # Opcional: marcar como solo lectura (no hay soporte directo, pero evita añadir setters)
+    def __repr__(self):
+        return f"<VistaPeliculasPopulares Id={self.Id} Titulo={self.Titulo} TotalBoletos={self.TotalBoletos}>"
+
 @login_manager.user_loader
 def load_user(user_id):
     # Usamos la sesión de tu clase Database
