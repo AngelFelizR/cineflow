@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from models import Usuario, RolUsuario, db
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 from flask import flash
 
 class UsuarioController:
@@ -145,8 +146,10 @@ class UsuarioController:
         
         session = db.get_session()
         try:
-            # Buscar usuario por correo
-            usuario = session.query(Usuario).filter_by(CorreoElectronico=correo.lower()).first()
+            # Buscar usuario por correo con la relación rol cargada
+            usuario = session.query(Usuario).options(
+                joinedload(Usuario.rol)
+            ).filter_by(CorreoElectronico=correo.lower()).first()
             
             if not usuario:
                 return False, "Correo o contraseña incorrectos", None

@@ -232,6 +232,15 @@ class Usuario(Base, UserMixin):
     def __repr__(self):
         return '<User Name {}>'.format(self.Nombre + self.Apellidos)
 
+    def get_id(self):
+        """Retorna el ID del usuario como string (requerido por Flask-Login)"""
+        return str(self.Id)
+
+    @property
+    def rol_nombre(self):
+        """Propiedad para obtener el nombre del rol del usuario"""
+        return self.rol.Rol if self.rol else None
+
     def guardar_contrasena(self, contrasena):
         self.ContrasenaHash = bcrypt.generate_password_hash(contrasena).decode()
 
@@ -314,7 +323,14 @@ def load_user(user_id):
     # Usamos la sesión de tu clase Database
     session = db.get_session()
     try:
-        # Buscamos al usuario por su ID (clave primaria)
-        return session.get(Usuario, int(user_id))
+        # Buscamos al usuario por su ID (clave primaria) y cargamos la relación rol
+        from sqlalchemy.orm import joinedload
+        usuario = session.query(Usuario).options(
+            joinedload(Usuario.rol)
+        ).filter_by(Id=int(user_id)).first()
+        return usuario
+    except Exception as e:
+        print(f"Error al cargar usuario: {e}")
+        return None
     finally:
         session.close()

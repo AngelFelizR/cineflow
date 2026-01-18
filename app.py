@@ -6,12 +6,14 @@ from controllers.usuario_controller import UsuarioController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
+from flask_login import login_user, logout_user, current_user, login_required
 import random
 
 app = Flask(__name__)
 app.secret_key = 'cineflow_secret_key_change_in_production_2025'
 
 login_manager.init_app(app)
+login_manager.login_view = 'inicio_sesion'
 bcrypt.init_app(app)
 
 # Fechas futuras para las próximas funciones
@@ -105,8 +107,9 @@ def lista_proximamente():
 
 @app.route('/logout')
 def logout():
-    # Aquí usualmente rediriges tras cerrar sesión
-    return redirect(url_for('lista_cartelera'))
+    logout_user()
+    flash('Has cerrado sesión correctamente.', 'success')
+    return redirect(url_for('index'))
 
 # =========================
 # Rutas de Usuario
@@ -115,6 +118,11 @@ def logout():
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
     """Ruta para crear un nuevo usuario"""
+
+    # Si el usuario ya está autenticado, redirigir al inicio
+    if current_user.is_authenticated:
+        flash('Para registrar un nuevo usuario debes cerrar sesion del usuario actual.', 'info')
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -134,7 +142,7 @@ def crear_usuario():
         
         if success:
             # Redirigir a login después de registro exitoso
-            return redirect(url_for('index'))
+            return redirect(url_for('inicio_sesion'))
     
     # Si es GET o si hubo error en POST, mostrar el formulario
     return render_template('usuario/crear_usuario.html')
@@ -144,8 +152,9 @@ def inicio_sesion():
     """Ruta para iniciar sesión"""
     
     # Si el usuario ya está autenticado, redirigir al inicio
-    # if current_user.is_authenticated:
-    #     return redirect(url_for('index'))
+    if current_user.is_authenticated:
+        flash('Ya has iniciado sesion, retornando a la pagina de inicio.', 'info')
+        return redirect(url_for('index'))
     
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -157,7 +166,7 @@ def inicio_sesion():
         
         if success:
             # Iniciar sesión con Flask-Login
-            # login_user(usuario, remember=False)
+            login_user(usuario, remember=False)
             flash(message, 'success')
             return redirect(url_for('index'))
         else:
@@ -167,10 +176,12 @@ def inicio_sesion():
     return render_template('usuario/inicio_sesion.html')
 
 @app.route('/perfil/actualizar')
+@login_required
 def usuario_actualizar_datos():
     return render_template('usuario/actualizar_datos.html')
 
 @app.route('/perfil/password')
+@login_required
 def usuario_cambiar_password():
     return render_template('usuario/actualizar_contraseña.html')
 
@@ -179,10 +190,12 @@ def usuario_cambiar_password():
 # =========================
 
 @app.route('/mis-boletos')
+@login_required
 def boletos_lista():
     return render_template('boletos_lista.html')
 
 @app.route('/boletos/devueltos')
+@login_required
 def boletos_devueltos():
     return render_template('boletos_devueltos.html')
 

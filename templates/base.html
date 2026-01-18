@@ -31,7 +31,7 @@
             <div class="collapse navbar-collapse" id="navbarCine">
                 <!-- Navegación Principal -->
                 <ul class="navbar-nav me-auto">
-                    {% if current_user.is_anonymous or current_user.Rol == "Cliente" %}
+                    {% if not current_user.is_authenticated or current_user.rol_nombre == "Cliente" %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
                             <i class="bi bi-house-door me-1"></i> Inicio
@@ -50,15 +50,15 @@
                     {% endif %}
                     <!-- Menú según rol del usuario -->
                     {% if current_user.is_authenticated %}
-                        {% if current_user.Rol == "Cliente" %}
+                        {% if current_user.rol_nombre == "Cliente" %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('boletos_lista') }}">
                                     <i class="bi bi-ticket-perforated me-1"></i> Mis Boletos
                                 </a>
                             </li>
-                        {% elif current_user.Rol == "Administrador" %}
+                        {% elif current_user.rol_nombre == "Administrador" %}
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" Rol="button" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     <i class="bi bi-speedometer2 me-1"></i> Administración
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -68,7 +68,7 @@
                                     <li><a class="dropdown-item" href="#"><i class="bi bi-clock me-1"></i> Funciones</a></li>
                                 </ul>
                             </li>
-                        {% elif current_user.Rol == "Encargado De Entrada" %}
+                        {% elif current_user.rol_nombre == "Encargado de Entrada" %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('boletos_devueltos') }}">
                                     <i class="bi bi-ticket-perforated me-1"></i> Control de Boletos
@@ -82,14 +82,14 @@
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" Rol="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
                                 <div class="user-avatar-sm me-2">
                                     <i class="bi bi-person-circle"></i>
                                 </div>
-                                {{ current_user.Nombre if current_user.Nombre else current_user.email }}
+                                {{ current_user.Nombre }} {{ current_user.Apellidos }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                                <li><h6 class="dropdown-header">{{ current_user.Rol }}</h6></li>
+                                <li><h6 class="dropdown-header">{{ current_user.rol_nombre }}</h6></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('usuario_actualizar_datos') }}">
                                     <i class="bi bi-person me-1"></i> Actualizar Perfil
@@ -126,7 +126,7 @@
             {% if messages %}
                 <div class="flash-messages-container">
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show mx-3 mt-3" Rol="alert">
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mx-3 mt-3" role="alert">
                             <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' if category == 'info' else 'x-circle' }} me-2"></i>
                             {{ message }}
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
