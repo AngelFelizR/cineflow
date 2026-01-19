@@ -59,7 +59,7 @@ CREATE TABLE Películas (
     IdIdioma INT NOT NULL,
     TítuloPelícula NVARCHAR(150) NOT NULL,
     DuraciónMinutos INT NOT NULL,
-    DescripciónCorta NVARCHAR(255) NOT NULL,
+    DescripciónCorta NVARCHAR(600) NOT NULL,
     DescripciónLarga NVARCHAR(MAX) NOT NULL,
     LinkToBanner NVARCHAR(MAX) NOT NULL,
     LinkToBajante NVARCHAR(MAX) NOT NULL,
