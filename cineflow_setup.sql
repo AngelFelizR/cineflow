@@ -69,13 +69,13 @@ CREATE TABLE Películas (
     FOREIGN KEY (IdIdioma) REFERENCES Idiomas(Id)
 );
 
-CREATE TABLE PeliculaGenero (
+CREATE TABLE PelículaGénero (
     Id INT IDENTITY PRIMARY KEY,
     IdPelícula INT NOT NULL,
     IdGénero INT NOT NULL,
     FOREIGN KEY (IdPelícula) REFERENCES Películas(Id),
     FOREIGN KEY (IdGénero) REFERENCES Géneros(Id),
-    UNIQUE (IdPelícula, IdGénero)
+    UNIQUE(IdPelícula, IdGénero)
 );
 
 
@@ -99,7 +99,6 @@ CREATE TABLE Asientos (
     UNIQUE (IdSala, CódigoAsiento)
 );
 
-
 CREATE TABLE Funciones (
     Id INT IDENTITY PRIMARY KEY,
     IdPelícula INT NOT NULL,
@@ -120,8 +119,7 @@ CREATE TABLE Usuarios (
     ContraseñaHash NVARCHAR(MAX) NOT NULL,
     FechaNacimiento DATE,
     FOREIGN KEY (IdRol) REFERENCES RolesDeUsuario(Id),
-    UNIQUE (CorreoElectrónico),
-    UNIQUE (Teléfono)
+    UNIQUE (CorreoElectrónico)
 );
 
 CREATE TABLE Boletos (
@@ -160,36 +158,6 @@ CREATE TABLE BoletosUsados(
 GO
 
 -- # Crear validaciones
-
-CREATE TRIGGER trg_ValidarTiempoFunciones
-ON Funciones
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    IF EXISTS (
-        -- Verificar conflictos entre funciones en la misma sala
-        SELECT 1
-        FROM inserted i
-        INNER JOIN Películas p ON i.IdPelícula = p.Id
-        INNER JOIN Funciones f ON i.IdSala = f.IdSala 
-            AND f.Id != i.Id -- Excluir la misma función
-        INNER JOIN Películas pf ON f.IdPelícula = pf.Id
-        WHERE 
-            -- Condición 1: Nueva función empieza durante otra función + intervalo
-            (i.FechaHora >= f.FechaHora 
-             AND i.FechaHora < DATEADD(MINUTE, pf.DuraciónMinutos + 25, f.FechaHora))
-            OR
-            -- Condición 2: Otra función empieza durante nueva función + intervalo
-            (f.FechaHora >= i.FechaHora 
-             AND f.FechaHora < DATEADD(MINUTE, p.DuraciónMinutos + 25, i.FechaHora))
-    )
-    BEGIN
-        THROW 50000, 'Violación del tiempo mínimo entre funciones (Duración + 25 minutos)', 1;
-        ROLLBACK TRANSACTION;
-    END
-END;
 
 GO
 
@@ -239,7 +207,146 @@ INSERT INTO TipoBoletos (TipoBoleto) VALUES
 ('Adulto'),
 ('Niño');
 
--- PENDING Insert Películas 
+INSERT INTO Películas (IdClasificación, IdIdioma, TítuloPelícula, DuraciónMinutos, DescripciónCorta, DescripciónLarga, LinkToBanner, LinkToBajante, LinkToTrailer) VALUES
+(4, 2, 
+'Avatar:Fuego y Cenizas', 197, 
+'Tras los eventos de la guerra contra la RDA, Jake Sully y Neytiri deben enfrentar una amenaza interna sin precedentes: el Pueblo de la Ceniza. Esta tribu de Navi, marcada por la violencia y la ira, desafía la unidad de Pandora, obligando a la familia Sully a luchar en un entorno volcánico hostil para proteger su hogar.', 
+'Expande el universo de Pandora explorando el lado más oscuro de sus habitantes nativos. La historia comienza poco después de la trágica pérdida de Neteyam, con una familia Sully vulnerable que busca refugio. Sin embargo, la paz se ve interrumpida por la aparición de Varang (interpretada por Oona Chaplin), la líder de una facción Navi que habita en regiones volcánicas y que ve la guerra de forma muy distinta a los Omaticaya o los Metkayina. A diferencia de las entregas anteriores, donde el conflicto principal era la invasión humana, esta película profundiza en los conflictos internos entre clanes. Mientras la RDA sigue presente bajo el mando de un reconstruido Coronel Quaritch, el verdadero peligro reside en el "fuego" emocional y físico de esta nueva tribu, que utiliza las cenizas y el calor volcánico para imponer su dominio. La narrativa explora temas de venganza, duelo y la compleja red de alianzas necesarias para evitar que Pandora se consuma desde adentro.',
+'https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/41ae7704-8740-4eb8-bb01-e4285e3b9011/compose?aspectRatio=1.78&format=webp&width=1200',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNYtdOaZ31Z_pesLVaPnZ0VQ1m5w-7wADgVQ&s',
+'https://www.youtube.com/watch?v=BlkNo-saOc0'),
+(3, 2, 
+'Anaconda', 100, 
+'Descripción Corta:Dos amigos de la infancia en plena crisis de la mediana edad viajan al Amazonas para realizar un remake independiente de su película favorita, Anaconda. Lo que comienza como una producción caótica y de bajo presupuesto se convierte en una pesadilla real cuando una serpiente gigante verdadera comienza a cazarlos, obligándolos a luchar por sus vidas en un entorno donde la ficción se vuelve realidad.',
+'Descripción Larga:La historia sigue a Doug (Jack Black), un videógrafo de bodas frustrado, y Griff (Paul Rudd), un actor cuya carrera está estancada. Desesperados por darle un sentido a sus vidas, deciden cumplir su sueño de la infancia: viajar a la selva de Brasil para rodar su propia versión de la película de 1997. Acompañados por sus amigos Kenny (Steve Zahn) y Claire (Thandiwe Newton), se adentran en el río Amazonas con un presupuesto minúsculo y un equipo técnico improvisado. La situación se complica cuando descubren que no están solos: una anaconda legendaria y asesina acecha la zona. La trama se vuelve cada vez más absurda y peligrosa al cruzarse con un equipo de rodaje profesional de Sony y enfrentarse a criminales locales, todo mientras intentan capturar las mejores tomas de su accidentada película antes de ser devorados.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG1WidkVNFIBUmVondNkYFpuTlJ7o5QVTdXg&s',
+'https://www.ecartelera.com/carteles/19400/19485/002_p.jpg',
+'https://www.youtube.com/watch?v=Wh-d_zia8DY'),
+(5, 2, 
+'Cinco noches en Freddys 2', 104, 
+'Un año después de los eventos en la pizzería de Freddy Fazbear, lo ocurrido se ha convertido en una leyenda urbana que inspira el festival local "Fazfest". Cuando Abby escapa para reencontrarse con sus "amigos" animatrónicos, desata una nueva serie de horrores que revelan los oscuros orígenes de Freddys y presentan una versión más avanzada y letal de las máquinas: los animatrónicos "Toy"',
+'Ambientada un año después de la pesadilla sobrenatural de la primera entrega, Mike Schmidt (Josh Hutcherson) y la oficial Vanessa (Elizabeth Lail) intentan mantener a la pequeña Abby alejada de la verdad sobre los animatrónicos. Sin embargo, la curiosidad de Abby la lleva a buscar nuevamente a Freddy, Bonnie, Chica y Foxy, lo que la conduce al descubrimiento de un nuevo establecimiento con tecnología más moderna y reluciente, pero mucho más peligrosa. Esta secuela introduce a los modelos "Toy" y a la inquietante figura de The Marionette (el Títere), un animatrónico del local original que busca venganza. A medida que los secretos sobre el pasado de William Afton y el verdadero propósito de la pizzería salen a la luz, Mike debe enfrentarse no solo a los nuevos robots, sino también a versiones deterioradas y hostiles de sus antiguos conocidos, en una batalla por sobrevivir a cinco nuevas noches de terror absoluto.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqjN2xRw90LmCReeUVFL8vBJcmYJE9sKeipw&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHIr2JR4c2EJBelkbBGlQoxEwBiMjaGdJjCw&s',
+'https://www.youtube.com/watch?v=E8M-iJ0p-Xk'),
+(2, 2, 
+'Grand Prix of Europe', 98, 
+'Descripción Corta:El Gran Premio de Europa 2026 es la denominación que unifica la pasión del automovilismo en el continente, destacando este año por ser la temporada de transición previa a la llegada del nuevo Gran Premio de España en Madrid. Es un evento clave del Campeonato Mundial de la FIA que pone a prueba la aerodinámica de los monoplazas bajo el nuevo reglamento técnico de 2026, combinando velocidad extrema con la precisión técnica de los mejores pilotos del mundo.',
+'Descripción Larga:La temporada 2026 de la Fórmula 1 marca el inicio de una nueva era tecnológica, con motores propulsados por combustibles 100% sostenibles y una mayor dependencia de la energía eléctrica. En este marco, el Grand Prix of Europe se consolida como el corazón de la gira europea, celebrándose en circuitos que representan la máxima exigencia para las escuderías.
+Este evento no solo es una carrera de 300 kilómetros, sino un festival de innovación donde equipos como Red Bull, Ferrari y Mercedes debutan sus sistemas de aerodinámica activa. La edición de 2026 es especialmente significativa por ser el último año en que el trazado de Barcelona-Catalunya ostenta la exclusividad en la península antes de la entrada del circuito semi-urbano de Madrid, lo que ha generado una asistencia récord. El Gran Premio abarca tres días de competición intensa, desde las sesiones de prácticas y la clasificación Sprint, hasta la carrera dominical, donde la estrategia de neumáticos y el ahorro de energía eléctrica son los factores determinantes para alcanzar el podio.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2OkxoaRjVhys__LHD7QxI4GTn5NNygayZJQ&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZlJ5zyjGkMAbskuHeQCNvQiYeaURQCFEqPw&s',
+'https://www.youtube.com/watch?v=mvSrvfdF_D4'),
+(3, 2, 
+'Madias Hermanas', 100, 
+'Medias Hermanas es una comedia que narra el accidentado encuentro entre Victoria y Maruja, dos mujeres que descubren, tras la muerte de su padre, que son hermanas. Obligadas a convivir para vender una propiedad compartida, ambas deberán superar sus profundas diferencias sociales y personales en un verano lleno de enredos, risas y revelaciones familiares.',
+'La historia comienza con el funeral del patriarca de la familia, un evento que revela un secreto guardado por décadas: la existencia de dos hijas de mundos completamente opuestos. Victoria (Gianella Neyra) es una mujer de alta sociedad, refinada y algo rígida, mientras que Maruja (Magdyel Ugaz) es extrovertida, espontánea y proviene de un entorno popular. Para poder cobrar su herencia y resolver sus respectivas crisis financieras, ambas se ven obligadas a pasar un verano juntas en una casa de playa que deben reparar y vender. Lo que inicia como una convivencia forzada y llena de choques culturales y prejuicios, se transforma en un viaje de autoexploración. A través de situaciones hilarantes y momentos de vulnerabilidad, las "medias hermanas" descubren que tienen más en común de lo que pensaban, aprendiendo que la familia no solo se define por la sangre, sino por la capacidad de perdonar y aceptar al otro.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFv_YyH5A_yIN_9SLY4Z4Onkp9Ark7_4UJHg&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQd6CyhksENC6wRprTU_j3Zh85HYh1kGn7Xrw&s',
+'https://www.youtube.com/watch?v=7Y2DeBEt2Ew'),
+(5, 2, 
+'Primate', 89, 
+'Primate es una comedia con tintes autobiográficos que sigue a William Days, un actor famoso que, al cumplir los 45 años, entra en una crisis de la mediana edad. Tras separarse y ser diagnosticado con diabetes tipo 2, William debe aprender a navegar su nueva soltería, la paternidad y su carrera en un mundo moderno que ya no comprende, dándose cuenta de que, en el fondo, sigue siendo un "primate" intentando evolucionar.',
+'La serie profundiza en la vida de William Days (Christian Tappan), un hombre que aparentemente lo tenía todo: fama, una familia estable y una carrera sólida. Sin embargo, su mundo se desmorona cuando su esposa le pide el divorcio y su salud le da un aviso inesperado. Obligado a mudarse con su mejor amigo, William se enfrenta a la cruda realidad de ser un hombre de mediana edad en la era de las aplicaciones de citas, la corrección política y las redes sociales. A lo largo de los episodios, la trama explora con humor ácido y mucha honestidad temas como la masculinidad frágil, el miedo al envejecimiento y la búsqueda de la identidad más allá del éxito profesional. Con el apoyo de sus amigos Andrés y Joao, William intenta redescubrirse mientras lidia con las exigencias de sus hijos adolescentes y los absurdos de la industria del entretenimiento. Es una crónica humana sobre los errores, la resiliencia y la difícil tarea de madurar cuando todavía te sientes como un cavernícola perdido en el siglo XXI',
+'https://i0.wp.com/bloody-disgusting.com/wp-content/uploads/2025/09/Screenshot-2025-09-22-145544.png?fit=1155%2C630&ssl=1',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTNIbHyKZCnaOqR15IyTKSmKkDNTjSVRsT-Q&s',
+'https://www.youtube.com/watch?v=nr1v2T1JMXY'),
+(4, 2, 
+'Vanilla Sky', 136,
+'Vanilla Sky es un thriller psicológico que sigue la vida de David Aames, un joven y apuesto magnate editorial que lo tiene todo hasta que un trágico accidente automovilístico desfigura su rostro. A partir de ese momento, su realidad comienza a fragmentarse en una serie de visiones oníricas y paranoicas, llevándolo a cuestionar qué es real y qué es parte de una elaborada simulación mental en su búsqueda por el amor y la redención.',
+'La historia presenta a David Aames (Tom Cruise), un heredero carismático y narcisista que vive una existencia privilegiada en Nueva York. Su vida cambia drásticamente cuando se enamora de Sofía (Penélope Cruz), la mujer de los sueños de su mejor amigo. Sin embargo, un arranque de celos de su antigua amante, Julianna (Cameron Diaz), provoca un accidente fatal que deja a David con el rostro severamente deformado. Tras someterse a una cirugía reconstructiva experimental, la vida de David parece volver a la normalidad, pero pronto la frontera entre sus sueños y la vigilia se disuelve. Acompañado por un psicólogo judicial (Kurt Russell) mientras es investigado por un asesinato que no recuerda, David debe navegar por un laberinto de recuerdos alterados y giros metafísicos. La película explora temas profundos como la criogenia, la identidad, el arrepentimiento y la posibilidad de elegir entre una "felicidad lúcida" o una realidad dolorosa, culminando en un final que redefine todo lo visto anteriormente.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTT3oiQZauD3vb2Y4GGyWuA5zz6QIpXQZ4nvg&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQessHhtFeFo6Pmr4d8RXOT1k4RzJSVNt_7JA&s',
+'https://www.youtube.com/watch?v=rwJHvswJ-Qo'),
+(5, 2, 
+'El beso de la mujer araña', 128, 
+'En una oscura celda de una prisión argentina durante la dictadura, dos hombres opuestos se ven obligados a convivir: Molina, un hombre homosexual encarcelado por "corromper a menores", y Valentín, un revolucionario político torturado. Para escapar de la brutal realidad, Molina narra tramas de películas clásicas, creando un lazo íntimo y transformador que desdibuja las fronteras entre la fantasía, el compromiso político y el amor prohibido.',
+'La historia es un profundo estudio de la condición humana y la resistencia emocional. Luis Molina utiliza el cine como un mecanismo de defensa, transportando a su compañero de celda, Valentín Arregui, a mundos glamorosos y melodramáticos de la era dorada de Hollywood. Mientras Valentín desprecia inicialmente estas historias por considerarlas una distracción frívola de su lucha social, termina encontrando en ellas un refugio para su dolor físico y psicológico. A medida que avanza la trama, se revela una tensión moral: Molina ha sido presionado por las autoridades de la prisión para espiar a Valentín a cambio de su libertad. Sin embargo, la lealtad y el afecto que surge entre ambos transforma a Molina en una figura heroica y a Valentín en alguien más empático. La obra explora la sexualidad, el sacrificio y cómo la imaginación puede ser el arma más poderosa contra la opresión, culminando en un acto de amor que sella el destino de ambos de manera trágica pero trascendental.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9v-9puZQ2QDf-Z1k3F36tsvhjUH35S9zmKw&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3KosHBVoLCx0r1zAn2xOs6eCKN_BIIOgvfg&s',
+'https://www.youtube.com/watch?v=LY9SDi33zIU'),
+(2, 2, 
+'Se levanta el viento', 126, 
+'Se levanta el viento es un relato biográfico ficcionalizado sobre Jiro Horikoshi, el ingeniero que diseñó los aviones de combate japoneses durante la Segunda Guerra Mundial. La película sigue su pasión por la aviación desde su infancia hasta la adultez, entrelazando sus sueños de ingeniería con una trágica historia de amor y el dilema moral de crear belleza en un mundo destinado a la destrucción.',
+'La película narra décadas de la vida de Jiro Horikoshi, un hombre corto de vista que, al no poder ser piloto, decide dedicar su vida a diseñar aeronaves. Ambientada en una época de gran agitación social en Japón marcada por la Gran Depresión, la epidemia de tuberculosis y el devastador terremoto de Kanto de 1923, la trama muestra el ascenso de Jiro como un prodigio de la ingeniería aeronáutica. A medida que Jiro perfecciona sus diseños, se enamora de Naoko, una joven con una salud frágil que se convierte en su mayor apoyo emocional. La narrativa explora la melancolía del creador: Jiro desea fabricar aviones hermosos, pero se enfrenta a la dolorosa realidad de que sus creaciones serán utilizadas como herramientas de guerra. Con la estética visual característica de Hayao Miyazaki, la cinta es una oda a la perseverancia, al arte del diseño y a la fragilidad de la vida, planteando la pregunta de si vale la pena perseguir un sueño a pesar de las consecuencias que este pueda tener en el mundo real.',
+'https://elpalomitron.com/wp-content/uploads/2014/04/Cr%C3%ADtica-de-El-viento-se-levanta-de-Hayao-Miyazaki-destacada-el-palomitron.jpg',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi_ouU2QtkdG3d1sd0HOeOpIqdkJnCImUSzQ&s',
+'https://www.youtube.com/watch?v=YKdMqlGu0h0'),
+(2, 2, 
+'Tom y Jerry', 104,
+'Tom y Jerry es la legendaria serie de comedia slapstick que narra la eterna e interminable persecución entre un gato doméstico, Tom, y un astuto ratón, Jerry. A través de ingeniosas trampas, caos físico y una banda sonora orquestal que dicta el ritmo de la acción, ambos personajes demuestran que, a pesar de sus constantes peleas, forman un vínculo inseparable donde la astucia siempre derrota a la fuerza bruta.',
+'Creada originalmente por William Hanna y Joseph Barbera, Tom y Jerry se centra en la cómica rivalidad de sus dos protagonistas en diversos escenarios, que van desde hogares suburbanos clásicos hasta entornos futuristas o mundos de fantasía. Tom es un gato persistente pero desafortunado, cuyos planes para atrapar a su vecino terminan casi siempre en un desastre doloroso para él. Por otro lado, Jerry es un ratón ingenioso y sorprendentemente fuerte que utiliza el entorno a su favor para humillar a Tom, aunque en ocasiones ambos unen fuerzas contra amenazas externas. La serie se distingue por su casi total ausencia de diálogos, confiando en la expresividad visual, el diseño de sonido y una sincronización perfecta con la música clásica o jazz para contar sus historias. La franquicia ha evolucionado integrando técnicas de animación moderna que respetan el estilo 2D tradicional, manteniéndose relevante para nuevas generaciones al explorar temas de amistad improbable y resiliencia, consolidándose como el estándar de oro de la animación de persecución y comedia visual. ',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRM2qn1d28ob4YWKjFu9j0wATDDA7GTcbe2zQ&s',
+'https://m.media-amazon.com/images/M/MV5BNjM3NzI5NjctNDc5MS00MTgwLWJkYTctNWY5NTlkYTQ4NjA1XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+'https://www.youtube.com/watch?v=kmq-uNePCgc'),
+(2, 2, 
+'De tal palo, tal astilla', 121,
+'De tal palo, tal astilla es un conmovedor drama que narra la vida de Ryota, un exitoso arquitecto obsesionado con el trabajo, cuya vida se desmorona cuando descubre que su hijo biológico fue intercambiado al nacer en el hospital. Ante la decisión imposible de recuperar a su verdadero hijo o conservar al niño que ha criado durante seis años, Ryota debe cuestionar si la paternidad reside en los lazos de sangre o en el tiempo compartido.',
+'La historia se centra en Ryota Nonomiya (Masaharu Fukuyama), un hombre ambicioso que cree que el éxito y la disciplina son los pilares de la familia. Su mundo perfecto cambia drásticamente cuando recibe una llamada del hospital informándole que su hijo, Keita, no es su hijo biológico. Debido a un error deliberado de una enfermera, Ryota y su esposa intercambiaron sus vidas con los Saiki, una familia de clase media mucho más humilde, relajada y afectuosa. La película explora el contraste entre las dos familias: la rigidez y el estatus de los Nonomiya frente a la alegría y el desorden de los Saiki. A medida que Ryota conoce a su hijo biológico, empieza a notar rasgos de su propia personalidad en él, pero también se da cuenta de la profunda conexión emocional que tiene con Keita. La narrativa se convierte en un viaje introspectivo sobre la naturaleza de la paternidad, el perdón y la redención, obligando al protagonista a decidir qué tipo de padre desea ser y qué es lo que realmente define a una familia en el Japón contemporáneo.',
+'https://i.ytimg.com/vi/bmFOcrlHsxM/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAiJ6LAXR6y5EGJdu3WNsf_sI1f9w',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyBaql_qYzooco79i4RR2L1vsECiar_VPQMA&s',
+'https://www.youtube.com/watch?v=bmFOcrlHsxM'),
+(5, 2, 
+'¡La novia! / The Bride', 93, 
+'En el Chicago de la década de 1930, un solitario y melancólico Frankenstein (Christian Bale) viaja para pedir la ayuda del Dr. Euphronius en la creación de una compañera. Juntos, reviven a una joven asesinada (Jessie Buckley), dando origen a La Novia. Sin embargo, la mujer resucitada trasciende las intenciones de sus creadores, desarrollando una identidad salvaje, una sed de libertad radical y provocando un cambio social y romántico que nadie pudo prever.',
+'Descripcis generosón Larga: Ambientada en una versión estilizada y oscura del Chicago de los años 30, la trama sigue al monstruo de Frankenstein, quien busca desesperadamente dejar de estar solo. Convence al Dr. Euphronius de realizar un experimento prohibido: utilizar el cuerpo de una mujer joven que fue víctima de la violencia para crear una pareja. Así nace La Novia, pero a diferencia de la criatura original, ella posee una chispa de rebelión y una autoconciencia que desafía el control masculino. La película se aleja del terror tradicional para convertirse en un drama psicológico con tintes de comedia negra y estética punk. Mientras los creadores esperan una compañera sumisa, ella se convierte en un símbolo de liberación, desafiando las normas de la época y atrayendo la atención de un joven entusiasta (interpretado por Peter Sarsgaard). La narrativa explora la obsesión, el deseo de pertenencia y las consecuencias de jugar a ser Dios, culminando en una explosión de caos visual y emocional que redefine la mitología del monstruo de Mary Shelley para el siglo XXI.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5VQBd6vM8mTN-qUclnpHbr76taStnngKWgw&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUZC3ctfqQygsXAZnkxvgS9A9Tp_XLCgu4xQ&s',
+'https://www.youtube.com/watch?v=XfMIn8l3tUU'),
+(2, 2, 
+'Hoppers', 90, 
+'Hoppers es una comedia de ciencia ficción que sigue a Mabel, una joven amante de los animales que utiliza una nueva tecnología para "saltar" (transferir su conciencia) al cuerpo de un castor robótico hiperrealista. Lo que comienza como una misión encubierta para entender la vida silvestre se convierte en una épica aventura cuando Mabel se hace amiga de los animales reales y debe proteger su hábitat de los planes de un alcalde ambicioso.',
+'La historia nos presenta a Mabel, una chica con una conexión especial con la naturaleza que aprovecha un avance tecnológico revolucionario: la capacidad de habitar cuerpos robóticos de animales para estudiarlos desde dentro. Al convertirse en una "Hopper", Mabel se infiltra en una comunidad de castores, descubriendo que estos animales tienen una estructura social compleja, personalidades vibrantes y sus propios problemas. La trama se complica cuando Mabel traba amistad con un castor real llamado Vinnie y descubre que el alcalde del pueblo, Jerry (interpretado por Jon Hamm), planea destruir el ecosistema local para un proyecto de desarrollo urbano. Dividida entre su vida humana y su nueva identidad en el reino animal, Mabel debe liderar a sus amigos peludos en una misión de sabotaje y rescate. La película explora con humor y corazón temas como la empatía entre especies, el impacto de la tecnología en el medio ambiente y lo que realmente significa ser uno mismo, sin importar la piel (o el pelaje) que habites.',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrOeM0DxLNOPv4wuoF0uddEu1ko7tRpNTyqg&s',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKJQfnDTqsTcsqMZllRzIS2-l8L99x6NQ_mw&s',
+'https://www.youtube.com/watch?v=AsW4KkFfifw');
+
+INSERT INTO PelículaGénero (IdPelícula, IdGénero) VALUES
+-- 1. Avatar: Fuego y Cenizas
+(1, 1), -- Acción
+(1, 6), -- Ciencia Ficción
+(1, 7), -- Aventura
+-- 2. Anaconda
+(2, 5), -- Terror
+(2, 7), -- Aventura
+(2, 2), -- Comedia
+-- 3. Cinco noches en Freddys 2
+(3, 5), -- Terror
+(3, 6), -- Ciencia Ficción
+-- 4. Grand Prix of Europe
+(4, 1), -- Acción
+(4, 7), -- Aventura
+(4, 3), -- Drama
+-- 5. Medias Hermanas
+(5, 2), -- Comedia
+(5, 3), -- Drama
+-- 6. Primate
+(6, 2), -- Comedia
+(6, 3), -- Drama
+-- 7. Vanilla Sky
+(7, 3), -- Drama
+(7, 6), -- Ciencia Ficción
+-- 8. El beso de la mujer araña
+(8, 3), -- Drama
+-- 9. Se levanta el viento
+(9, 3), -- Drama
+(9, 4), -- Animación
+-- 10. Tom y Jerry
+(10, 2), -- Comedia
+(10, 4), -- Animación
+(10, 7), -- Aventura
+-- 11. De tal palo, tal astilla
+(11, 3), -- Drama
+-- 12. ¡La novia! / The Bride
+(12, 3), -- Drama
+(12, 5), -- Terror
+(12, 6), -- Ciencia Ficción
+-- 13. Hoppers
+(13, 2), -- Comedia
+(13, 4), -- Animación
+(13, 6), -- Ciencia Ficción
+(13, 7); -- Aventura
+
 
 INSERT INTO Usuarios (IdRol, Nombre, Apellidos, CorreoElectrónico, Teléfono, ContraseñaHash, FechaNacimiento) VALUES
 (1, 'Admin', 'CineFlow', 'admin@cineflow.com', '809-555-0001', '$2b$12$mdWsWi5RQ9QOo7kB1s/aOOWY6wLiV2uyPhHgy/bC91Q69ogQ/jpby', '1985-01-01'),
@@ -295,20 +402,202 @@ INSERT INTO Usuarios (IdRol, Nombre, Apellidos, CorreoElectrónico, Teléfono, C
 (3, 'Cliente49', 'Apellido', 'usuario_49@example.com', '809-000-0049', '$2b$12$B5b8iEuYTzPhSGdccnrPW.FDYzzc0j/vNrwCAhgs40iLrl8D452l2', '1995-01-01'),
 (3, 'Cliente50', 'Apellido', 'usuario_50@example.com', '809-000-0050', '$2b$12$msFyGTX27V6Tq2Q6Bg9zEeiAJVkLk8.oIIqVjE6oljDkC6uo/z5Iu', '1995-01-01');
 
--- PENDING Insert PelículaGénero
 
--- PENDING Insert Salas
+INSERT INTO Salas (IdCine, IdTipo, NúmeroDeSala) VALUES
+(1, 1, 1), -- Sala 1: 2D
+(1, 1, 2), -- Sala 2: 2D
+(1, 2, 3), -- Sala 3: 3D
+(1, 2, 4), -- Sala 4: 3D
+(1, 3, 5), -- Sala 5: CxC
+(1, 3, 6); -- Sala 6: CxC
 
--- PENDING Insert Asientos
+-- Declaración de variables para el control de los bucles
+DECLARE @Sala INT;
+DECLARE @Fila INT; -- Solo declaramos aquí
+DECLARE @ColIndice INT;
+DECLARE @Codigo NVARCHAR(3);
 
--- PENDING Insert Funciones
+BEGIN
+	SET @Sala = 1; 
+    WHILE @Sala <= 6
+    BEGIN
+	    SET @Fila = 1; 
+        WHILE @Fila <= 25
+        BEGIN
+            SET @ColIndice = 0; 
+            WHILE @ColIndice < 12
+            BEGIN
+                SET @Codigo = CHAR(65 + @ColIndice) + CAST(@Fila AS NVARCHAR(2))
+                INSERT INTO Asientos (IdSala, CódigoAsiento)
+                VALUES (@Sala, @Codigo);
+                SET @ColIndice = @ColIndice + 1;
+            END
+            SET @Fila = @Fila + 1;
+        END
+        SET @Sala = @Sala + 1;
+    END
+END
+PRINT 'Inserción de 1800 asientos completada con éxito.';
+
+INSERT INTO Funciones (IdPelícula, IdSala, FechaHora) VALUES
+-- Lunes (2026-01-19)
+(1, 1, '2026-01-19 17:00:00'),
+(2, 2, '2026-01-19 17:25:00'),
+(3, 3, '2026-01-19 18:00:00'),
+(4, 4, '2026-01-19 18:00:00'),
+(5, 5, '2026-01-19 18:00:00'),
+(6, 6, '2026-01-19 18:00:00'),
+(7, 3, '2026-01-19 20:05:00'),
+(8, 4, '2026-01-19 20:10:00'),
+(9, 5, '2026-01-19 20:10:00'),
+(10, 6, '2026-01-19 18:30:00'),
+(1, 1, '2026-01-19 20:45:00'),
+(2, 2, '2026-01-19 19:30:00'),
+-- Martes (2026-01-20)
+(1, 1, '2026-01-20 17:00:00'),
+(2, 2, '2026-01-20 17:25:00'),
+(3, 3, '2026-01-20 18:00:00'),
+(4, 4, '2026-01-20 18:00:00'),
+(5, 5, '2026-01-20 18:00:00'),
+(6, 6, '2026-01-20 18:00:00'),
+(7, 3, '2026-01-20 20:05:00'),
+(8, 4, '2026-01-20 20:10:00'),
+(9, 5, '2026-01-20 20:10:00'),
+(10, 6, '2026-01-20 18:30:00'),
+(1, 1, '2026-01-20 20:45:00'),
+(2, 2, '2026-01-20 19:30:00'),
+-- Miercoles (2026-01-21)
+(1, 1, '2026-01-21 17:00:00'),
+(2, 2, '2026-01-21 17:25:00'),
+(3, 3, '2026-01-21 18:00:00'),
+(4, 4, '2026-01-21 18:00:00'),
+(5, 5, '2026-01-21 18:00:00'),
+(6, 6, '2026-01-21 18:00:00'),
+(7, 3, '2026-01-21 20:05:00'),
+(8, 4, '2026-01-21 20:10:00'),
+(9, 5, '2026-01-21 20:10:00'),
+(10, 6, '2026-01-21 18:30:00'),
+(1, 1, '2026-01-21 20:45:00'),
+(2, 2, '2026-01-21 19:30:00'),
+-- Jueves (2026-01-22)
+(1, 1, '2026-01-22 17:00:00'),
+(2, 2, '2026-01-22 17:25:00'),
+(3, 3, '2026-01-22 18:00:00'),
+(4, 4, '2026-01-22 18:00:00'),
+(5, 5, '2026-01-22 18:00:00'),
+(6, 6, '2026-01-22 18:00:00'),
+(7, 3, '2026-01-22 20:05:00'),
+(8, 4, '2026-01-22 20:10:00'),
+(9, 5, '2026-01-22 20:10:00'),
+(10, 6, '2026-01-22 18:30:00'),
+(1, 1, '2026-01-22 20:45:00'),
+(2, 2, '2026-01-22 19:30:00'),
+-- Viernes (2026-01-23)
+(1, 1, '2026-01-23 17:00:00'),
+(2, 2, '2026-01-23 17:25:00'),
+(3, 3, '2026-01-23 18:00:00'),
+(4, 4, '2026-01-23 18:00:00'),
+(5, 5, '2026-01-23 18:00:00'),
+(6, 6, '2026-01-23 18:00:00'),
+(7, 3, '2026-01-23 20:05:00'),
+(8, 4, '2026-01-23 20:10:00'),
+(9, 5, '2026-01-23 20:10:00'),
+(10, 6, '2026-01-23 18:30:00'),
+(1, 1, '2026-01-23 20:45:00'),
+(2, 2, '2026-01-23 19:30:00'),
+-- Sabado (2026-01-24)
+(1, 1, '2026-01-24 17:00:00'),
+(2, 2, '2026-01-24 17:25:00'),
+(3, 3, '2026-01-24 18:00:00'),
+(4, 4, '2026-01-24 18:00:00'),
+(5, 5, '2026-01-24 18:00:00'),
+(6, 6, '2026-01-24 18:00:00'),
+(7, 3, '2026-01-24 20:05:00'),
+(8, 4, '2026-01-24 20:10:00'),
+(9, 5, '2026-01-24 20:10:00'),
+(10, 6, '2026-01-24 18:30:00'),
+(1, 1, '2026-01-24 20:45:00'),
+(2, 2, '2026-01-24 19:30:00'),
+-- Domingo (2026-01-25)
+(1, 1, '2026-01-25 17:00:00'),
+(2, 2, '2026-01-25 17:25:00'),
+(3, 3, '2026-01-25 18:00:00'),
+(4, 4, '2026-01-25 18:00:00'),
+(5, 5, '2026-01-25 18:00:00'),
+(6, 6, '2026-01-25 18:00:00'),
+(7, 3, '2026-01-25 20:05:00'),
+(8, 4, '2026-01-25 20:10:00'),
+(9, 5, '2026-01-25 20:10:00'),
+(10, 6, '2026-01-25 18:30:00'),
+(1, 1, '2026-01-25 20:45:00'),
+(2, 2, '2026-01-25 19:30:00'),
+-- Lunes (2026-01-26)
+(1, 1, '2026-01-26 17:00:00'),
+(2, 2, '2026-01-26 17:25:00'),
+(3, 3, '2026-01-26 18:00:00'),
+(4, 4, '2026-01-26 18:00:00'),
+(5, 5, '2026-01-26 18:00:00'),
+(6, 6, '2026-01-26 18:00:00'),
+(7, 3, '2026-01-26 20:05:00'),
+(8, 4, '2026-01-26 20:10:00'),
+(9, 5, '2026-01-26 20:10:00'),
+(10, 6, '2026-01-26 18:30:00'),
+(1, 1, '2026-01-26 20:45:00'),
+(2, 2, '2026-01-26 19:30:00'),
+-- Martes (2026-01-27)
+(1, 1, '2026-01-27 17:00:00'),
+(2, 2, '2026-01-27 17:25:00'),
+(3, 3, '2026-01-27 18:00:00'),
+(4, 4, '2026-01-27 18:00:00'),
+(5, 5, '2026-01-27 18:00:00'),
+(6, 6, '2026-01-27 18:00:00'),
+(7, 3, '2026-01-27 20:05:00'),
+(8, 4, '2026-01-27 20:10:00'),
+(9, 5, '2026-01-27 20:10:00'),
+(10, 6, '2026-01-27 18:30:00'),
+(1, 1, '2026-01-27 20:45:00'),
+(2, 2, '2026-01-27 19:30:00'),
+-- Miercoles (2026-01-28)
+(1, 1, '2026-01-28 17:00:00'),
+(2, 2, '2026-01-28 17:25:00'),
+(3, 3, '2026-01-28 18:00:00'),
+(4, 4, '2026-01-28 18:00:00'),
+(5, 5, '2026-01-28 18:00:00'),
+(6, 6, '2026-01-28 18:00:00'),
+(7, 3, '2026-01-28 20:05:00'),
+(8, 4, '2026-01-28 20:10:00'),
+(9, 5, '2026-01-28 20:10:00'),
+(10, 6, '2026-01-28 18:30:00'),
+(1, 1, '2026-01-28 20:45:00'),
+(2, 2, '2026-01-28 19:30:00'),
+-- Funciones futuras
+-- Jueves (2026-03-05)
+(11, 1, '2026-03-05 18:00:00'),
+(12, 2, '2026-03-05 18:00:00'),
+(13, 3, '2026-03-05 18:00:00'),
+(11, 4, '2026-03-05 18:00:00'),
+(12, 5, '2026-03-05 18:00:00'),
+(13, 6, '2026-03-05 18:00:00'),
+-- Viernes (2026-03-06)
+(11, 1, '2026-03-06 18:00:00'),
+(12, 2, '2026-03-06 18:00:00'),
+(13, 3, '2026-03-06 18:00:00'),
+(11, 4, '2026-03-06 18:00:00'),
+(12, 5, '2026-03-06 18:00:00'),
+(13, 6, '2026-03-06 18:00:00'),
+-- Sabado (2026-03-07)
+(11, 1, '2026-03-07 18:00:00'),
+(12, 2, '2026-03-07 18:00:00'),
+(13, 3, '2026-03-07 18:00:00'),
+(11, 4, '2026-03-07 18:00:00'),
+(12, 5, '2026-03-07 18:00:00'),
+(13, 6, '2026-03-07 18:00:00');
 
 -- PENDING Insert Boleto
 
 -- PENDING Insert BoletosCancelados
 
 -- PENDING Insert BoletosUsados
-
 
 GO
 
