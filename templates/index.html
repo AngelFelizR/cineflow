@@ -9,6 +9,8 @@
     .hero-banner {
         position: relative;
         height: 70vh;
+        min-height: 500px;
+        max-height: 800px;
         overflow: hidden;
         border-radius: 0 0 20px 20px;
         background: linear-gradient(to right, rgba(18, 18, 18, 0.9), rgba(18, 18, 18, 0.7));
@@ -24,7 +26,7 @@
         opacity: 0;
         transition: opacity 0.5s ease-in-out;
         background-size: cover;
-        background-position: center 12%;
+        background-position: center center;
         background-repeat: no-repeat;
     }
     
@@ -37,9 +39,16 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(to top, rgba(18, 18, 18, 1), transparent);
-        padding: 3rem;
+        background: linear-gradient(to top, rgba(18, 18, 18, 1) 30%, transparent 100%);
+        padding: 2rem 3rem 3rem;
         color: white;
+        display: flex;
+        align-items: flex-end;
+        min-height: 60%;
+    }
+    
+    .banner-content {
+        width: 100%;
     }
     
     .banner-controls {
@@ -50,7 +59,7 @@
         transform: translateY(-50%);
         display: flex;
         justify-content: space-between;
-        padding: 0 2rem;
+        padding: 0 1rem;
         z-index: 10;
     }
     
@@ -58,13 +67,13 @@
         background: rgba(255, 193, 7, 0.2);
         border: 2px solid var(--accent-color);
         color: white;
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         cursor: pointer;
         transition: all 0.3s;
         backdrop-filter: blur(5px);
@@ -78,18 +87,18 @@
     
     .banner-indicators {
         position: absolute;
-        bottom: 20px;
+        bottom: 15px;
         left: 0;
         right: 0;
         display: flex;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         z-index: 10;
     }
     
     .banner-indicator {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.3);
         border: 2px solid transparent;
@@ -115,6 +124,8 @@
         overflow: hidden;
         transition: all 0.3s ease;
         height: 100%;
+        display: flex;
+        flex-direction: column;
     }
     
     .movie-card:hover {
@@ -123,15 +134,29 @@
         border-color: var(--accent-color);
     }
     
-    .movie-poster {
+    .movie-poster-container {
+        position: relative;
         height: 300px;
+        overflow: hidden;
+    }
+    
+    .movie-poster {
         width: 100%;
+        height: 100%;
         object-fit: cover;
         border-bottom: 3px solid var(--accent-color);
+        transition: transform 0.3s;
+    }
+    
+    .movie-card:hover .movie-poster {
+        transform: scale(1.05);
     }
     
     .movie-info {
         padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
     }
     
     .movie-title {
@@ -139,12 +164,16 @@
         font-weight: bold;
         margin-bottom: 0.5rem;
         color: white;
+        line-height: 1.3;
     }
     
     .movie-meta {
         color: var(--dark-text-secondary);
         font-size: 0.9rem;
         margin-bottom: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
     
     .movie-description {
@@ -152,9 +181,17 @@
         font-size: 0.95rem;
         margin-bottom: 1rem;
         display: -webkit-box;
+        display: -moz-box;
         -webkit-line-clamp: 3;
+        -moz-line-clamp: 3;
+        line-clamp: 3;
         -webkit-box-orient: vertical;
+        -moz-box-orient: vertical;
+        box-orient: vertical;
         overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.5;
+        max-height: 4.5em;
     }
     
     .genre-badge {
@@ -174,73 +211,229 @@
         border-top: 1px solid var(--dark-border);
         display: flex;
         gap: 10px;
+        margin-top: auto;
     }
     
     .popular-tag {
         position: absolute;
         top: 15px;
         left: 15px;
-        background: #dc3545;
+        background: linear-gradient(135deg, #dc3545, #c82333);
         color: white;
-        padding: 3px 10px;
+        padding: 5px 12px;
         border-radius: 15px;
         font-size: 0.8rem;
         font-weight: bold;
+        z-index: 5;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
     
-    .countdown-timer {
-        background: rgba(13, 202, 240, 0.1);
-        border: 1px solid var(--info-color);
-        border-radius: 10px;
-        padding: 10px;
-        margin-top: 10px;
-        text-align: center;
+    .popular-tag:not(.first) {
+        display: none;
     }
     
-    .timer-label {
-        font-size: 0.8rem;
-        color: var(--dark-text-secondary);
-        margin-bottom: 5px;
+    .banner-badge-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 1rem;
     }
     
-    .timer-value {
-        font-size: 1.1rem;
-        color: var(--info-color);
+    .top-badge {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        color: #121212;
+        padding: 8px 16px;
+        border-radius: 25px;
         font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .movie-title-large {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        font-weight: bold;
+        margin-bottom: 0.75rem;
+        color: white;
+        line-height: 1.2;
+    }
+    
+    .movie-meta-large {
+        color: var(--dark-text-secondary);
+        font-size: clamp(0.9rem, 2vw, 1.1rem);
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+    
+    .movie-description-large {
+        color: var(--dark-text);
+        font-size: clamp(0.95rem, 2vw, 1.1rem);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        max-width: 800px;
+    }
+    
+    .banner-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 1rem;
+    }
+    
+    .banner-button {
+        min-width: 180px;
+        padding: 12px 25px;
+        font-size: 1rem;
     }
     
     /* Responsive */
-    @media (max-width: 768px) {
+    @media (max-width: 1200px) {
         .hero-banner {
-            height: 50vh;
+            height: 60vh;
         }
         
         .banner-overlay {
-            padding: 1.5rem;
+            padding: 2rem 2rem 3rem;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .hero-banner {
+            height: 55vh;
+            min-height: 450px;
+        }
+        
+        .movie-title-large {
+            font-size: 2.2rem;
+        }
+        
+        .banner-button {
+            min-width: 160px;
+            padding: 10px 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .hero-banner {
+            height: 50vh;
+            min-height: 400px;
+        }
+        
+        .banner-overlay {
+            padding: 1.5rem 1.5rem 2rem;
+            background: linear-gradient(to top, rgba(18, 18, 18, 0.95) 40%, transparent 100%);
         }
         
         .banner-btn {
             width: 40px;
             height: 40px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
         
-        .movie-poster {
+        .movie-poster-container {
             height: 250px;
+        }
+        
+        .movie-title-large {
+            font-size: 1.8rem;
+        }
+        
+        .movie-meta-large {
+            gap: 1rem;
+        }
+        
+        .banner-button {
+            min-width: 140px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .banner-buttons {
+            gap: 10px;
         }
     }
     
     @media (max-width: 576px) {
         .hero-banner {
-            height: 40vh;
+            height: 45vh;
+            min-height: 350px;
+            margin-bottom: 2rem;
         }
         
         .banner-overlay {
-            padding: 1rem;
+            padding: 1rem 1rem 1.5rem;
         }
         
         .movie-card {
             margin-bottom: 1.5rem;
+        }
+        
+        .movie-title-large {
+            font-size: 1.5rem;
+        }
+        
+        .movie-meta-large {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .banner-button {
+            min-width: 120px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .banner-buttons {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .banner-buttons .btn {
+            width: 100%;
+        }
+        
+        .movie-description-large {
+            font-size: 0.9rem;
+        }
+        
+        .popular-tag {
+            top: 10px;
+            left: 10px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+        }
+    }
+    
+    @media (max-width: 400px) {
+        .hero-banner {
+            height: 40vh;
+            min-height: 300px;
+        }
+        
+        .banner-overlay {
+            padding: 0.75rem 0.75rem 1.25rem;
+        }
+        
+        .movie-title-large {
+            font-size: 1.3rem;
+        }
+        
+        .banner-button {
+            min-width: 100%;
+        }
+    }
+    
+    @media (min-width: 1600px) {
+        .hero-banner {
+            max-height: 900px;
+        }
+        
+        .movie-title-large {
+            font-size: 3.5rem;
+        }
+        
+        .movie-description-large {
+            font-size: 1.2rem;
         }
     }
 </style>
@@ -251,41 +444,53 @@
 <div class="hero-banner">
     <!-- Slides del Banner -->
     {% for pelicula in peliculas_populares %}
-    {% if loop.first %}
-    <span class="popular-tag">#1 POPULAR</span>
-    {% endif %}
     <div class="banner-slide {% if loop.first %}active{% endif %}" 
          data-slide="{{ loop.index0 }}"
          style="background-image: url('{{ pelicula.link_to_banner }}');">
+        {% if loop.first %}
+        <span class="popular-tag first">#1 POPULAR</span>
+        {% else %}
+        <span class="popular-tag" style="display: none;">#1 POPULAR</span>
+        {% endif %}
+        
         <div class="banner-overlay">
             <div class="container">
                 <div class="row align-items-end">
-                    <div class="col-lg-8">
-                        <span class="badge bg-warning text-dark mb-3">TOP {{ loop.index }}</span>
-                        <h1 class="display-4 fw-bold mb-3">{{ pelicula.titulo }}</h1>
-                        <div class="d-flex align-items-center mb-3">
-                            <span class="me-3">
+                    <div class="col-xxl-8 col-xl-9 col-lg-10">
+                        <div class="banner-badge-container">
+                            <span class="top-badge">TOP {{ loop.index }}</span>
+                        </div>
+                        <h1 class="movie-title-large mb-3">{{ pelicula.titulo }}</h1>
+                        <div class="movie-meta-large mb-4">
+                            <span>
                                 <i class="bi bi-clock me-1"></i> {{ pelicula.duracion_minutos }} min
                             </span>
-                            <span class="me-3">
+                            <span>
                                 <i class="bi bi-translate me-1"></i> {{ pelicula.idioma }}
                             </span>
                             <span>
                                 <i class="bi bi-ticket-detailed me-1"></i> {{ pelicula.clasificacion }}
                             </span>
+                            {% if pelicula.total_boletos is defined %}
+                            <span>
+                                <i class="bi bi-people me-1"></i> {{ pelicula.total_boletos }} boletos
+                            </span>
+                            {% endif %}
                         </div>
-                        <p class="lead mb-4">{{ pelicula.descripcion_corta }}</p>
-                        <div class="mb-3">
+                        <p class="movie-description-large mb-4">{{ pelicula.descripcion_corta }}</p>
+                        <div class="mb-4">
                             {% for genero in pelicula.generos[:3] %}
                             <span class="genre-badge">{{ genero }}</span>
                             {% endfor %}
                         </div>
-                        <a href="#" class="btn btn-warning btn-lg me-2 trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}">
-                            <i class="bi bi-play-circle me-1"></i> Ver Tráiler
-                        </a>
-                        <a href="{{ url_for('funciones_pelicula', pelicula_id=pelicula.id) }}" class="btn btn-outline-warning btn-lg">
-                            <i class="bi bi-ticket-perforated me-1"></i> Comprar Boletos
-                        </a>
+                        <div class="banner-buttons">
+                            <a href="#" class="btn btn-warning banner-button trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}">
+                                <i class="bi bi-play-circle me-1"></i> Ver Tráiler
+                            </a>
+                            <a href="{{ url_for('funciones_pelicula', pelicula_id=pelicula.id) }}" class="btn btn-outline-warning banner-button">
+                                <i class="bi bi-ticket-perforated me-1"></i> Comprar Boletos
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -295,10 +500,10 @@
     
     <!-- Controles del Banner -->
     <div class="banner-controls">
-        <button class="banner-btn prev-btn">
+        <button class="banner-btn prev-btn" aria-label="Película anterior">
             <i class="bi bi-chevron-left"></i>
         </button>
-        <button class="banner-btn next-btn">
+        <button class="banner-btn next-btn" aria-label="Película siguiente">
             <i class="bi bi-chevron-right"></i>
         </button>
     </div>
@@ -306,7 +511,7 @@
     <!-- Indicadores del Banner -->
     <div class="banner-indicators">
         {% for pelicula in peliculas_populares %}
-        <div class="banner-indicator {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+        <div class="banner-indicator {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" aria-label="Ir a película {{ loop.index }}"></div>
         {% endfor %}
     </div>
 </div>
@@ -321,21 +526,21 @@
         {% for pelicula in ultimas_peliculas %}
         <div class="col-lg-4 col-md-6">
             <div class="movie-card">
-                <div class="position-relative">
+                <div class="movie-poster-container">
                     <img src="{{ pelicula.link_to_bajante }}" alt="{{ pelicula.titulo }}" class="movie-poster">
                 </div>
                 <div class="movie-info">
                     <h3 class="movie-title">{{ pelicula.titulo }}</h3>
                     <div class="movie-meta">
-                        <span class="me-3">
+                        <span>
                             <i class="bi bi-clock me-1"></i> {{ pelicula.duracion_minutos }} min
                         </span>
                         <span>
-                            <i class="bi bi-people me-1"></i> {{ pelicula.total_boletos }} boletos
+                            <i class="bi bi-people me-1"></i> {{ pelicula.total_boletos if pelicula.total_boletos is defined else 0 }} boletos
                         </span>
                     </div>
                     <p class="movie-description">{{ pelicula.descripcion_corta }}</p>
-                    <div class="mb-3">
+                    <div class="mb-3 mt-auto">
                         {% for genero in pelicula.generos[:2] %}
                         <span class="genre-badge">{{ genero }}</span>
                         {% endfor %}
@@ -345,7 +550,7 @@
                     <a href="{{ url_for('funciones_pelicula', pelicula_id=pelicula.id) }}" class="btn btn-warning flex-grow-1">
                         <i class="bi bi-ticket-perforated me-1"></i> Comprar
                     </a>
-                    <button class="btn btn-outline-warning trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}">
+                    <button class="btn btn-outline-warning trailer-btn" data-trailer="{{ pelicula.link_to_trailer }}" aria-label="Ver tráiler">
                         <i class="bi bi-play-circle"></i>
                     </button>
                 </div>
@@ -354,4 +559,121 @@
         {% endfor %}
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para manejar el popular-tag
+    function updatePopularTagVisibility() {
+        const activeSlide = document.querySelector('.banner-slide.active');
+        const popularTags = document.querySelectorAll('.popular-tag');
+        
+        // Ocultar todos los popular-tags
+        popularTags.forEach(tag => tag.style.display = 'none');
+        
+        // Mostrar solo el popular-tag del primer slide si está activo
+        const firstPopularTag = document.querySelector('.popular-tag.first');
+        if (firstPopularTag && firstPopularTag.closest('.banner-slide.active')) {
+            firstPopularTag.style.display = 'block';
+        }
+    }
+    
+    // Inicializar carrusel con control del popular-tag
+    const bannerSlides = document.querySelectorAll('.banner-slide');
+    const bannerIndicators = document.querySelectorAll('.banner-indicator');
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
+    
+    if (bannerSlides.length > 0) {
+        let currentBannerIndex = 0;
+        let bannerInterval;
+        
+        function showBannerSlide(index) {
+            // Validar índice
+            if (index < 0) index = bannerSlides.length - 1;
+            if (index >= bannerSlides.length) index = 0;
+            
+            // Ocultar todos los slides
+            bannerSlides.forEach(slide => {
+                slide.style.opacity = '0';
+                slide.classList.remove('active');
+            });
+            
+            // Ocultar todos los indicadores
+            bannerIndicators.forEach(indicator => {
+                indicator.classList.remove('active');
+            });
+            
+            // Mostrar slide actual
+            bannerSlides[index].style.opacity = '1';
+            bannerSlides[index].classList.add('active');
+            
+            // Activar indicador actual
+            if (bannerIndicators[index]) {
+                bannerIndicators[index].classList.add('active');
+            }
+            
+            currentBannerIndex = index;
+            
+            // Actualizar visibilidad del popular-tag
+            updatePopularTagVisibility();
+        }
+        
+        function nextBannerSlide() {
+            showBannerSlide(currentBannerIndex + 1);
+        }
+        
+        function prevBannerSlide() {
+            showBannerSlide(currentBannerIndex - 1);
+        }
+        
+        function startBannerAutoSlide() {
+            stopBannerAutoSlide();
+            bannerInterval = setInterval(nextBannerSlide, 5000);
+        }
+        
+        function stopBannerAutoSlide() {
+            if (bannerInterval) {
+                clearInterval(bannerInterval);
+            }
+        }
+        
+        // Event listeners para botones de navegación
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                prevBannerSlide();
+                startBannerAutoSlide();
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                nextBannerSlide();
+                startBannerAutoSlide();
+            });
+        }
+        
+        // Event listeners para indicadores
+        bannerIndicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                showBannerSlide(index);
+                startBannerAutoSlide();
+            });
+        });
+        
+        // Pausar auto-slide al interactuar
+        const heroBanner = document.querySelector('.hero-banner');
+        if (heroBanner) {
+            heroBanner.addEventListener('mouseenter', stopBannerAutoSlide);
+            heroBanner.addEventListener('mouseleave', startBannerAutoSlide);
+            heroBanner.addEventListener('touchstart', stopBannerAutoSlide);
+        }
+        
+        // Inicializar
+        showBannerSlide(0);
+        startBannerAutoSlide();
+    }
+});
+</script>
 {% endblock %}
