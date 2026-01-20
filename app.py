@@ -3,7 +3,7 @@
 
 from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
-from models import login_manager, bcrypt
+from models import login_manager, bcrypt, Usuario
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
 from flask_login import login_user, logout_user, current_user, login_required
@@ -175,14 +175,55 @@ def inicio_sesion():
     # Si es GET o si hubo error en POST, mostrar el formulario
     return render_template('usuario/inicio_sesion.html')
 
-@app.route('/perfil/actualizar')
+@app.route('/perfil/actualizar_datos', methods=['GET', 'POST'])
 @login_required
 def usuario_actualizar_datos():
+    """Ruta para actualizar los datos del usuario"""
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        data = {
+            'nombre': request.form.get('nombre', '').strip(),
+            'apellidos': request.form.get('apellidos', '').strip(),
+            'fecha_nacimiento': request.form.get('fecha_nacimiento', '').strip(),
+            'telefono': request.form.get('telefono', '').strip()
+        }
+        
+        # Actualizar usuario usando el controlador
+        success, message, usuario_dict = UsuarioController.actualizar_usuario(current_user.Id, data)
+        
+        if success:
+            # Actualizar el objeto current_user con los nuevos datos
+            # Necesitamos recargar el usuario desde la base de datos para actualizar la sesión
+            from database import db
+            session = db.get_session()
+            try:
+                usuario_actualizado = session.query(Usuario).filter_by(Id=current_user.Id).first()
+                if usuario_actualizado:
+                    # Actualizar current_user
+                    current_user.Nombre = usuario_actualizado.Nombre
+                    current_user.Apellidos = usuario_actualizado.Apellidos
+                    current_user.FechaNacimiento = usuario_actualizado.FechaNacimiento
+                    current_user.Telefono = usuario_actualizado.Telefono
+                    
+                    # Recargar el usuario en la sesión de Flask-Login
+                    from flask_login import logout_user, login_user
+                    logout_user()
+                    login_user(usuario_actualizado)
+            finally:
+                session.close()
+            
+            flash(message, 'success')
+            return redirect(url_for('usuario_actualizar_datos'))
+        else:
+            flash(message, 'danger')
+    
+    # Si es GET, mostrar el formulario con los datos actuales
     return render_template('usuario/actualizar_datos.html')
 
-@app.route('/perfil/password')
+@app.route('/perfil/actualizar_password')
 @login_required
-def usuario_cambiar_password():
+def usuario_actualizar_password():
     return render_template('usuario/actualizar_contraseña.html')
 
 # =========================

@@ -242,3 +242,96 @@ class UsuarioController:
             return None
         finally:
             session.close()
+
+    @staticmethod
+    def actualizar_usuario(usuario_id, data):
+        """
+        Actualiza los datos de un usuario existente
+        
+        Args:
+            usuario_id (int): ID del usuario a actualizar
+            data (dict): Diccionario con los datos a actualizar:
+                - nombre (str, opcional)
+                - apellidos (str, opcional)
+                - fecha_nacimiento (str, opcional) en formato YYYY-MM-DD
+                - telefono (str, opcional)
+                
+        Returns:
+            tuple: (success: bool, message: str, usuario_dict: dict or None)
+        """
+        session = db.get_session()
+        try:
+            # Buscar usuario por ID
+            usuario = session.query(Usuario).filter_by(Id=usuario_id).first()
+            
+            if not usuario:
+                return False, "Usuario no encontrado", None
+            
+            actualizado = False
+            mensajes = []
+            
+            # Actualizar nombre si está presente y no está vacío
+            if 'nombre' in data and data['nombre'] and data['nombre'].strip():
+                usuario.Nombre = data['nombre'].strip()
+                actualizado = True
+            elif 'nombre' in data and not data['nombre'].strip():
+                mensajes.append("El nombre no puede estar vacío")
+            
+            # Actualizar apellidos si está presente y no está vacío
+            if 'apellidos' in data and data['apellidos'] and data['apellidos'].strip():
+                usuario.Apellidos = data['apellidos'].strip()
+                actualizado = True
+            elif 'apellidos' in data and not data['apellidos'].strip():
+                mensajes.append("Los apellidos no pueden estar vacíos")
+            
+            # Actualizar fecha de nacimiento si está presente y no está vacía
+            if 'fecha_nacimiento' in data and data['fecha_nacimiento']:
+                try:
+                    fecha_nacimiento = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
+                    hoy = datetime.now().date()
+                    edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+                    
+                    if edad < 13:
+                        return False, "Debes tener al menos 13 años.", None
+                    if edad > 120:
+                        return False, "Fecha de nacimiento no válida.", None
+                    
+                    usuario.FechaNacimiento = fecha_nacimiento
+                    actualizado = True
+                except ValueError:
+                    return False, "Formato de fecha de nacimiento no válido. Use YYYY-MM-DD", None
+            
+            # Actualizar teléfono (puede ser vacío)
+            if 'telefono' in data:
+                # Si el teléfono está vacío o solo espacios, guardamos None
+                if data['telefono'] and data['telefono'].strip():
+                    usuario.Telefono = data['telefono'].strip()
+                else:
+                    usuario.Telefono = None
+                actualizado = True
+            
+            if not actualizado and mensajes:
+                return False, " ".join(mensajes), None
+            elif not actualizado:
+                return False, "No se proporcionaron datos para actualizar", None
+            
+            # Guardar cambios
+            session.commit()
+            
+            # Crear un diccionario con los datos actualizados para retornar
+            usuario_dict = {
+                'id': usuario.Id,
+                'nombre': usuario.Nombre,
+                'apellidos': usuario.Apellidos,
+                'fecha_nacimiento': usuario.FechaNacimiento,
+                'telefono': usuario.Telefono,
+                'correo_electronico': usuario.CorreoElectronico
+            }
+            
+            return True, "Datos actualizados exitosamente", usuario_dict
+            
+        except Exception as e:
+            session.rollback()
+            return False, f"Error al actualizar usuario: {str(e)}", None
+        finally:
+            session.close()

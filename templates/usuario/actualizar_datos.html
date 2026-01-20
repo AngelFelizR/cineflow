@@ -1,0 +1,272 @@
+<!-- templates/usuario/actualizar_datos.html (actualizado) -->
+{% extends "base.html" %}
+
+{% block title %}CineFlow - Actualizar Datos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .actualizar-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    
+    .actualizar-card {
+        background-color: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .actualizar-header {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        color: #121212;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .actualizar-logo {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .actualizar-body {
+        padding: 2.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        color: var(--dark-text);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--dark-border);
+        color: var(--dark-text);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-color);
+        color: var(--dark-text);
+        box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .form-control::placeholder {
+        color: rgba(200, 200, 200, 0.6) !important;
+        opacity: 1;
+    }
+    
+    .btn-actualizar {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        border: none;
+        color: #121212;
+        font-weight: bold;
+        padding: 1rem;
+        border-radius: 8px;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-actualizar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .back-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: var(--dark-text-secondary);
+    }
+    
+    .back-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Indicadores de validación */
+    .is-invalid {
+        border-color: var(--danger-color) !important;
+    }
+    
+    .is-valid {
+        border-color: var(--success-color) !important;
+    }
+    
+    .invalid-feedback {
+        color: var(--danger-color);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="actualizar-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="actualizar-card">
+                    <!-- Encabezado -->
+                    <div class="actualizar-header">
+                        <div class="actualizar-logo">
+                            <i class="bi bi-person-gear"></i>
+                        </div>
+                        <h2 class="fw-bold">Actualizar Datos Personales</h2>
+                        <p class="mb-0">Modifica tu información personal</p>
+                    </div>
+                    
+                    <!-- Cuerpo del formulario -->
+                    <div class="actualizar-body">
+                        <form id="actualizarForm" method="POST" action="{{ url_for('usuario_actualizar_datos') }}">
+                            <!-- Nombre -->
+                            <div class="form-group">
+                                <label for="nombre" class="form-label">
+                                    <i class="bi bi-person me-1"></i> Nombre
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="nombre" 
+                                       name="nombre" 
+                                       value="{{ current_user.Nombre if current_user.Nombre else '' }}"
+                                       placeholder="Deja vacío para mantener el valor actual">
+                            </div>
+                            
+                            <!-- Apellido -->
+                            <div class="form-group">
+                                <label for="apellidos" class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i> Apellidos
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="apellidos" 
+                                       name="apellidos" 
+                                       value="{{ current_user.Apellidos if current_user.Apellidos else '' }}"
+                                       placeholder="Deja vacío para mantener el valor actual">
+                            </div>
+                            
+                            <!-- Fecha de Nacimiento -->
+                            <div class="form-group">
+                                <label for="fecha_nacimiento" class="form-label">
+                                    <i class="bi bi-calendar3 me-1"></i> Fecha de Nacimiento
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="fecha_nacimiento" 
+                                       name="fecha_nacimiento" 
+                                       value="{{ current_user.FechaNacimiento.strftime('%Y-%m-%d') if current_user.FechaNacimiento else '' }}"
+                                       placeholder="Deja vacío para mantener el valor actual">
+                                <small class="form-text text-muted">
+                                    Debes tener al menos 13 años
+                                </small>
+                            </div>
+                            
+                            <!-- Teléfono -->
+                            <div class="form-group">
+                                <label for="telefono" class="form-label">
+                                    <i class="bi bi-telephone me-1"></i> Teléfono
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="telefono" 
+                                       name="telefono" 
+                                       value="{{ current_user.Telefono if current_user.Telefono else '' }}"
+                                       placeholder="Deja vacío para eliminar el teléfono">
+                                <small class="form-text text-muted">
+                                    Solo números, sin espacios ni guiones
+                                </small>
+                            </div>
+                            
+                            <!-- Botón de Actualizar -->
+                            <button type="submit" class="btn btn-actualizar mt-4">
+                                <i class="bi bi-check-circle me-2"></i> Actualizar Datos
+                            </button>
+                        </form>
+                        
+                        <!-- Enlace para volver -->
+                        <div class="back-link">
+                            <a href="{{ url_for('index') }}">Volver al inicio</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formulario = document.getElementById('actualizarForm');
+    const fechaNacimientoInput = document.getElementById('fecha_nacimiento');
+    
+    // Establecer fecha máxima para fecha de nacimiento (hoy - 13 años)
+    const hoy = new Date();
+    const fechaMinima = new Date();
+    fechaMinima.setFullYear(hoy.getFullYear() - 120); // Máximo 120 años
+    const fechaMaxima = new Date();
+    fechaMaxima.setFullYear(hoy.getFullYear() - 13); // Mínimo 13 años
+    
+    fechaNacimientoInput.min = fechaMinima.toISOString().split('T')[0];
+    fechaNacimientoInput.max = fechaMaxima.toISOString().split('T')[0];
+    
+    // Validación solo para fecha de nacimiento (si se proporciona)
+    formulario.addEventListener('submit', function(event) {
+        if (fechaNacimientoInput.value) {
+            const fechaNacimiento = new Date(fechaNacimientoInput.value);
+            const edad = hoy.getFullYear() - fechaNacimiento.getFullYear() -
+                ((hoy.getMonth() < fechaNacimiento.getMonth() || 
+                (hoy.getMonth() === fechaNacimiento.getMonth() && hoy.getDate() < fechaNacimiento.getDate())) ? 1 : 0);
+            
+            if (edad < 13) {
+                fechaNacimientoInput.classList.add('is-invalid');
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            } else {
+                fechaNacimientoInput.classList.remove('is-invalid');
+            }
+        }
+    });
+    
+    // Validación en tiempo real solo para fecha de nacimiento
+    fechaNacimientoInput.addEventListener('change', function() {
+        if (this.value) {
+            const fechaNacimiento = new Date(this.value);
+            const edad = hoy.getFullYear() - fechaNacimiento.getFullYear() -
+                ((hoy.getMonth() < fechaNacimiento.getMonth() || 
+                (hoy.getMonth() === fechaNacimiento.getMonth() && hoy.getDate() < fechaNacimiento.getDate())) ? 1 : 0);
+            
+            if (edad < 13) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        } else {
+            this.classList.remove('is-invalid', 'is-valid');
+        }
+    });
+});
+</script>
+{% endblock %}
