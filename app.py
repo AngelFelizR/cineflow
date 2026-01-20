@@ -221,9 +221,32 @@ def usuario_actualizar_datos():
     # Si es GET, mostrar el formulario con los datos actuales
     return render_template('usuario/actualizar_datos.html')
 
-@app.route('/perfil/actualizar_password')
+@app.route('/perfil/actualizar_password', methods=['GET', 'POST'])
 @login_required
 def usuario_actualizar_password():
+    """Ruta para actualizar la contraseña del usuario"""
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        contrasena_actual = request.form.get('contrasena_actual')
+        nueva_contrasena = request.form.get('nueva_contrasena')
+        confirmar_contrasena = request.form.get('confirmar_contrasena')
+        
+        # Actualizar contraseña usando el controlador
+        success, message = UsuarioController.actualizar_contrasena(
+            current_user.Id,
+            contrasena_actual,
+            nueva_contrasena,
+            confirmar_contrasena
+        )
+        
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('usuario_actualizar_password'))
+        else:
+            flash(message, 'danger')
+    
+    # Si es GET, mostrar el formulario
     return render_template('usuario/actualizar_contraseña.html')
 
 # =========================

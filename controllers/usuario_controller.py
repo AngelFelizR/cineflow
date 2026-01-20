@@ -335,3 +335,52 @@ class UsuarioController:
             return False, f"Error al actualizar usuario: {str(e)}", None
         finally:
             session.close()
+
+    @staticmethod
+    def actualizar_contrasena(usuario_id, contrasena_actual, nueva_contrasena, confirmar_contrasena):
+        """
+        Actualiza la contraseña de un usuario
+        
+        Args:
+            usuario_id (int): ID del usuario
+            contrasena_actual (str): Contraseña actual del usuario
+            nueva_contrasena (str): Nueva contraseña
+            confirmar_contrasena (str): Confirmación de la nueva contraseña
+            
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        # Validar que las nuevas contraseñas coincidan
+        if nueva_contrasena != confirmar_contrasena:
+            return False, "Las nuevas contraseñas no coinciden"
+        
+        # Validar fortaleza de la nueva contraseña
+        contrasena_valida, mensaje_contrasena = UsuarioController._validar_contrasena(nueva_contrasena)
+        if not contrasena_valida:
+            return False, mensaje_contrasena
+        
+        session = db.get_session()
+        try:
+            # Obtener usuario por ID
+            usuario = session.query(Usuario).filter_by(Id=usuario_id).first()
+            
+            if not usuario:
+                return False, "Usuario no encontrado"
+            
+            # Verificar contraseña actual
+            if not usuario.validar_contrasena(contrasena_actual):
+                return False, "La contraseña actual es incorrecta"
+            
+            # Encriptar y guardar nueva contraseña
+            usuario.guardar_contrasena(nueva_contrasena)
+            
+            # Guardar cambios
+            session.commit()
+            
+            return True, "Contraseña actualizada exitosamente"
+            
+        except Exception as e:
+            session.rollback()
+            return False, f"Error al actualizar contraseña: {str(e)}"
+        finally:
+            session.close()

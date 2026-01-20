@@ -1,0 +1,331 @@
+<!-- templates/usuario/actualizar_contraseña.html -->
+{% extends "base.html" %}
+
+{% block title %}CineFlow - Cambiar Contraseña{% endblock %}
+
+{% block extra_css %}
+<style>
+    .password-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    
+    .password-card {
+        background-color: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .password-header {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        color: #121212;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .password-logo {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .password-body {
+        padding: 2.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        color: var(--dark-text);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--dark-border);
+        color: var(--dark-text);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control::placeholder {
+        color: rgba(200, 200, 200, 0.6) !important;
+        opacity: 1;
+    }
+    
+    .form-control:focus {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent-color);
+        color: var(--dark-text);
+        box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .btn-password {
+        background: linear-gradient(135deg, var(--accent-color), #ff9800);
+        border: none;
+        color: #121212;
+        font-weight: bold;
+        padding: 1rem;
+        border-radius: 8px;
+        width: 100%;
+        transition: all 0.3s;
+    }
+    
+    .btn-password:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+    }
+    
+    .back-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: var(--dark-text-secondary);
+    }
+    
+    .back-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+    
+    .password-requirements {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-left: 3px solid var(--info-color);
+        padding: 1rem;
+        margin-top: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    .requirement-item i {
+        margin-right: 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .requirement-item.valid {
+        color: var(--success-color);
+    }
+    
+    .requirement-item.invalid {
+        color: var(--dark-text-secondary);
+    }
+    
+    /* Indicadores de validación */
+    .is-invalid {
+        border-color: var(--danger-color) !important;
+    }
+    
+    .is-valid {
+        border-color: var(--success-color) !important;
+    }
+    
+    .invalid-feedback {
+        color: var(--danger-color);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="password-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="password-card">
+                    <!-- Encabezado -->
+                    <div class="password-header">
+                        <div class="password-logo">
+                            <i class="bi bi-key-fill"></i>
+                        </div>
+                        <h2 class="fw-bold">Cambiar Contraseña</h2>
+                        <p class="mb-0">Actualiza tu contraseña de acceso</p>
+                    </div>
+                    
+                    <!-- Cuerpo del formulario -->
+                    <div class="password-body">
+                        <form id="passwordForm" method="POST" action="{{ url_for('usuario_actualizar_password') }}" novalidate>
+                            <!-- Contraseña Actual -->
+                            <div class="form-group">
+                                <label for="contrasena_actual" class="form-label">
+                                    <i class="bi bi-key me-1"></i> Contraseña Actual
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="contrasena_actual" 
+                                       name="contrasena_actual" 
+                                       required
+                                       placeholder="Ingresa tu contraseña actual">
+                                <div class="invalid-feedback">
+                                    Por favor ingresa tu contraseña actual.
+                                </div>
+                            </div>
+                            
+                            <!-- Nueva Contraseña -->
+                            <div class="form-group">
+                                <label for="nueva_contrasena" class="form-label">
+                                    <i class="bi bi-key me-1"></i> Nueva Contraseña
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="nueva_contrasena" 
+                                       name="nueva_contrasena" 
+                                       required
+                                       placeholder="Crea una nueva contraseña">
+                                <div class="invalid-feedback">
+                                    La nueva contraseña no cumple con los requisitos.
+                                </div>
+                            </div>
+                            
+                            <!-- Confirmar Nueva Contraseña -->
+                            <div class="form-group">
+                                <label for="confirmar_contrasena" class="form-label">
+                                    <i class="bi bi-key-fill me-1"></i> Confirmar Nueva Contraseña
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="confirmar_contrasena" 
+                                       name="confirmar_contrasena" 
+                                       required
+                                       placeholder="Repite tu nueva contraseña">
+                                <div class="invalid-feedback">
+                                    Las contraseñas no coinciden.
+                                </div>
+                            </div>
+                            
+                            <!-- Requisitos de la contraseña -->
+                            <div class="password-requirements">
+                                <p class="mb-2 text-info"><i class="bi bi-info-circle me-1"></i> La nueva contraseña debe contener:</p>
+                                <div class="requirement-item invalid" id="req-longitud">
+                                    <i class="bi bi-circle"></i> Mínimo 10 caracteres
+                                </div>
+                                <div class="requirement-item invalid" id="req-mayuscula">
+                                    <i class="bi bi-circle"></i> Al menos una mayúscula
+                                </div>
+                                <div class="requirement-item invalid" id="req-minuscula">
+                                    <i class="bi bi-circle"></i> Al menos una minúscula
+                                </div>
+                                <div class="requirement-item invalid" id="req-numero">
+                                    <i class="bi bi-circle"></i> Al menos un número
+                                </div>
+                                <div class="requirement-item invalid" id="req-especial">
+                                    <i class="bi bi-circle"></i> Al menos un carácter especial
+                                </div>
+                            </div>
+                            
+                            <!-- Botón de Actualizar Contraseña -->
+                            <button type="submit" class="btn btn-password mt-4">
+                                <i class="bi bi-check-circle me-2"></i> Actualizar Contraseña
+                            </button>
+                        </form>
+                        
+                        <!-- Enlace para volver -->
+                        <div class="back-link">
+                            <a href="{{ url_for('usuario_actualizar_datos') }}">Volver a Actualizar Datos</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formulario = document.getElementById('passwordForm');
+    const nuevaContrasenaInput = document.getElementById('nueva_contrasena');
+    const confirmarContrasenaInput = document.getElementById('confirmar_contrasena');
+    
+    // Función para validar contraseña en tiempo real
+    function validarContrasena(contrasena) {
+        const requisitos = {
+            longitud: contrasena.length >= 10,
+            mayuscula: /[A-Z]/.test(contrasena),
+            minuscula: /[a-z]/.test(contrasena),
+            numero: /\d/.test(contrasena),
+            especial: /[!@#$%^&*()\-_=+{};:,<.>]/.test(contrasena)
+        };
+        
+        // Actualizar indicadores visuales
+        actualizarRequisito('longitud', requisitos.longitud);
+        actualizarRequisito('mayuscula', requisitos.mayuscula);
+        actualizarRequisito('minuscula', requisitos.minuscula);
+        actualizarRequisito('numero', requisitos.numero);
+        actualizarRequisito('especial', requisitos.especial);
+        
+        // Validar contraseña en el input
+        const esValida = Object.values(requisitos).every(req => req === true);
+        nuevaContrasenaInput.classList.toggle('is-valid', esValida);
+        nuevaContrasenaInput.classList.toggle('is-invalid', !esValida);
+        
+        return esValida;
+    }
+    
+    function actualizarRequisito(id, esValido) {
+        const elemento = document.getElementById(`req-${id}`);
+        if (esValido) {
+            elemento.classList.remove('invalid');
+            elemento.classList.add('valid');
+            elemento.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            elemento.classList.remove('valid');
+            elemento.classList.add('invalid');
+            elemento.querySelector('i').className = 'bi bi-circle';
+        }
+    }
+    
+    function validarCoincidenciaContrasenas() {
+        const coinciden = nuevaContrasenaInput.value === confirmarContrasenaInput.value;
+        
+        confirmarContrasenaInput.classList.toggle('is-valid', coinciden && confirmarContrasenaInput.value);
+        confirmarContrasenaInput.classList.toggle('is-invalid', !coinciden && confirmarContrasenaInput.value);
+        
+        return coinciden;
+    }
+    
+    // Event listeners para validación en tiempo real
+    nuevaContrasenaInput.addEventListener('input', function() {
+        validarContrasena(this.value);
+        validarCoincidenciaContrasenas();
+    });
+    
+    confirmarContrasenaInput.addEventListener('input', validarCoincidenciaContrasenas);
+    
+    // Validación del formulario al enviar
+    formulario.addEventListener('submit', function(event) {
+        // Validaciones personalizadas
+        const contrasenaValida = validarContrasena(nuevaContrasenaInput.value);
+        const coinciden = validarCoincidenciaContrasenas();
+        
+        if (!contrasenaValida || !coinciden) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        formulario.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}
