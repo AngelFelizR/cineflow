@@ -13,7 +13,8 @@ class PeliculaController:
     def __init__(self):
         pass
 
-    def ultimas_3_pelis(self):
+    @staticmethod
+    def ultimas_3_pelis():
         """
         Obtiene las últimas 3 películas con funciones próximas
         
@@ -69,7 +70,8 @@ class PeliculaController:
         finally:
             session.close()
 
-    def top_3_pelis(self):
+    @staticmethod
+    def top_3_pelis():
         """
         Obtiene las 3 películas más populares basadas en ventas de boletos
         
@@ -78,28 +80,38 @@ class PeliculaController:
         """
         session = db.get_session()
         try:
-            # Consulta para contar boletos por película
-            peliculas_populares = session.query(
-                Pelicula,
+            # SOLUCIÓN 1: Usar subconsulta para evitar problemas de GROUP BY
+            # Primero obtenemos los IDs de las películas más populares
+            subquery = session.query(
+                Funcion.IdPelicula,
                 func.count(Boleto.Id).label('total_boletos')
-            ).join(Funcion, Pelicula.Id == Funcion.IdPelicula
             ).join(Boleto, Funcion.Id == Boleto.IdFuncion
             ).filter(
-                Pelicula.Activo == True,
                 Funcion.Activo == True,
                 Funcion.FechaHora > datetime.now()
-            ).group_by(Pelicula.Id
-            ).order_by(desc('total_boletos')).limit(3).all()
+            ).group_by(Funcion.IdPelicula).subquery()
+
+            # Luego obtenemos las películas con más boletos
+            peliculas_populares = session.query(
+                Pelicula.Id,
+                func.coalesce(subquery.c.total_boletos, 0).label('total_boletos')
+            ).outerjoin(subquery, Pelicula.Id == subquery.c.IdPelicula
+            ).filter(
+                Pelicula.Activo == True
+            ).order_by(desc(func.coalesce(subquery.c.total_boletos, 0))).limit(3).all()
 
             resultado = []
-            for pelicula, total_boletos in peliculas_populares:
-                # Cargar relaciones adicionales
+            for pelicula_id, total_boletos in peliculas_populares:
+                # Cargar la película completa con sus relaciones
                 pelicula_completa = session.query(Pelicula).options(
                     joinedload(Pelicula.clasificacion),
                     joinedload(Pelicula.idioma),
                     joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
-                ).filter(Pelicula.Id == pelicula.Id).first()
+                ).filter(Pelicula.Id == pelicula_id).first()
                 
+                if not pelicula_completa:
+                    continue
+                    
                 # Obtener nombres de géneros
                 generos = [pg.genero.Genero for pg in pelicula_completa.generos]
                 
@@ -115,26 +127,27 @@ class PeliculaController:
                     'link_to_banner': pelicula_completa.LinkToBanner,
                     'link_to_bajante': pelicula_completa.LinkToBajante,
                     'link_to_trailer': pelicula_completa.LinkToTrailer,
-                    'total_boletos': total_boletos,
-                    'popularidad': self._calcular_popularidad(total_boletos)
+                    'total_boletos': total_boletos or 0,
+                    'popularidad': PeliculaController._calcular_popularidad(total_boletos or 0)
                 }
                 
                 resultado.append(pelicula_dict)
                 session.expunge(pelicula_completa)
-                
+            
             # Si no hay películas con boletos, devolver las últimas 3
             if not resultado:
-                return self.ultimas_3_pelis()
+                return PeliculaController.ultimas_3_pelis()
                 
             return resultado
             
         except Exception as e:
             print(f"Error al obtener películas populares: {e}")
-            return []
+            return PeliculaController.ultimas_3_pelis()
         finally:
             session.close()
 
-    def _calcular_popularidad(self, total_boletos):
+    @staticmethod
+    def _calcular_popularidad(total_boletos):
         """
         Calcula el nivel de popularidad basado en ventas de boletos
         
@@ -151,7 +164,8 @@ class PeliculaController:
         else:
             return "Baja"
 
-    def obtener_por_id(self, pelicula_id):
+    @staticmethod
+    def obtener_por_id(pelicula_id):
         """
         Obtiene una película por su ID
         

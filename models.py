@@ -179,7 +179,7 @@ class Pelicula(Base):
 
 
 class PeliculaGenero(Base):
-    __tablename__ = "PeliculaGenero"
+    __tablename__ = "PelículaGénero"
 
     Id: Mapped[int] = mapped_column(primary_key=True)
     IdPelicula: Mapped[int] = mapped_column(
