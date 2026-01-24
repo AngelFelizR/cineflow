@@ -5,9 +5,8 @@ from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
 from models import login_manager, bcrypt, Usuario
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask_login import login_user, logout_user, current_user, login_required
-import random
 
 app = Flask(__name__)
 app.secret_key = 'cineflow_secret_key_change_in_production_2025'
@@ -39,8 +38,90 @@ def index():
 
 @app.route('/cartelera')
 def lista_cartelera():
-    # Esta es la ruta que causaba el error BuildError
-    return render_template('funciones/lista_cartelera.html')
+    """Ruta para mostrar la cartelera con filtros dinámicos"""
+    
+    # Obtener parámetros de filtro de la solicitud GET
+    dia = request.args.get('dia')
+    generos = request.args.getlist('genero')
+    salas = request.args.getlist('sala')
+    idiomas = request.args.getlist('idioma')
+    clasificaciones = request.args.getlist('clasificacion')
+    
+    # Convertir listas de strings a enteros (solo si son dígitos)
+    generos_ids = []
+    for g in generos:
+        if g.isdigit():
+            generos_ids.append(int(g))
+    
+    salas_ids = []
+    for s in salas:
+        if s.isdigit():
+            salas_ids.append(int(s))
+    
+    idiomas_ids = []
+    for i in idiomas:
+        if i.isdigit():
+            idiomas_ids.append(int(i))
+    
+    clasificaciones_ids = []
+    for c in clasificaciones:
+        if c.isdigit():
+            clasificaciones_ids.append(int(c))
+    
+    # 1. Obtener películas filtradas usando el controlador
+    resultado_cartelera = PeliculaController.filtrar_pelis_cartelera(
+        dia=dia,
+        genero_list=generos_ids if generos_ids else None,
+        sala_tipo_list=salas_ids if salas_ids else None,
+        idioma_list=idiomas_ids if idiomas_ids else None,
+        clasificacion_list=clasificaciones_ids if clasificaciones_ids else None
+    )
+    
+    # 2. Obtener opciones de filtro dinámicas basadas en las películas ya obtenidas
+    # Esto evita consultas adicionales innecesarias
+    opciones_filtros = PeliculaController.obtener_opciones_filtros_por_fecha(
+        resultado_cartelera=resultado_cartelera
+    )
+    
+    # 3. Verificar si hay filtros seleccionados que ya no están disponibles
+    # y filtrar solo los que están disponibles
+    generos_seleccionados_filtrados = []
+    if generos_ids:
+        generos_disponibles_ids = [g.Id for g in opciones_filtros['generos']]
+        generos_seleccionados_filtrados = [g for g in generos_ids if g in generos_disponibles_ids]
+    
+    salas_seleccionadas_filtradas = []
+    if salas_ids:
+        salas_disponibles_ids = [s.Id for s in opciones_filtros['salas']]
+        salas_seleccionadas_filtradas = [s for s in salas_ids if s in salas_disponibles_ids]
+    
+    idiomas_seleccionados_filtrados = []
+    if idiomas_ids:
+        idiomas_disponibles_ids = [i.Id for i in opciones_filtros['idiomas']]
+        idiomas_seleccionados_filtrados = [i for i in idiomas_ids if i in idiomas_disponibles_ids]
+    
+    clasificaciones_seleccionadas_filtradas = []
+    if clasificaciones_ids:
+        clasificaciones_disponibles_ids = [c.Id for c in opciones_filtros['clasificaciones']]
+        clasificaciones_seleccionadas_filtradas = [c for c in clasificaciones_ids if c in clasificaciones_disponibles_ids]
+    
+    # 3. Combinar todos los datos para la template
+    return render_template(
+        'funciones/lista_cartelera.html',
+        peliculas=resultado_cartelera['peliculas'],
+        fecha_seleccionada=resultado_cartelera['fecha_seleccionada'],
+        fecha_minima=resultado_cartelera['fecha_minima'],
+        fecha_maxima=resultado_cartelera['fecha_maxima'],
+        fecha_mostrada=resultado_cartelera['fecha_mostrada'],
+        generos_opciones=opciones_filtros['generos'],
+        salas_opciones=opciones_filtros['salas'],
+        idiomas_opciones=opciones_filtros['idiomas'],
+        clasificaciones_opciones=opciones_filtros['clasificaciones'],
+        generos_seleccionados=generos_seleccionados_filtrados,
+        salas_seleccionados=salas_seleccionadas_filtradas,
+        idiomas_seleccionados=idiomas_seleccionados_filtrados,
+        clasificaciones_seleccionados=clasificaciones_seleccionadas_filtradas
+    )
 
 @app.route('/proximamente')
 def lista_proximamente():

@@ -102,7 +102,7 @@ class TipoSala(Base):
     Id: Mapped[int] = mapped_column(primary_key=True)
     Tipo: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     PrecioAdulto: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
-    PrecioNino: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
+    PrecioNino: Mapped[float] = mapped_column("PrecioNiño", Numeric(10, 4), nullable=False)
     Activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
     salas: Mapped[List["Sala"]] = relationship(back_populates="tipo_sala")
