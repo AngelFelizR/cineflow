@@ -593,11 +593,88 @@ INSERT INTO Funciones (IdPelícula, IdSala, FechaHora) VALUES
 (12, 5, '2026-03-07 18:00:00'),
 (13, 6, '2026-03-07 18:00:00');
 
--- PENDING Insert Boleto
 
--- PENDING Insert BoletosCancelados
+-- Insert Boletos
 
--- PENDING Insert BoletosUsados
+INSERT INTO Boletos (
+    IdFunción,
+    IdAsiento,
+    IdUsuario,
+    IdTipoBoleto,
+    FechaCreacion,
+    ValorPagado
+)
+SELECT
+    f.IdFuncion,
+    a.IdAsiento,
+    3 + (ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) % 50) AS IdUsuario,
+    CASE 
+        WHEN a.IdAsiento % 2 = 0 THEN 1 ELSE 2
+    END AS IdTipoBoleto,
+    DATEADD(DAY, -5, '2026-01-25') AS FechaCreacion,
+    CASE 
+        WHEN a.IdAsiento % 2 = 0 THEN 350 ELSE 200
+    END AS ValorPagado
+FROM (
+    SELECT number AS IdFuncion
+    FROM master..spt_values
+    WHERE type = 'P'
+      AND number BETWEEN 1 AND 138
+) f
+CROSS JOIN (
+    SELECT number AS IdAsiento
+    FROM master..spt_values
+    WHERE type = 'P'
+      AND number BETWEEN 1 AND 150
+) a;
+
+
+-- Insert BoletosCancelados
+
+INSERT INTO BoletosCancelados (
+    IdBoleto,
+    FechaCancelacion,
+    ValorAcreditado,
+    Canjeado
+)
+SELECT TOP (10) PERCENT
+    b.Id,
+    GETDATE(),
+    b.ValorPagado,
+    0
+FROM Boletos b
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM BoletosCancelados bc
+    WHERE bc.IdBoleto = b.Id
+)
+ORDER BY NEWID();
+
+
+-- Insert BoletosUsados
+
+INSERT INTO BoletosUsados (
+    IdBoleto,
+    IdEncargado,
+    FechaUso
+)
+SELECT
+    b.Id,
+    1 AS IdEncargado,
+    GETDATE() AS FechaUso
+FROM Boletos b
+WHERE b.Id NOT IN (
+    SELECT IdBoleto
+    FROM BoletosCancelados
+)
+AND b.Id NOT IN (
+    SELECT IdBoleto
+    FROM BoletosUsados
+)
+AND b.Id <= (
+    SELECT CAST(COUNT(*) * 0.85 AS INT)
+    FROM Boletos
+);
 
 GO
 
