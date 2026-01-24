@@ -384,3 +384,48 @@ class UsuarioController:
             return False, f"Error al actualizar contraseña: {str(e)}"
         finally:
             session.close()
+
+    @staticmethod
+    def actualizar_usuario(usuario_id, data):
+        """
+        Actualiza los datos de un usuario.
+        
+        Args:
+            usuario_id: ID del usuario a actualizar
+            data: Diccionario con los datos a actualizar
+            
+        Returns:
+            Tupla (success, message, usuario_actualizado)
+        """
+        from database import db
+        session = db.get_session()
+        
+        try:
+            usuario = session.query(Usuario).filter_by(Id=usuario_id).first()
+            
+            if not usuario:
+                return False, "Usuario no encontrado", None
+            
+            # Actualizar campos
+            if data.get('nombre'):
+                usuario.Nombre = data['nombre']
+            if data.get('apellidos'):
+                usuario.Apellidos = data['apellidos']
+            if data.get('fecha_nacimiento'):
+                usuario.FechaNacimiento = data['fecha_nacimiento']
+            if data.get('telefono'):
+                usuario.Telefono = data['telefono']
+            
+            session.commit()
+            
+            # Refrescar y desasociar el objeto
+            session.refresh(usuario)
+            session.expunge(usuario)
+            
+            return True, "Datos actualizados correctamente", usuario
+            
+        except Exception as e:
+            session.rollback()
+            return False, f"Error al actualizar datos: {str(e)}", None
+        finally:
+            session.close()
