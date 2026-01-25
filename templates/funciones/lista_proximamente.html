@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Próximamente - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Cabecera -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="text-accent mb-0">Próximamente</h1>
+            <p class="text-light-60 mb-0">Próximos estrenos que llegarán a nuestras salas</p>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-accent px-3 py-2 h5 mb-0">
+                {{ peliculas|length }} película{% if peliculas|length != 1 %}s{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card dark-card mb-4">
+        <div class="card-header dark-card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('lista_proximamente') }}" class="row g-3" id="filtros-form">
+                <!-- Géneros -->
+                <div class="col-md-4">
+                    <label class="form-label">Géneros</label>
+                    <div class="filter-options">
+                        {% for genero in generos_opciones %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="genero" 
+                                   value="{{ genero.Id }}" id="genero{{ genero.Id }}"
+                                   {% if genero.Id in generos_seleccionados %}checked{% endif %}>
+                            <label class="form-check-label" for="genero{{ genero.Id }}">
+                                {{ genero.Genero }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Idioma -->
+                <div class="col-md-4">
+                    <label class="form-label">Idioma</label>
+                    <div class="filter-options">
+                        {% for idioma in idiomas_opciones %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="idioma" 
+                                   value="{{ idioma.Id }}" id="idioma{{ idioma.Id }}"
+                                   {% if idioma.Id in idiomas_seleccionados %}checked{% endif %}>
+                            <label class="form-check-label" for="idioma{{ idioma.Id }}">
+                                {{ idioma.Idioma }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Clasificación -->
+                <div class="col-md-3">
+                    <label class="form-label">Clasificación</label>
+                    <div class="filter-options">
+                        {% for clasificacion in clasificaciones_opciones %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="clasificacion" 
+                                   value="{{ clasificacion.Id }}" id="clasificacion{{ clasificacion.Id }}"
+                                   {% if clasificacion.Id in clasificaciones_seleccionados %}checked{% endif %}>
+                            <label class="form-check-label" for="clasificacion{{ clasificacion.Id }}">
+                                {{ clasificacion.Clasificacion }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Botones -->
+                <div class="col-md-1 d-flex flex-column justify-content-end">
+                    <button type="submit" class="btn btn-warning mb-2">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('lista_proximamente') }}" class="btn btn-outline-warning">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Películas -->
+    <div class="row">
+        {% if peliculas %}
+            {% for pelicula in peliculas %}
+            <div class="col-lg-12 mb-4">
+                <div class="card dark-card movie-card">
+                    <div class="row g-0">
+                        <!-- Columna Izquierda: Imagen -->
+                        <div class="col-md-4">
+                            <div class="position-relative h-100">
+                                {% if pelicula.link_to_bajante %}
+                                <img src="{{ pelicula.link_to_bajante }}" 
+                                     class="img-fluid rounded-start h-100 w-100" 
+                                     alt="{{ pelicula.titulo }}"
+                                     style="object-fit: cover; min-height: 300px;"
+                                     onerror="this.src='https://via.placeholder.com/300x400/1e1e1e/ffffff?text=Poster+No+Disponible'">
+                                {% else %}
+                                <div class="h-100 w-100 d-flex align-items-center justify-content-center" 
+                                     style="background-color: rgba(255,255,255,0.05); min-height: 300px;">
+                                    <i class="bi bi-film display-1 text-light-60"></i>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Badge de clasificación sobre la imagen -->
+                                {% if pelicula.clasificacion %}
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge 
+                                        {% if pelicula.clasificacion == 'R/18' %}bg-danger
+                                        {% elif pelicula.clasificacion == 'R/16' %}bg-warning text-dark
+                                        {% elif pelicula.clasificacion == 'R/14' %}bg-primary
+                                        {% elif pelicula.clasificacion == 'NR' %}bg-secondary
+                                        {% elif pelicula.clasificacion == 'N/S' %}bg-light text-dark
+                                        {% else %}bg-dark{% endif %} 
+                                        px-3 py-2 fs-6">
+                                        {{ pelicula.clasificacion }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Badge de "Próximamente" -->
+                                <div class="position-absolute bottom-0 start-0 m-3">
+                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                                        <i class="bi bi-clock me-1"></i>Próximamente
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Columna Derecha: Detalles -->
+                        <div class="col-md-8">
+                            <div class="card-body h-100 d-flex flex-column">
+                                <!-- Título y acciones -->
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h3 class="card-title text-accent mb-1">{{ pelicula.titulo }}</h3>
+                                        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                                            <span class="badge bg-primary">{{ pelicula.idioma }}</span>
+                                            <span class="badge bg-dark">{{ pelicula.duracion_minutos }} min</span>
+                                            {% if pelicula.fecha_lanzamiento %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-calendar-event me-1"></i>
+                                                Estreno: {{ pelicula.fecha_lanzamiento_formateada }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if pelicula.link_to_trailer %}
+                                    <a href="{{ pelicula.link_to_trailer }}" 
+                                       target="_blank"
+                                       class="btn btn-outline-info btn-sm"
+                                       title="Ver tráiler">
+                                        <i class="bi bi-play-btn me-1"></i>Tráiler
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Descripción -->
+                                <div class="mb-3 flex-grow-1">
+                                    <p class="card-text text-light">{{ pelicula.descripcion_corta }}</p>
+                                </div>
+                                
+                                <!-- Géneros -->
+                                <div class="mb-3">
+                                    <h6 class="text-accent mb-2">Géneros</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for genero in pelicula.generos %}
+                                        <span class="badge bg-secondary">{{ genero }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Información adicional -->
+                                <div class="mt-auto">
+                                    <div class="row text-center">
+                                        <div class="col">
+                                            <small class="text-light-60 d-block">Idioma</small>
+                                            <span class="text-light">{{ pelicula.idioma }}</span>
+                                        </div>
+                                        <div class="col">
+                                            <small class="text-light-60 d-block">Duración</small>
+                                            <span class="text-light">{{ pelicula.duracion_minutos }} min</span>
+                                        </div>
+                                        <div class="col">
+                                            <small class="text-light-60 d-block">Fecha de lanzamiento</small>
+                                            <span class="text-light">
+                                                {% if pelicula.fecha_lanzamiento %}
+                                                    {{ pelicula.fecha_lanzamiento_formateada }}
+                                                {% else %}
+                                                    Por definir
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="card dark-card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-film display-1 text-light-60 mb-3"></i>
+                    <h4 class="text-accent mb-3">No se encontraron películas próximas</h4>
+                    <p class="text-light-60 mb-4">
+                        No hay películas programadas para los próximos días con los filtros seleccionados.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{{ url_for('lista_proximamente') }}" class="btn btn-warning">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Ver todas las películas próximas
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-house me-1"></i>Volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.movie-card {
+    border: 1px solid var(--dark-border);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.movie-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 10px 30px rgba(255, 193, 7, 0.1);
+    transform: translateY(-5px);
+}
+
+.filter-options {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--dark-border);
+    border-radius: 5px;
+    padding: 10px;
+    background-color: rgba(255,255,255,0.05);
+}
+
+.filter-options .form-check {
+    margin-bottom: 5px;
+    padding-left: 1.5em;
+}
+
+.filter-options .form-check-input {
+    margin-left: -1.5em;
+}
+
+/* Scrollbar personalizada */
+.filter-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filter-options::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+}
+
+.filter-options::-webkit-scrollbar-thumb {
+    background: var(--dark-border);
+    border-radius: 3px;
+}
+
+.filter-options::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .movie-card .row {
+        flex-direction: column;
+    }
+    
+    .movie-card .col-md-4 {
+        height: 250px;
+    }
+    
+    .movie-card .col-md-4 img,
+    .movie-card .col-md-4 div {
+        height: 100%;
+        width: 100%;
+        border-radius: 8px 8px 0 0 !important;
+    }
+}
+</style>
+
+<script>
+// Inicialización cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Próximamente cargada correctamente');
+    
+    // Efecto hover en las cards
+    const movieCards = document.querySelectorAll('.movie-card');
+    movieCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Mostrar mensaje de filtros aplicados
+    const filtrosForm = document.getElementById('filtros-form');
+    const checkboxes = filtrosForm.querySelectorAll('input[type="checkbox"]:checked');
+    
+    if (checkboxes.length > 0) {
+        console.log(`${checkboxes.length} filtros aplicados`);
+    }
+});
+</script>
+{% endblock %}

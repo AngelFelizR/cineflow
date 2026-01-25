@@ -5,7 +5,8 @@ from models import Pelicula, Funcion, Boleto, PeliculaGenero, Genero, Sala, Tipo
 from database import db
 from sqlalchemy import desc, func
 from sqlalchemy.orm import joinedload
-from datetime import datetime
+from datetime import datetime, timedelta
+import traceback
 
 class PeliculaController:
     """Controlador para operaciones de películas"""
@@ -229,7 +230,6 @@ class PeliculaController:
         Returns:
             dict: Diccionario con películas filtradas y metadatos
         """
-        from datetime import datetime, timedelta
         
         session = db.get_session()
         try:
@@ -401,7 +401,6 @@ class PeliculaController:
             
         except Exception as e:
             print(f"Error al filtrar películas para cartelera: {e}")
-            import traceback
             traceback.print_exc()
             
             return {
@@ -413,7 +412,6 @@ class PeliculaController:
             }
         finally:
             session.close()
-
 
     @staticmethod
     def obtener_opciones_filtros_por_fecha(resultado_cartelera):
@@ -497,7 +495,6 @@ class PeliculaController:
                     TipoSala.Activo == True
                 ).order_by(TipoSala.Tipo).all()
             
-            # Paso 3: Retornar el diccionario con las opciones de filtro
             return {
                 'generos': generos_objs,
                 'salas': salas_objs,
@@ -507,13 +504,231 @@ class PeliculaController:
             
         except Exception as e:
             print(f"Error al obtener opciones de filtros: {e}")
-            import traceback
             traceback.print_exc()
             
-            # En caso de error, retornar listas vacías
             return {
                 'generos': [],
                 'salas': [],
+                'idiomas': [],
+                'clasificaciones': []
+            }
+        finally:
+            session.close()
+
+    @staticmethod
+    def convertir_parametros_filtro(parametros):
+        """
+        Convierte listas de strings de parámetros a listas de enteros.
+        
+        Args:
+            parametros (list): Lista de strings de parámetros
+            
+        Returns:
+            list: Lista de enteros válidos (o lista vacía si no hay parámetros válidos)
+        """
+        resultado = []
+        if not parametros:
+            return resultado
+            
+        for param in parametros:
+            if param and str(param).strip().isdigit():
+                resultado.append(int(param))
+        return resultado
+
+    @staticmethod
+    def filtrar_pelis_prox(genero_list=None, idioma_list=None, clasificacion_list=None):
+        """
+        Filtra películas que tienen funciones programadas para dentro de 13 días o más.
+        
+        Args:
+            genero_list (list, opcional): Lista de IDs de géneros (OR).
+            idioma_list (list, opcional): Lista de IDs de idiomas (OR).
+            clasificacion_list (list, opcional): Lista de IDs de clasificaciones (OR).
+            
+        Returns:
+            list: Lista de diccionarios con información de películas próximas
+        """
+        
+        session = db.get_session()
+        try:
+            # Fecha actual
+            ahora = datetime.now()
+            # Fecha mínima para considerarse "próximamente": 13 días a partir de ahora
+            fecha_minima = ahora + timedelta(days=13)
+            
+            # 1. Construir la consulta base
+            query = session.query(Pelicula).options(
+                joinedload(Pelicula.clasificacion),
+                joinedload(Pelicula.idioma),
+                joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
+            ).filter(
+                Pelicula.Activo == True
+            )
+            
+            # 2. Subconsulta para películas con funciones futuras (13+ días)
+            subquery_funciones = session.query(Funcion.IdPelicula).filter(
+                Funcion.FechaHora >= fecha_minima,
+                Funcion.Activo == True
+            ).distinct().subquery()
+            
+            query = query.join(subquery_funciones, Pelicula.Id == subquery_funciones.c.IdPelicula)
+            
+            # 3. Aplicar filtros con lógica OR dentro de cada categoría
+            
+            # GÉNEROS (OR) - Películas que tengan AL MENOS UNO de los géneros seleccionados
+            if genero_list and len(genero_list) > 0:
+                subquery_genero = session.query(PeliculaGenero.IdPelicula).filter(
+                    PeliculaGenero.IdGenero.in_(genero_list)
+                ).distinct().subquery()
+                query = query.join(subquery_genero, Pelicula.Id == subquery_genero.c.IdPelicula)
+            
+            # IDIOMA (OR) - Películas en AL MENOS UNO de los idiomas seleccionados
+            if idioma_list and len(idioma_list) > 0:
+                query = query.filter(Pelicula.IdIdioma.in_(idioma_list))
+            
+            # CLASIFICACIÓN (OR) - Películas con AL MENOS UNA de las clasificaciones
+            if clasificacion_list and len(clasificacion_list) > 0:
+                query = query.filter(Pelicula.IdClasificacion.in_(clasificacion_list))
+            
+            # 4. Obtener fecha de lanzamiento (primera función programada) para cada película
+            peliculas = query.order_by(Pelicula.Titulo).distinct().all()
+            
+            # 5. Obtener fecha de lanzamiento para cada película (la función más temprana)
+            fechas_lanzamiento = {}
+            if peliculas:
+                pelicula_ids = [p.Id for p in peliculas]
+                
+                # Consulta para obtener la primera función programada para cada película
+                resultados_fechas = session.query(
+                    Funcion.IdPelicula,
+                    func.min(Funcion.FechaHora).label('fecha_lanzamiento')
+                ).filter(
+                    Funcion.IdPelicula.in_(pelicula_ids),
+                    Funcion.FechaHora >= fecha_minima,
+                    Funcion.Activo == True
+                ).group_by(Funcion.IdPelicula).all()
+                
+                for id_pelicula, fecha_lanzamiento in resultados_fechas:
+                    fechas_lanzamiento[id_pelicula] = fecha_lanzamiento
+            
+            # 6. Formatear resultados
+            peliculas_proximas = []
+            for pelicula in peliculas:
+                generos = [pg.genero.Genero for pg in pelicula.generos]
+                
+                fecha_lanz = fechas_lanzamiento.get(pelicula.Id)
+                fecha_lanz_formateada = fecha_lanz.strftime('%d/%m/%Y') if fecha_lanz else 'Por definir'
+                
+                pelicula_dict = {
+                    'id': pelicula.Id,
+                    'titulo': pelicula.Titulo,
+                    'descripcion_corta': pelicula.DescripcionCorta,
+                    'descripcion_larga': pelicula.DescripcionLarga,
+                    'duracion_minutos': pelicula.DuracionMinutos,
+                    'generos': generos,
+                    'clasificacion': pelicula.clasificacion.Clasificacion if pelicula.clasificacion else None,
+                    'idioma': pelicula.idioma.Idioma if pelicula.idioma else None,
+                    'link_to_banner': pelicula.LinkToBanner,
+                    'link_to_bajante': pelicula.LinkToBajante,
+                    'link_to_trailer': pelicula.LinkToTrailer,
+                    'fecha_lanzamiento': fecha_lanz,
+                    'fecha_lanzamiento_formateada': fecha_lanz_formateada
+                }
+                
+                peliculas_proximas.append(pelicula_dict)
+                session.expunge(pelicula)
+            
+            return peliculas_proximas
+            
+        except Exception as e:
+            print(f"Error al filtrar películas próximas: {e}")
+            traceback.print_exc()
+            return []
+        finally:
+            session.close()
+
+    @staticmethod
+    def obtener_opciones_filtros_proximamente(peliculas_filtradas):
+        """
+        Obtiene opciones de filtro basadas en las películas próximas ya obtenidas.
+        Solo muestra los filtros (géneros, idiomas, clasificaciones) que están disponibles
+        en las películas que se están mostrando actualmente.
+        
+        Args:
+            peliculas_filtradas (list): Lista de diccionarios con información de películas próximas
+                
+        Returns:
+            dict: Diccionario con las opciones de filtro disponibles
+        """
+        # Si no hay películas, retornar listas vacías
+        if not peliculas_filtradas:
+            return {
+                'generos': [],
+                'idiomas': [],
+                'clasificaciones': []
+            }
+        
+        session = db.get_session()
+        try:
+            # Paso 1: Recopilar nombres únicos de los elementos presentes en las películas filtradas
+            generos_nombres = set()
+            idiomas_nombres = set()
+            clasificaciones_nombres = set()
+            
+            for pelicula in peliculas_filtradas:
+                # Recopilar géneros (puede haber múltiples por película)
+                for genero in pelicula.get('generos', []):
+                    if genero:  # Solo agregar si no está vacío
+                        generos_nombres.add(genero)
+                
+                # Recopilar idiomas
+                idioma = pelicula.get('idioma')
+                if idioma:
+                    idiomas_nombres.add(idioma)
+                
+                # Recopilar clasificaciones
+                clasificacion = pelicula.get('clasificacion')
+                if clasificacion:
+                    clasificaciones_nombres.add(clasificacion)
+            
+            # Paso 2: Consultar la base de datos para obtener objetos completos con IDs
+            
+            # Obtener géneros activos que coincidan con los nombres encontrados
+            generos_objs = []
+            if generos_nombres:
+                generos_objs = session.query(Genero).filter(
+                    Genero.Genero.in_(list(generos_nombres)),
+                    Genero.Activo == True
+                ).order_by(Genero.Genero).all()
+            
+            # Obtener idiomas activos que coincidan con los nombres encontrados
+            idiomas_objs = []
+            if idiomas_nombres:
+                idiomas_objs = session.query(Idioma).filter(
+                    Idioma.Idioma.in_(list(idiomas_nombres)),
+                    Idioma.Activo == True
+                ).order_by(Idioma.Idioma).all()
+            
+            # Obtener clasificaciones activas que coincidan con los nombres encontrados
+            clasificaciones_objs = []
+            if clasificaciones_nombres:
+                clasificaciones_objs = session.query(Clasificacion).filter(
+                    Clasificacion.Clasificacion.in_(list(clasificaciones_nombres)),
+                    Clasificacion.Activo == True
+                ).order_by(Clasificacion.Clasificacion).all()
+            
+            return {
+                'generos': generos_objs,
+                'idiomas': idiomas_objs,
+                'clasificaciones': clasificaciones_objs
+            }
+            
+        except Exception as e:
+            print(f"Error al obtener opciones de filtros para próximamente: {e}")
+            traceback.print_exc()
+            
+            return {
+                'generos': [],
                 'idiomas': [],
                 'clasificaciones': []
             }

@@ -47,26 +47,11 @@ def lista_cartelera():
     idiomas = request.args.getlist('idioma')
     clasificaciones = request.args.getlist('clasificacion')
     
-    # Convertir listas de strings a enteros (solo si son dígitos)
-    generos_ids = []
-    for g in generos:
-        if g.isdigit():
-            generos_ids.append(int(g))
-    
-    salas_ids = []
-    for s in salas:
-        if s.isdigit():
-            salas_ids.append(int(s))
-    
-    idiomas_ids = []
-    for i in idiomas:
-        if i.isdigit():
-            idiomas_ids.append(int(i))
-    
-    clasificaciones_ids = []
-    for c in clasificaciones:
-        if c.isdigit():
-            clasificaciones_ids.append(int(c))
+    # Convertir listas de strings a enteros usando el controlador
+    generos_ids = PeliculaController.convertir_parametros_filtro(generos)
+    salas_ids = PeliculaController.convertir_parametros_filtro(salas)
+    idiomas_ids = PeliculaController.convertir_parametros_filtro(idiomas)
+    clasificaciones_ids = PeliculaController.convertir_parametros_filtro(clasificaciones)
     
     # 1. Obtener películas filtradas usando el controlador
     resultado_cartelera = PeliculaController.filtrar_pelis_cartelera(
@@ -78,7 +63,6 @@ def lista_cartelera():
     )
     
     # 2. Obtener opciones de filtro dinámicas basadas en las películas ya obtenidas
-    # Esto evita consultas adicionales innecesarias
     opciones_filtros = PeliculaController.obtener_opciones_filtros_por_fecha(
         resultado_cartelera=resultado_cartelera
     )
@@ -105,7 +89,7 @@ def lista_cartelera():
         clasificaciones_disponibles_ids = [c.Id for c in opciones_filtros['clasificaciones']]
         clasificaciones_seleccionadas_filtradas = [c for c in clasificaciones_ids if c in clasificaciones_disponibles_ids]
     
-    # 3. Combinar todos los datos para la template
+    # 4. Combinar todos los datos para la template
     return render_template(
         'funciones/lista_cartelera.html',
         peliculas=resultado_cartelera['peliculas'],
@@ -125,7 +109,58 @@ def lista_cartelera():
 
 @app.route('/proximamente')
 def lista_proximamente():
-    return render_template('funciones/lista_proximamente.html')
+    """Ruta para mostrar la cartelera de próximos estrenos"""
+    
+    # Obtener parámetros de filtro de la solicitud GET
+    generos = request.args.getlist('genero')
+    idiomas = request.args.getlist('idioma')
+    clasificaciones = request.args.getlist('clasificacion')
+    
+    # Convertir parámetros usando el método del controlador
+    generos_ids = PeliculaController.convertir_parametros_filtro(generos)
+    idiomas_ids = PeliculaController.convertir_parametros_filtro(idiomas)
+    clasificaciones_ids = PeliculaController.convertir_parametros_filtro(clasificaciones)
+    
+    # 1. Obtener películas próximas usando el nuevo método del controlador
+    peliculas_proximas = PeliculaController.filtrar_pelis_prox(
+        genero_list=generos_ids if generos_ids else None,
+        idioma_list=idiomas_ids if idiomas_ids else None,
+        clasificacion_list=clasificaciones_ids if clasificaciones_ids else None
+    )
+    
+    # 2. Obtener opciones de filtro dinámicas basadas en las películas ya obtenidas
+    opciones_filtros = PeliculaController.obtener_opciones_filtros_proximamente(
+        peliculas_filtradas=peliculas_proximas
+    )
+    
+    # 3. Verificar si hay filtros seleccionados que ya no están disponibles
+    # y filtrar solo los que están disponibles
+    generos_seleccionados_filtrados = []
+    if generos_ids:
+        generos_disponibles_ids = [g.Id for g in opciones_filtros['generos']]
+        generos_seleccionados_filtrados = [g for g in generos_ids if g in generos_disponibles_ids]
+    
+    idiomas_seleccionados_filtrados = []
+    if idiomas_ids:
+        idiomas_disponibles_ids = [i.Id for i in opciones_filtros['idiomas']]
+        idiomas_seleccionados_filtrados = [i for i in idiomas_ids if i in idiomas_disponibles_ids]
+    
+    clasificaciones_seleccionadas_filtradas = []
+    if clasificaciones_ids:
+        clasificaciones_disponibles_ids = [c.Id for c in opciones_filtros['clasificaciones']]
+        clasificaciones_seleccionadas_filtradas = [c for c in clasificaciones_ids if c in clasificaciones_disponibles_ids]
+    
+    # 4. Combinar todos los datos para la template
+    return render_template(
+        'funciones/lista_proximamente.html',
+        peliculas=peliculas_proximas,
+        generos_opciones=opciones_filtros['generos'],
+        idiomas_opciones=opciones_filtros['idiomas'],
+        clasificaciones_opciones=opciones_filtros['clasificaciones'],
+        generos_seleccionados=generos_seleccionados_filtrados,
+        idiomas_seleccionados=idiomas_seleccionados_filtrados,
+        clasificaciones_seleccionados=clasificaciones_seleccionadas_filtradas
+    )
 
 # =========================
 # Rutas de Autenticación
