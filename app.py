@@ -7,6 +7,7 @@ from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime
 from flask_login import login_user, logout_user, current_user, login_required
+import traceback
 
 app = Flask(__name__)
 app.secret_key = 'cineflow_secret_key_change_in_production_2025'

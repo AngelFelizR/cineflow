@@ -14,128 +14,104 @@ class PeliculaController:
     def __init__(self):
         pass
 
+
     @staticmethod
     def ultimas_3_pelis():
         """
-        Obtiene las últimas 3 películas con funciones próximas
+        Obtiene las últimas 3 películas registradas que están disponibles en cartelera
         
         Returns:
             list: Lista de diccionarios con información de películas
         """
         session = db.get_session()
         try:
-            # Obtener películas que tienen funciones futuras
-            peliculas = session.query(Pelicula).options(
-                joinedload(Pelicula.clasificacion),
-                joinedload(Pelicula.idioma),
-                joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
-            ).filter(
-                Pelicula.Activo == True
-            ).order_by(desc(Pelicula.Id)).limit(3).all()
-
-            resultado = []
-            for pelicula in peliculas:
-                # Obtener nombres de géneros
-                generos = [pg.genero.Genero for pg in pelicula.generos]
+            # Primero obtenemos todas las películas en cartelera usando el método existente
+            resultado_cartelera = PeliculaController.filtrar_pelis_cartelera()
+            peliculas_cartelera = resultado_cartelera.get('peliculas', [])
+            
+            if not peliculas_cartelera:
+                return []
+            
+            # Ordenamos por ID descendente (las más recientes primero)
+            peliculas_cartelera.sort(key=lambda x: x['id'], reverse=True)
+            
+            # Tomamos las primeras 3
+            ultimas_3 = peliculas_cartelera[:3]
+            
+            # Para mantener compatibilidad con el formato esperado,
+            # agregamos información adicional si es necesario
+            for pelicula in ultimas_3:
+                # Ya obtenemos la próxima función desde el método filtrar_pelis_cartelera
+                # Si necesitamos más datos específicos, los agregamos aquí
+                pass
                 
-                # Obtener próxima función
-                proxima_funcion = session.query(Funcion).filter(
-                    Funcion.IdPelicula == pelicula.Id,
-                    Funcion.FechaHora > datetime.now(),
-                    Funcion.Activo == True
-                ).order_by(Funcion.FechaHora).first()
-                
-                pelicula_dict = {
-                    'id': pelicula.Id,
-                    'titulo': pelicula.Titulo,
-                    'descripcion_corta': pelicula.DescripcionCorta,
-                    'descripcion_larga': pelicula.DescripcionLarga,
-                    'duracion_minutos': pelicula.DuracionMinutos,
-                    'generos': generos,
-                    'clasificacion': pelicula.clasificacion.Clasificacion if pelicula.clasificacion else None,
-                    'idioma': pelicula.idioma.Idioma if pelicula.idioma else None,
-                    'link_to_banner': pelicula.LinkToBanner,
-                    'link_to_bajante': pelicula.LinkToBajante,
-                    'link_to_trailer': pelicula.LinkToTrailer,
-                    'proxima_funcion': proxima_funcion.FechaHora if proxima_funcion else None
-                }
-                
-                resultado.append(pelicula_dict)
-                session.expunge(pelicula)
-                
-            return resultado
+            return ultimas_3
             
         except Exception as e:
             print(f"Error al obtener últimas películas: {e}")
+            traceback.print_exc()
             return []
         finally:
             session.close()
+
 
     @staticmethod
     def top_3_pelis():
         """
         Obtiene las 3 películas más populares basadas en ventas de boletos
+        que están disponibles en cartelera
         
         Returns:
             list: Lista de diccionarios con información de películas
         """
         session = db.get_session()
         try:
-            # SOLUCIÓN 1: Usar subconsulta para evitar problemas de GROUP BY
-            # Primero obtenemos los IDs de las películas más populares
+            # Primero obtenemos todas las películas en cartelera
+            resultado_cartelera = PeliculaController.filtrar_pelis_cartelera()
+            peliculas_cartelera = resultado_cartelera.get('peliculas', [])
+            
+            if not peliculas_cartelera:
+                return PeliculaController.ultimas_3_pelis()
+            
+            # Extraemos los IDs de las películas en cartelera
+            peliculas_cartelera_ids = [p['id'] for p in peliculas_cartelera]
+            
+            # Subconsulta para contar boletos SOLO de películas en cartelera
             subquery = session.query(
                 Funcion.IdPelicula,
                 func.count(Boleto.Id).label('total_boletos')
             ).join(Boleto, Funcion.Id == Boleto.IdFuncion
             ).filter(
                 Funcion.Activo == True,
+                Funcion.IdPelicula.in_(peliculas_cartelera_ids),
                 Funcion.FechaHora > datetime.now()
             ).group_by(Funcion.IdPelicula).subquery()
 
-            # Luego obtenemos las películas con más boletos
+            # Obtenemos las películas con más boletos vendidos
             peliculas_populares = session.query(
                 Pelicula.Id,
                 func.coalesce(subquery.c.total_boletos, 0).label('total_boletos')
             ).outerjoin(subquery, Pelicula.Id == subquery.c.IdPelicula
             ).filter(
-                Pelicula.Activo == True
+                Pelicula.Activo == True,
+                Pelicula.Id.in_(peliculas_cartelera_ids)
             ).order_by(desc(func.coalesce(subquery.c.total_boletos, 0))).limit(3).all()
 
             resultado = []
             for pelicula_id, total_boletos in peliculas_populares:
-                # Cargar la película completa con sus relaciones
-                pelicula_completa = session.query(Pelicula).options(
-                    joinedload(Pelicula.clasificacion),
-                    joinedload(Pelicula.idioma),
-                    joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
-                ).filter(Pelicula.Id == pelicula_id).first()
+                # Buscamos la información completa de la película en nuestros datos ya filtrados
+                pelicula_info = next((p for p in peliculas_cartelera if p['id'] == pelicula_id), None)
                 
-                if not pelicula_completa:
+                if not pelicula_info:
                     continue
                     
-                # Obtener nombres de géneros
-                generos = [pg.genero.Genero for pg in pelicula_completa.generos]
+                # Enriquecer con información adicional si es necesario
+                pelicula_info['total_boletos'] = total_boletos or 0
+                pelicula_info['popularidad'] = PeliculaController._calcular_popularidad(total_boletos or 0)
                 
-                pelicula_dict = {
-                    'id': pelicula_completa.Id,
-                    'titulo': pelicula_completa.Titulo,
-                    'descripcion_corta': pelicula_completa.DescripcionCorta,
-                    'descripcion_larga': pelicula_completa.DescripcionLarga,
-                    'duracion_minutos': pelicula_completa.DuracionMinutos,
-                    'generos': generos,
-                    'clasificacion': pelicula_completa.clasificacion.Clasificacion if pelicula_completa.clasificacion else None,
-                    'idioma': pelicula_completa.idioma.Idioma if pelicula_completa.idioma else None,
-                    'link_to_banner': pelicula_completa.LinkToBanner,
-                    'link_to_bajante': pelicula_completa.LinkToBajante,
-                    'link_to_trailer': pelicula_completa.LinkToTrailer,
-                    'total_boletos': total_boletos or 0,
-                    'popularidad': PeliculaController._calcular_popularidad(total_boletos or 0)
-                }
-                
-                resultado.append(pelicula_dict)
-                session.expunge(pelicula_completa)
+                resultado.append(pelicula_info)
             
-            # Si no hay películas con boletos, devolver las últimas 3
+            # Si no hay películas con boletos, devolver las últimas 3 en cartelera
             if not resultado:
                 return PeliculaController.ultimas_3_pelis()
                 
@@ -143,6 +119,7 @@ class PeliculaController:
             
         except Exception as e:
             print(f"Error al obtener películas populares: {e}")
+            traceback.print_exc()
             return PeliculaController.ultimas_3_pelis()
         finally:
             session.close()
@@ -164,6 +141,7 @@ class PeliculaController:
             return "Media"
         else:
             return "Baja"
+
 
     @staticmethod
     def obtener_por_id(pelicula_id):
