@@ -92,7 +92,7 @@ def lista_cartelera():
     
     # 4. Combinar todos los datos para la template
     return render_template(
-        'funciones/lista_cartelera.html',
+        'peliculas/lista_cartelera.html',
         peliculas=resultado_cartelera['peliculas'],
         fecha_seleccionada=resultado_cartelera['fecha_seleccionada'],
         fecha_minima=resultado_cartelera['fecha_minima'],
@@ -153,7 +153,7 @@ def lista_proximamente():
     
     # 4. Combinar todos los datos para la template
     return render_template(
-        'funciones/lista_proximamente.html',
+        'peliculas/lista_proximamente.html',
         peliculas=peliculas_proximas,
         generos_opciones=opciones_filtros['generos'],
         idiomas_opciones=opciones_filtros['idiomas'],
