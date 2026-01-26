@@ -4,8 +4,9 @@
 from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
 from controllers.funcion_controller import FuncionController
+from controllers.boleto_controller import BoletoController
 from models import login_manager, bcrypt
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from datetime import datetime, date
 from flask_login import login_user, logout_user, current_user, login_required
 import traceback
@@ -355,8 +356,13 @@ def detalle_pelicula(pelicula_id):
 @login_required
 def seleccion_asientos(funcion_id):
     """
-    Ruta para seleccionar asientos (placeholder por ahora)
+    Ruta para seleccionar asientos
     """
+    # Verificar que el usuario sea cliente
+    if current_user.rol_nombre != "Cliente":
+        flash('Esta sección es solo para clientes.', 'danger')
+        return redirect(url_for('index'))
+    
     # Obtener detalles de la función
     funcion_detalle = FuncionController.obtener_funcion_por_id(funcion_id)
     
@@ -364,14 +370,105 @@ def seleccion_asientos(funcion_id):
         flash('La función no existe o no está disponible.', 'danger')
         return redirect(url_for('lista_cartelera'))
     
-    # Por ahora, solo mostramos un mensaje
-    flash(f'Redirigiendo a selección de asientos para la función {funcion_id}', 'info')
+    # Obtener asientos con disponibilidad
+    asientos = FuncionController.obtener_asientos_con_disponibilidad(funcion_id)
     
-    # En un futuro, aquí renderizaríamos la template de selección de asientos
     return render_template(
         'funciones/seleccion_asientos.html',
-        funcion=funcion_detalle
+        funcion=funcion_detalle,
+        asientos=asientos
     )
+
+# ==================== CONFIRMACIÓN DEL PAGO ====================
+
+@app.route('/funcion/<int:funcion_id>/confirmar-pago', methods=['GET', 'POST'])
+@login_required
+def confirmar_pago(funcion_id):
+    """
+    Ruta para confirmar y procesar el pago
+    """
+    if current_user.rol_nombre != "Cliente":
+        flash('Esta sección es solo para clientes.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Obtener detalles de la función
+    funcion_detalle = FuncionController.obtener_funcion_por_id(funcion_id)
+    
+    if not funcion_detalle:
+        flash('La función no existe o no está disponible.', 'danger')
+        return redirect(url_for('lista_cartelera'))
+    
+    if request.method == 'GET':
+        # Obtener parámetros de la compra desde GET
+        asientos_params = []
+        tipos_asientos = {}
+        
+        for key, value in request.args.items():
+            if key.startswith('asiento_'):
+                codigo = key.replace('asiento_', '')
+                tipo = value
+                asientos_params.append((codigo, tipo))
+                tipos_asientos[codigo] = tipo
+        
+        total = request.args.get('total', '0.00')
+        adultos = request.args.get('adultos', '0')
+        ninos = request.args.get('ninos', '0')
+        
+        # Validar que haya al menos un asiento
+        if not asientos_params:
+            flash('No se han seleccionado asientos.', 'danger')
+            return redirect(url_for('seleccion_asientos', funcion_id=funcion_id))
+        
+        # Guardar temporalmente en sesión para procesar POST
+        session['compra_temporal'] = {
+            'asientos': asientos_params,
+            'tipos': tipos_asientos,
+            'total': total,
+            'funcion_id': funcion_id
+        }
+        
+        return render_template(
+            'funciones/confirmar_pago.html',
+            funcion=funcion_detalle,
+            asientos=asientos_params,
+            total=total,
+            adultos=adultos,
+            ninos=ninos
+        )
+    
+    elif request.method == 'POST':
+        # Procesar el pago
+        compra_temporal = session.get('compra_temporal')
+        
+        if not compra_temporal or compra_temporal.get('funcion_id') != funcion_id:
+            flash('Sesión de compra expirada o inválida.', 'danger')
+            return redirect(url_for('seleccion_asientos', funcion_id=funcion_id))
+        
+        # Extraer datos
+        asientos_params = compra_temporal['asientos']  # Lista de tuplas (código, tipo)
+        tipos_asientos = compra_temporal['tipos']      # Dict código -> tipo
+        
+        # Extraer solo los códigos de asientos
+        asientos_codigos = [codigo for codigo, _ in asientos_params]
+        
+        # Crear boletos en la base de datos
+        success, message, boletos_ids = BoletoController.crear_boletos(
+            funcion_id=funcion_id,
+            usuario_id=current_user.Id,
+            asientos_seleccionados=asientos_codigos,
+            tipos_asientos=tipos_asientos
+        )
+        
+        if success:
+            # Limpiar sesión temporal
+            session.pop('compra_temporal', None)
+            
+            flash(f'¡Pago confirmado! {message} Tu número de transacción: {", ".join(map(str, boletos_ids))}', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash(f'Error al procesar el pago: {message}', 'danger')
+            return redirect(url_for('seleccion_asientos', funcion_id=funcion_id))
+
 
 # ==================== RUTAS DE API PARA DESARROLLO ====================
 

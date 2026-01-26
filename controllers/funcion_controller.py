@@ -1,8 +1,8 @@
 # controllers/funcion_controller.py
 from database import db
-from models import Funcion, Sala, Cine, TipoSala, Pelicula, Idioma, Clasificacion
-from sqlalchemy.orm import joinedload, Session
-from datetime import datetime, date, timedelta
+from models import Funcion, Sala, Pelicula, Boleto, BoletoCancelado
+from sqlalchemy.orm import joinedload
+from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 
 
@@ -260,5 +260,57 @@ class FuncionController:
         except Exception as e:
             print(f"Error en contar_asientos_disponibles: {e}")
             return 0
+        finally:
+            session.close()
+
+
+# Agregar al archivo funcion_controller.py (en la clase FuncionController)
+
+    @staticmethod
+    def obtener_asientos_con_disponibilidad(funcion_id: int) -> List[Dict[str, Any]]:
+        """
+        Obtiene todos los asientos de la sala de una función, con indicador de disponibilidad.
+        Un asiento está disponible si está activo y no tiene un boleto vendido (no cancelado).
+        
+        Args:
+            funcion_id: ID de la función
+            
+        Returns:
+            Lista de diccionarios con información de cada asiento
+        """
+        session = db.get_session()
+        try:
+            # Obtener la función con la sala
+            funcion = session.query(Funcion).options(
+                joinedload(Funcion.sala).joinedload(Sala.asientos)
+            ).filter(Funcion.Id == funcion_id).first()
+            
+            if not funcion:
+                return []
+            
+            subquery = session.query(BoletoCancelado.IdBoleto).subquery()
+            asientos_vendidos = session.query(Boleto.IdAsiento).filter(
+                Boleto.IdFuncion == funcion_id
+            ).filter(
+                ~Boleto.Id.in_(subquery)
+            ).all()
+            asientos_vendidos_ids = {av[0] for av in asientos_vendidos}
+            
+            # Construir la lista de asientos con su estado
+            asientos_info = []
+            for asiento in funcion.sala.asientos:
+                # El asiento está disponible si está activo y no ha sido vendido
+                disponible = (asiento.Activo and asiento.Id not in asientos_vendidos_ids)
+                asientos_info.append({
+                    'id': asiento.Id,
+                    'codigo_asiento': asiento.CodigoAsiento,
+                    'disponible': disponible
+                })
+            
+            return asientos_info
+            
+        except Exception as e:
+            print(f"Error al obtener asientos con disponibilidad: {e}")
+            return []
         finally:
             session.close()

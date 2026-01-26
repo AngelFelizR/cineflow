@@ -1,51 +1,691 @@
 <!-- templates/funciones/seleccion_asientos.html -->
 {% extends "base.html" %}
 
-{% block title %}Seleccionar Asientos - Cine Flow{% endblock %}
+{% block title %}Selección de Asientos - Cine Flow{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<div class="container py-4">
+    <!-- Información de la función -->
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card dark-card">
-                <div class="card-header dark-card-header text-center">
-                    <h3 class="mb-0">
-                        <i class="bi bi-ticket-perforated me-2"></i>
-                        Selección de Asientos
-                    </h3>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="text-accent mb-2">{{ funcion.pelicula.titulo }}</h2>
+                            <p class="mb-1">
+                                <i class="bi bi-calendar me-2"></i>
+                                <strong>Fecha:</strong> {{ funcion.fecha_display }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-clock me-2"></i>
+                                <strong>Hora:</strong> {{ funcion.hora_display }}
+                            </p>
+                            <p class="mb-1">
+                                <i class="bi bi-easel me-2"></i>
+                                <strong>Sala:</strong> {{ funcion.sala.numero }} ({{ funcion.sala.tipo_sala }})
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-building me-2"></i>
+                                <strong>Cine:</strong> {{ funcion.cine.nombre }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="d-inline-block text-start">
+                                <p class="mb-1">
+                                    <strong>Precio Adulto:</strong> ${{ "%.2f"|format(funcion.sala.precio_adulto) }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Precio Niño:</strong> ${{ "%.2f"|format(funcion.sala.precio_nino) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-camera-reels display-1 text-accent mb-4"></i>
-                    <h4 class="mb-3">Función #{{ funcion.id }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Selector de tipo de boleto -->
+        <div class="col-lg-3 mb-4">
+            <div class="card dark-card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h4 class="text-accent mb-4">Tipo de Boleto</h4>
                     
-                    <div class="alert alert-info mb-4">
-                        <h5 class="alert-heading">{{ funcion.pelicula.titulo }}</h5>
-                        <p class="mb-2">
-                            <strong>Cine:</strong> {{ funcion.cine.nombre }}<br>
-                            <strong>Fecha y Hora:</strong> {{ funcion.fecha_display }} {{ funcion.hora_display }}<br>
-                            <strong>Sala:</strong> {{ funcion.sala.numero }} ({{ funcion.sala.tipo_sala }})<br>
-                            <strong>Asientos disponibles:</strong> {{ funcion.asientos_disponibles }}
+                    <div class="form-check form-switch form-switch-lg mb-3">
+                        <input class="form-check-input" type="checkbox" id="tipoBoletoSwitch" 
+                               {% if funcion.pelicula.clasificacion in ['R/14', 'R/16', 'R/18'] %}disabled{% endif %}
+                               style="width: 3.5rem; height: 1.75rem;">
+                        <label class="form-check-label ms-3" for="tipoBoletoSwitch" style="font-size: 1.1rem;">
+                            <span id="tipoBoletoTexto" class="fw-bold">Adulto</span>
+                            <span class="text-light-60 d-block">
+                                Precio: $<span id="precioActual">{{ "%.2f"|format(funcion.sala.precio_adulto) }}</span>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    {% if funcion.pelicula.clasificacion in ['R/14', 'R/16', 'R/18'] %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Esta película no es apta para niños menores de {{ funcion.pelicula.clasificacion.split('/')[1] if '/' in funcion.pelicula.clasificacion else '14' }} años.
+                        Solo se permiten boletos para adultos.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h5 class="text-accent mb-3">Leyenda de Asientos</h5>
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex align-items-center">
+                                <div class="asiento-leyenda asiento-disponible me-3"></div>
+                                <span>Disponible</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="asiento-leyenda asiento-adulto me-3"></div>
+                                <span>Adulto seleccionado</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="asiento-leyenda asiento-nino me-3"></div>
+                                <span>Niño seleccionado</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="asiento-leyenda asiento-no-disponible me-3"></div>
+                                <span>No disponible</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-5">
+                        <h5 class="text-accent mb-3">Instrucciones</h5>
+                        <ol class="small text-light-60 ps-3">
+                            <li>Selecciona el tipo de boleto (Adulto/Niño)</li>
+                            <li>Haz clic en los asientos disponibles</li>
+                            <li>Cambia el tipo de boleto según necesites</li>
+                            <li>Revisa el resumen de tu compra</li>
+                            <li>Haz clic en "Siguiente" para proceder al pago</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa de asientos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card dark-card h-100">
+                <div class="card-body">
+                    <h4 class="text-accent mb-4 text-center">Selecciona tus asientos</h4>
+                    
+                    <!-- Pantalla del cine -->
+                    <div class="text-center mb-4">
+                        <div class="pantalla-cine mx-auto mb-2"></div>
+                        <p class="text-light-60 mb-0">PANTALLA</p>
+                    </div>
+                    
+                    <!-- Contenedor de asientos con scroll -->
+                    <div class="asientos-container" style="max-height: 500px; overflow-y: auto;">
+                        <div id="asientosGrid" class="d-flex flex-column align-items-center">
+                            <!-- Las filas de asientos se generarán aquí con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de compra -->
+        <div class="col-lg-3 mb-4">
+            <div class="card dark-card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h4 class="text-accent mb-4">Resumen de Compra</h4>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-dark table-borderless table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Adulto</td>
+                                    <td id="cantidadAdultos" class="text-center">0</td>
+                                    <td id="precioAdulto" class="text-end">${{ "%.2f"|format(funcion.sala.precio_adulto) }}</td>
+                                    <td id="subtotalAdultos" class="text-end">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Niño</td>
+                                    <td id="cantidadNinos" class="text-center">0</td>
+                                    <td id="precioNino" class="text-end">${{ "%.2f"|format(funcion.sala.precio_nino) }}</td>
+                                    <td id="subtotalNinos" class="text-end">$0.00</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="border-top border-dark-border">
+                                    <td colspan="3" class="text-end fw-bold">Total a pagar:</td>
+                                    <td id="totalPagar" class="text-end fw-bold text-accent">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-light-60 small mb-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Asientos seleccionados: <span id="totalAsientosSeleccionados">0</span>
                         </p>
+                        <div id="listaAsientos" class="small text-light-60 mb-3" style="min-height: 80px;">
+                            <!-- Lista de asientos seleccionados aparecerá aquí -->
+                        </div>
                     </div>
                     
-                    <div class="alert alert-warning">
-                        <i class="bi bi-tools me-2"></i>
-                        <strong>En construcción:</strong> La funcionalidad de selección de asientos estará disponible próximamente.
-                    </div>
-                    
-                    <div class="d-grid gap-3 col-lg-6 mx-auto">
-                        <a href="{{ url_for('lista_cartelera') }}" 
-                           class="btn btn-outline-warning">
-                            <i class="bi bi-arrow-left me-2"></i> Volver a Cartelera
-                        </a>
-                        <a href="{{ url_for('detalle_pelicula', pelicula_id=funcion.pelicula.id) }}" 
-                           class="btn btn-outline-light">
-                            <i class="bi bi-film me-2"></i> Volver a la Película
-                        </a>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" id="btnLimpiar" class="btn btn-outline-warning">
+                            <i class="bi bi-x-circle me-1"></i> Limpiar selección
+                        </button>
+                        <button type="button" id="btnSiguiente" class="btn btn-warning btn-lg" disabled>
+                            <i class="bi bi-arrow-right me-1"></i> Siguiente
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal de advertencia (oculto por defecto) -->
+<div class="modal fade" id="advertenciaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dark-card">
+            <div class="modal-header border-dark-border">
+                <h5 class="modal-title text-accent">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Advertencia
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeAdvertencia"></p>
+            </div>
+            <div class="modal-footer border-dark-border">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos para la selección de asientos */
+.pantalla-cine {
+    width: 80%;
+    height: 20px;
+    background: linear-gradient(to bottom, #6c757d, #495057);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.asientos-container {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--dark-border);
+}
+
+/* Estilos para los botones de asiento */
+.asiento-btn {
+    width: 40px;
+    height: 40px;
+    margin: 3px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.asiento-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+/* Estados de los asientos */
+.asiento-disponible {
+    background-color: #6c757d;
+    color: white;
+    border-color: #5a6268;
+}
+
+.asiento-disponible:hover {
+    background-color: #5a6268;
+}
+
+.asiento-adulto {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0b5ed7;
+}
+
+.asiento-adulto:hover {
+    background-color: #0b5ed7;
+}
+
+.asiento-nino {
+    background-color: #198754;
+    color: white;
+    border-color: #157347;
+}
+
+.asiento-nino:hover {
+    background-color: #157347;
+}
+
+.asiento-no-disponible {
+    background-color: #495057;
+    color: #6c757d;
+    border-color: #343a40;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+/* Leyenda de asientos */
+.asiento-leyenda {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Estilos para el switch */
+.form-switch .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.form-switch .form-check-input:focus {
+    border-color: rgba(255, 193, 7, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+}
+
+/* Estilos para la lista de asientos seleccionados */
+#listaAsientos {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.asiento-item {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+    padding: 2px 8px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Scrollbar personalizado */
+.asientos-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.asientos-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.asientos-container::-webkit-scrollbar-thumb {
+    background: #6c757d;
+    border-radius: 4px;
+}
+
+.asientos-container::-webkit-scrollbar-thumb:hover {
+    background: #5a6268;
+}
+
+/* Responsividad */
+@media (max-width: 992px) {
+    .asiento-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.7rem;
+        margin: 2px;
+    }
+}
+
+@media (max-width: 768px) {
+    .asiento-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.6rem;
+        margin: 1px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Datos iniciales desde Flask
+const funcionId = {{ funcion.id }};
+const peliculaClasificacion = "{{ funcion.pelicula.clasificacion }}";
+const precioAdulto = parseFloat({{ funcion.sala.precio_adulto }});
+const precioNino = parseFloat({{ funcion.sala.precio_nino }});
+const asientosData = {{ asientos|tojson }};
+
+// Estado de la aplicación
+let tipoActual = 'adulto'; // 'adulto' o 'nino'
+let asientosSeleccionados = new Map(); // Map: código_asiento -> {tipo, id}
+
+// Elementos DOM
+let asientosGrid, tipoBoletoSwitch, tipoBoletoTexto, precioActual;
+let cantidadAdultos, cantidadNinos, subtotalAdultos, subtotalNinos, totalPagar;
+let totalAsientosSeleccionados, listaAsientos, btnSiguiente, btnLimpiar;
+
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', function() {
+    // Referencias a elementos DOM
+    asientosGrid = document.getElementById('asientosGrid');
+    tipoBoletoSwitch = document.getElementById('tipoBoletoSwitch');
+    tipoBoletoTexto = document.getElementById('tipoBoletoTexto');
+    precioActual = document.getElementById('precioActual');
+    
+    cantidadAdultos = document.getElementById('cantidadAdultos');
+    cantidadNinos = document.getElementById('cantidadNinos');
+    subtotalAdultos = document.getElementById('subtotalAdultos');
+    subtotalNinos = document.getElementById('subtotalNinos');
+    totalPagar = document.getElementById('totalPagar');
+    
+    totalAsientosSeleccionados = document.getElementById('totalAsientosSeleccionados');
+    listaAsientos = document.getElementById('listaAsientos');
+    btnSiguiente = document.getElementById('btnSiguiente');
+    btnLimpiar = document.getElementById('btnLimpiar');
+    
+    // Configurar el switch de tipo de boleto
+    configurarSwitchTipoBoleto();
+    
+    // Generar la cuadrícula de asientos
+    generarAsientos();
+    
+    // Configurar botones
+    btnSiguiente.addEventListener('click', procederAlPago);
+    btnLimpiar.addEventListener('click', limpiarSeleccion);
+    
+    // Actualizar resumen inicial
+    actualizarResumen();
+});
+
+function configurarSwitchTipoBoleto() {
+    // Si la película no es apta para niños, deshabilitar el switch
+    const clasificacionesNoAptas = ['R/14', 'R/16', 'R/18'];
+    if (clasificacionesNoAptas.includes(peliculaClasificacion)) {
+        tipoBoletoSwitch.disabled = true;
+        tipoBoletoTexto.textContent = 'Adulto (solo)';
+        precioActual.textContent = precioAdulto.toFixed(2);
+        tipoActual = 'adulto';
+        return;
+    }
+    
+    // Configurar el evento change del switch
+    tipoBoletoSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            tipoActual = 'nino';
+            tipoBoletoTexto.textContent = 'Niño';
+            precioActual.textContent = precioNino.toFixed(2);
+        } else {
+            tipoActual = 'adulto';
+            tipoBoletoTexto.textContent = 'Adulto';
+            precioActual.textContent = precioAdulto.toFixed(2);
+        }
+    });
+}
+
+function generarAsientos() {
+    // Configurar 25 filas y 12 columnas según el esquema de la base de datos
+    const filas = 25;
+    const columnas = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+    
+    // Limpiar el contenedor
+    asientosGrid.innerHTML = '';
+    
+    // Crear encabezado de columnas
+    const encabezadoColumna = document.createElement('div');
+    encabezadoColumna.className = 'd-flex justify-content-center mb-1';
+    
+    // Celda vacía para la esquina
+    const celdaEsquina = document.createElement('div');
+    celdaEsquina.style.width = '40px';
+    encabezadoColumna.appendChild(celdaEsquina);
+    
+    // Agregar letras de columnas
+    columnas.forEach(letra => {
+        const columnaDiv = document.createElement('div');
+        columnaDiv.className = 'd-flex align-items-center justify-content-center';
+        columnaDiv.style.width = '40px';
+        columnaDiv.style.height = '30px';
+        columnaDiv.innerHTML = `<span class="fw-bold text-light-60">${letra}</span>`;
+        encabezadoColumna.appendChild(columnaDiv);
+    });
+    
+    asientosGrid.appendChild(encabezadoColumna);
+    
+    // Crear un mapa de asientos por código para acceso rápido
+    const asientosMap = new Map();
+    asientosData.forEach(asiento => {
+        asientosMap.set(asiento.codigo_asiento, asiento);
+    });
+    
+    // Generar filas (1-25)
+    for (let filaNum = 1; filaNum <= filas; filaNum++) {
+        const filaDiv = document.createElement('div');
+        filaDiv.className = 'd-flex justify-content-center mb-1';
+        
+        // Etiqueta de fila
+        const etiquetaFila = document.createElement('div');
+        etiquetaFila.className = 'd-flex align-items-center justify-content-end me-2';
+        etiquetaFila.style.width = '40px';
+        etiquetaFila.innerHTML = `<span class="fw-bold text-light-60">${filaNum}</span>`;
+        filaDiv.appendChild(etiquetaFila);
+        
+        // Generar asientos para cada columna en esta fila
+        columnas.forEach(letra => {
+            const codigoAsiento = `${letra}${filaNum}`;
+            const asiento = asientosMap.get(codigoAsiento);
+            
+            const botonAsiento = document.createElement('button');
+            botonAsiento.type = 'button';
+            botonAsiento.className = 'asiento-btn';
+            botonAsiento.dataset.codigo = codigoAsiento;
+            
+            if (asiento) {
+                botonAsiento.dataset.id = asiento.id;
+                
+                if (!asiento.disponible) {
+                    botonAsiento.classList.add('asiento-no-disponible');
+                    botonAsiento.disabled = true;
+                    botonAsiento.title = `Asiento ${codigoAsiento} no disponible`;
+                    botonAsiento.textContent = '✗';
+                } else {
+                    botonAsiento.classList.add('asiento-disponible');
+                    botonAsiento.addEventListener('click', () => toggleAsiento(codigoAsiento, asiento.id));
+                    botonAsiento.title = `Asiento ${codigoAsiento} disponible`;
+                    botonAsiento.textContent = filaNum; // Mostrar número de fila
+                }
+            } else {
+                // Si no hay datos del asiento, marcarlo como no disponible
+                botonAsiento.classList.add('asiento-no-disponible');
+                botonAsiento.disabled = true;
+                botonAsiento.title = `Asiento ${codigoAsiento} no disponible`;
+                botonAsiento.textContent = '✗';
+            }
+            
+            filaDiv.appendChild(botonAsiento);
+        });
+        
+        asientosGrid.appendChild(filaDiv);
+    }
+}
+
+function toggleAsiento(codigoAsiento, idAsiento) {
+    const boton = document.querySelector(`.asiento-btn[data-codigo="${codigoAsiento}"]`);
+    
+    if (asientosSeleccionados.has(codigoAsiento)) {
+        // Deseleccionar
+        asientosSeleccionados.delete(codigoAsiento);
+        boton.classList.remove('asiento-adulto', 'asiento-nino');
+        boton.classList.add('asiento-disponible');
+        boton.title = 'Asiento disponible - Haz clic para seleccionar';
+    } else {
+        // Seleccionar con el tipo actual
+        asientosSeleccionados.set(codigoAsiento, {
+            tipo: tipoActual,
+            id: idAsiento
+        });
+        
+        boton.classList.remove('asiento-disponible');
+        boton.classList.add(`asiento-${tipoActual}`);
+        boton.title = `Asiento ${codigoAsiento} - ${tipoActual === 'adulto' ? 'Adulto' : 'Niño'}`;
+    }
+    
+    actualizarResumen();
+}
+
+function actualizarResumen() {
+    // Contar asientos por tipo
+    let contadorAdultos = 0;
+    let contadorNinos = 0;
+    
+    for (const [_, datos] of asientosSeleccionados) {
+        if (datos.tipo === 'adulto') {
+            contadorAdultos++;
+        } else {
+            contadorNinos++;
+        }
+    }
+    
+    // Actualizar contadores
+    cantidadAdultos.textContent = contadorAdultos;
+    cantidadNinos.textContent = contadorNinos;
+    
+    // Calcular subtotales
+    const subtotalAdultosCalculado = contadorAdultos * precioAdulto;
+    const subtotalNinosCalculado = contadorNinos * precioNino;
+    const totalCalculado = subtotalAdultosCalculado + subtotalNinosCalculado;
+    
+    // Actualizar montos
+    subtotalAdultos.textContent = `$${subtotalAdultosCalculado.toFixed(2)}`;
+    subtotalNinos.textContent = `$${subtotalNinosCalculado.toFixed(2)}`;
+    totalPagar.textContent = `$${totalCalculado.toFixed(2)}`;
+    
+    // Actualizar lista de asientos seleccionados
+    actualizarListaAsientos();
+    
+    // Habilitar/deshabilitar botón siguiente
+    const totalSeleccionados = asientosSeleccionados.size;
+    totalAsientosSeleccionados.textContent = totalSeleccionados;
+    btnSiguiente.disabled = totalSeleccionados === 0;
+}
+
+function actualizarListaAsientos() {
+    if (asientosSeleccionados.size === 0) {
+        listaAsientos.innerHTML = '<span class="text-light-60">No hay asientos seleccionados</span>';
+        return;
+    }
+    
+    let html = '';
+    for (const [codigo, datos] of asientosSeleccionados) {
+        const tipoTexto = datos.tipo === 'adulto' ? 'A' : 'N';
+        const tipoClase = datos.tipo === 'adulto' ? 'border-primary' : 'border-success';
+        html += `<span class="asiento-item ${tipoClase}">${codigo} (${tipoTexto})</span>`;
+    }
+    listaAsientos.innerHTML = html;
+}
+
+function limpiarSeleccion() {
+    if (asientosSeleccionados.size === 0) return;
+    
+    // Mostrar confirmación
+    const modal = new bootstrap.Modal(document.getElementById('advertenciaModal'));
+    document.getElementById('mensajeAdvertencia').textContent = 
+        `¿Estás seguro de que deseas limpiar la selección de ${asientosSeleccionados.size} asiento(s)?`;
+    
+    // Configurar botón de confirmación
+    const modalElement = document.getElementById('advertenciaModal');
+    const confirmarBtn = modalElement.querySelector('.modal-footer .btn');
+    
+    const originalClick = confirmarBtn.onclick;
+    confirmarBtn.onclick = function() {
+        // Restaurar todos los asientos seleccionados a disponible
+        for (const [codigo] of asientosSeleccionados) {
+            const boton = document.querySelector(`.asiento-btn[data-codigo="${codigo}"]`);
+            if (boton) {
+                boton.classList.remove('asiento-adulto', 'asiento-nino');
+                boton.classList.add('asiento-disponible');
+                boton.title = 'Asiento disponible - Haz clic para seleccionar';
+            }
+        }
+        
+        // Limpiar mapa de selección
+        asientosSeleccionados.clear();
+        
+        // Actualizar resumen
+        actualizarResumen();
+        
+        modal.hide();
+        confirmarBtn.onclick = originalClick;
+    };
+    
+    modal.show();
+}
+
+function procederAlPago() {
+    if (asientosSeleccionados.size === 0) {
+        mostrarAdvertencia('Por favor, selecciona al menos un asiento.');
+        return;
+    }
+    
+    // Construir URL con parámetros
+    let url = `/funcion/${funcionId}/confirmar-pago?`;
+    const params = [];
+    
+    // Agregar cada asiento seleccionado
+    for (const [codigo, datos] of asientosSeleccionados) {
+        params.push(`asiento_${codigo}=${datos.tipo}`);
+    }
+    
+    // Agregar parámetros de resumen
+    const total = parseFloat(totalPagar.textContent.replace('$', ''));
+    params.push(`total=${total.toFixed(2)}`);
+    params.push(`adultos=${cantidadAdultos.textContent}`);
+    params.push(`ninos=${cantidadNinos.textContent}`);
+    
+    url += params.join('&');
+    
+    // Redirigir a la página de confirmación de pago
+    window.location.href = url;
+}
+
+function mostrarAdvertencia(mensaje) {
+    const modal = new bootstrap.Modal(document.getElementById('advertenciaModal'));
+    document.getElementById('mensajeAdvertencia').textContent = mensaje;
+    
+    // Configurar botón de cierre
+    const modalElement = document.getElementById('advertenciaModal');
+    const cerrarBtn = modalElement.querySelector('.modal-footer .btn');
+    
+    const originalClick = cerrarBtn.onclick;
+    cerrarBtn.onclick = function() {
+        modal.hide();
+        cerrarBtn.onclick = originalClick;
+    };
+    
+    modal.show();
+}
+</script>
 {% endblock %}
