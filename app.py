@@ -3,9 +3,10 @@
 
 from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
+from controllers.funcion_controller import FuncionController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from datetime import datetime
+from datetime import datetime, date
 from flask_login import login_user, logout_user, current_user, login_required
 import traceback
 
@@ -310,10 +311,67 @@ def boletos_devueltos():
 
 # ==================== RUTAS DE PELÍCULAS ====================
 
-@app.route('/pelicula/<int:pelicula_id>/funciones')
-def funciones_pelicula(pelicula_id):
-    # Aquí puedes agregar lógica para obtener funciones de la película
-    return render_template('funciones_pelicula.html', pelicula_id=pelicula_id)
+@app.route('/pelicula/<int:pelicula_id>')
+def detalle_pelicula(pelicula_id):
+    """
+    Ruta para mostrar el detalle de una película con sus funciones
+    """
+    # 1. Verificar si la película existe y está activa
+    pelicula_detalle = PeliculaController.obtener_peli_detalle(pelicula_id)
+    
+    if not pelicula_detalle:
+        flash('La película no existe o no está disponible.', 'danger')
+        return redirect(url_for('lista_cartelera'))
+    
+    # 2. Verificar si la película está en cartelera (tiene funciones futuras)
+    # Primero, verificar si tiene funciones futuras
+    tiene_funciones = FuncionController.pelicula_tiene_funciones(pelicula_id)
+    
+    if not tiene_funciones:
+        # Verificar si está en la cartelera filtrada
+        resultado_cartelera = PeliculaController.filtrar_pelis_cartelera()
+        peliculas_en_cartelera_ids = [p['Id'] for p in resultado_cartelera['peliculas']]
+        
+        if pelicula_id not in peliculas_en_cartelera_ids:
+            flash('Esta película no está actualmente en cartelera.', 'warning')
+            return redirect(url_for('lista_cartelera'))
+    
+    # 3. Obtener funciones organizadas por fecha y cine
+    funciones_data = FuncionController.obtener_funciones_por_pelicula(pelicula_id)
+    
+    if funciones_data['total_funciones'] == 0:
+        flash('No hay funciones disponibles para esta película en este momento.', 'warning')
+        return redirect(url_for('lista_cartelera'))
+    
+    # 4. Renderizar template con todos los datos
+    return render_template(
+        'peliculas/detalle.html',
+        pelicula=pelicula_detalle,
+        funciones_data=funciones_data,
+        hoy=date.today().isoformat()
+    )
+
+@app.route('/funcion/<int:funcion_id>/asientos')
+@login_required
+def seleccion_asientos(funcion_id):
+    """
+    Ruta para seleccionar asientos (placeholder por ahora)
+    """
+    # Obtener detalles de la función
+    funcion_detalle = FuncionController.obtener_funcion_por_id(funcion_id)
+    
+    if not funcion_detalle:
+        flash('La función no existe o no está disponible.', 'danger')
+        return redirect(url_for('lista_cartelera'))
+    
+    # Por ahora, solo mostramos un mensaje
+    flash(f'Redirigiendo a selección de asientos para la función {funcion_id}', 'info')
+    
+    # En un futuro, aquí renderizaríamos la template de selección de asientos
+    return render_template(
+        'funciones/seleccion_asientos.html',
+        funcion=funcion_detalle
+    )
 
 # ==================== RUTAS DE API PARA DESARROLLO ====================
 

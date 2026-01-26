@@ -6,6 +6,7 @@ from database import db
 from sqlalchemy import desc, func
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
 import traceback
 
 class PeliculaController:
@@ -710,5 +711,58 @@ class PeliculaController:
                 'idiomas': [],
                 'clasificaciones': []
             }
+        finally:
+            session.close()
+
+    @staticmethod
+    def obtener_peli_detalle(pelicula_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Obtiene todos los detalles de una película específica
+        
+        Args:
+            pelicula_id: ID de la película
+            
+        Returns:
+            Dict con detalles de la película o None si no existe
+        """
+        session = db.get_session()
+        try:
+            
+            pelicula = session.query(Pelicula).\
+                options(
+                    joinedload(Pelicula.clasificacion),
+                    joinedload(Pelicula.idioma),
+                    joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
+                ).\
+                filter(Pelicula.Id == pelicula_id).\
+                filter(Pelicula.Activo == True).\
+                first()
+            
+            if not pelicula:
+                return None
+            
+            # Obtener géneros
+            generos = [pg.genero.Genero for pg in pelicula.generos]
+            
+            return {
+                'id': pelicula.Id,
+                'titulo': pelicula.Titulo,
+                'duracion': pelicula.DuracionMinutos,
+                'descripcion_corta': pelicula.DescripcionCorta,
+                'descripcion_larga': pelicula.DescripcionLarga,
+                'link_to_banner': pelicula.LinkToBanner,
+                'link_to_bajante': pelicula.LinkToBajante,
+                'link_to_trailer': pelicula.LinkToTrailer,
+                'clasificacion': pelicula.clasificacion.Clasificacion,
+                'clasificacion_id': pelicula.clasificacion.Id,
+                'idioma': pelicula.idioma.Idioma,
+                'idioma_id': pelicula.idioma.Id,
+                'generos': generos,
+                'activo': pelicula.Activo
+            }
+            
+        except Exception as e:
+            print(f"Error en obtener_peli_detalle: {e}")
+            return None
         finally:
             session.close()

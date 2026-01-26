@@ -1,0 +1,470 @@
+<!-- templates/peliculas/detalle.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ pelicula.titulo }} - Cine Flow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para el detalle de película */
+    .movie-detail-hero {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)),
+                    url("{{ pelicula.link_to_banner }}") center/cover no-repeat;
+        min-height: 60vh;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .movie-poster-container {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transition: transform 0.3s ease;
+    }
+    
+    .movie-poster-container:hover {
+        transform: translateY(-5px);
+    }
+    
+    .movie-poster {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+    }
+    
+    .movie-rating-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: var(--accent-color);
+        color: #121212;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .movie-info-card {
+        background-color: var(--dark-card);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--dark-border);
+    }
+    
+    .function-date-tabs {
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--dark-border);
+    }
+    
+    .function-date-tab {
+        padding: 0.75rem 1.5rem;
+        background: transparent;
+        border: none;
+        color: var(--dark-text-secondary);
+        font-weight: 500;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        margin-right: 1rem;
+    }
+    
+    .function-date-tab:hover,
+    .function-date-tab.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+    }
+    
+    .functions-table {
+        background-color: var(--dark-card);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--dark-border);
+    }
+    
+    .functions-table th {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-bottom: 2px solid var(--dark-border);
+        padding: 1.5rem;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .functions-table td {
+        padding: 1.5rem;
+        text-align: center;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--dark-border);
+    }
+    
+    .function-time-btn {
+        display: inline-block;
+        background-color: rgba(255, 193, 7, 0.1);
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        margin: 0.25rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        min-width: 100px;
+    }
+    
+    .function-time-btn:hover {
+        background-color: var(--accent-color);
+        color: #121212;
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    
+    .cine-info {
+        margin-bottom: 0.5rem;
+    }
+    
+    .cine-name {
+        font-weight: 600;
+        color: var(--dark-text);
+        margin-bottom: 0.25rem;
+    }
+    
+    .cine-address {
+        font-size: 0.9rem;
+        color: var(--dark-text-secondary);
+    }
+    
+    .sala-type-badge {
+        display: inline-block;
+        background-color: rgba(13, 202, 240, 0.2);
+        color: var(--info-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+    }
+    
+    .trailer-btn-container {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+    }
+    
+    @media (max-width: 768px) {
+        .movie-detail-hero {
+            min-height: 40vh;
+        }
+        
+        .movie-poster {
+            height: 300px;
+        }
+        
+        .functions-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .function-date-tabs {
+            flex-wrap: wrap;
+        }
+        
+        .function-date-tab {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section con banner de la película -->
+<section class="movie-detail-hero">
+    <div class="container">
+        <div class="row align-items-end">
+            <div class="col-lg-3 col-md-4 mb-4 mb-md-0">
+                <div class="movie-poster-container">
+                    <img src="{{ pelicula.link_to_banner }}" 
+                         alt="{{ pelicula.titulo }}" 
+                         class="movie-poster">
+                    <div class="movie-rating-badge">
+                        {{ pelicula.clasificacion }}
+                    </div>
+                    <div class="trailer-btn-container">
+                        <a href="{{ pelicula.link_to_trailer }}" 
+                           target="_blank"
+                           class="btn btn-warning btn-sm"
+                           data-bs-toggle="tooltip"
+                           data-bs-placement="top"
+                           title="Ver tráiler en YouTube">
+                            <i class="bi bi-play-circle me-1"></i> Ver Tráiler
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-8">
+                <h1 class="display-4 fw-bold text-white mb-3">{{ pelicula.titulo }}</h1>
+                
+                <div class="d-flex flex-wrap align-items-center mb-4">
+                    {% for genero in pelicula.generos %}
+                    <span class="badge bg-secondary me-2 mb-2 py-2 px-3">{{ genero }}</span>
+                    {% endfor %}
+                    
+                    <span class="badge bg-info me-2 mb-2 py-2 px-3">
+                        <i class="bi bi-clock me-1"></i> {{ pelicula.duracion }} min
+                    </span>
+                    
+                    <span class="badge bg-success me-2 mb-2 py-2 px-3">
+                        <i class="bi bi-volume-up me-1"></i> {{ pelicula.idioma }}
+                    </span>
+                </div>
+                
+                <p class="lead text-light-60 mb-4">{{ pelicula.descripcion_corta }}</p>
+                
+                {% if funciones_data.total_funciones > 0 %}
+                <div class="alert alert-info d-inline-flex align-items-center">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span>{{ funciones_data.total_funciones }} función(es) disponible(s)</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contenido Principal -->
+<div class="container py-5">
+    <div class="row">
+        <!-- Columna izquierda: Información detallada -->
+        <div class="col-lg-8 mb-5 mb-lg-0">
+            <!-- Descripción detallada -->
+            <div class="movie-info-card">
+                <h3 class="text-accent mb-4">Sinopsis</h3>
+                <p class="text-light-60" style="line-height: 1.8; white-space: pre-line;">
+                    {{ pelicula.descripcion_larga }}
+                </p>
+                
+                <div class="row mt-4 pt-4 border-top border-dark-border">
+                    <div class="col-md-6">
+                        <h5 class="text-accent mb-3">Detalles Técnicos</h5>
+                        <ul class="list-unstyled text-light-60">
+                            <li class="mb-2">
+                                <i class="bi bi-tag me-2 text-accent"></i>
+                                <strong>Clasificación:</strong> {{ pelicula.clasificacion }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-globe me-2 text-accent"></i>
+                                <strong>Idioma:</strong> {{ pelicula.idioma }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-clock-history me-2 text-accent"></i>
+                                <strong>Duración:</strong> {{ pelicula.duracion }} minutos
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="text-accent mb-3">Géneros</h5>
+                        <div class="d-flex flex-wrap">
+                            {% for genero in pelicula.generos %}
+                            <span class="badge bg-dark border border-accent me-2 mb-2 py-2 px-3">
+                                {{ genero }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Funciones disponibles -->
+            <div class="movie-info-card">
+                <h3 class="text-accent mb-4">Funciones Disponibles</h3>
+                
+                {% if funciones_data.total_funciones == 0 %}
+                <div class="alert alert-warning text-center py-4">
+                    <i class="bi bi-calendar-x display-4 d-block mb-3"></i>
+                    <h5>No hay funciones disponibles</h5>
+                    <p class="mb-0">Esta película no tiene funciones programadas en este momento.</p>
+                </div>
+                {% else %}
+                <!-- Tabs de fechas -->
+                <div class="function-date-tabs d-flex overflow-auto">
+                    {% for fecha_item in funciones_data.fechas %}
+                    <button class="function-date-tab {% if fecha_item.fecha_str == hoy %}active{% endif %}" 
+                            data-fecha="{{ fecha_item.fecha_str }}">
+                        {{ fecha_item.fecha_display }}
+                        {% if fecha_item.fecha_str == hoy %}
+                        <span class="badge bg-warning text-dark ms-1">Hoy</span>
+                        {% endif %}
+                    </button>
+                    {% endfor %}
+                </div>
+                
+                <!-- Tablas de funciones por fecha -->
+                {% for fecha_str, fecha_data in funciones_data.organizadas.items() %}
+                <div class="function-date-table {% if fecha_str != hoy %}d-none{% endif %}" 
+                     data-fecha="{{ fecha_str }}">
+                    
+                    <div class="functions-table">
+                        <table class="table table-dark table-borderless mb-0">
+                            <thead>
+                                <tr>
+                                    {% for cine in funciones_data.cines %}
+                                    {% if cine.id in fecha_data.cines %}
+                                    <th>
+                                        <div class="cine-info">
+                                            <div class="cine-name">{{ cine.nombre }}</div>
+                                            <div class="cine-address">{{ cine.direccion }}</div>
+                                        </div>
+                                    </th>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    {% for cine in funciones_data.cines %}
+                                    {% if cine.id in fecha_data.cines %}
+                                    <td>
+                                        {% set cine_funciones = fecha_data.cines[cine.id].funciones %}
+                                        {% for funcion in cine_funciones %}
+                                        <a href="{{ url_for('seleccion_asientos', funcion_id=funcion.id) }}" 
+                                           class="function-time-btn d-block mb-2">
+                                            <div class="fw-bold">{{ funcion.hora }}</div>
+                                            <div class="sala-type-badge mt-1">
+                                                {{ funcion.tipo_sala }}
+                                            </div>
+                                            <small class="d-block mt-1 text-light-60">
+                                                Sala {{ funcion.sala_numero }}
+                                            </small>
+                                        </a>
+                                        {% endfor %}
+                                    </td>
+                                    {% else %}
+                                    <td class="text-center text-light-60">
+                                        <i class="bi bi-x-circle display-6 d-block mb-2"></i>
+                                        Sin funciones
+                                    </td>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Columna derecha: Información lateral -->
+        <div class="col-lg-4">
+            <!-- Acciones rápidas -->
+            <div class="movie-info-card mb-4">
+                <h5 class="text-accent mb-4">Acciones Rápidas</h5>
+                
+                <div class="d-grid gap-3">
+                    <a href="{{ pelicula.link_to_trailer }}" 
+                       target="_blank"
+                       class="btn btn-outline-warning btn-lg">
+                        <i class="bi bi-play-btn me-2"></i> Ver Tráiler
+                    </a>
+                    
+                    <a href="{{ url_for('lista_cartelera') }}" 
+                       class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-film me-2"></i> Ver Cartelera
+                    </a>
+                    
+                    <a href="{{ url_for('lista_proximamente') }}" 
+                       class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-calendar3 me-2"></i> Próximamente
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Información de clasificación -->
+            <div class="movie-info-card mb-4">
+                <h5 class="text-accent mb-3">Clasificación: {{ pelicula.clasificacion }}</h5>
+                <p class="text-light-60 small mb-0">
+                    Esta clasificación indica el público adecuado para esta película. 
+                    Consulte nuestro personal si tiene dudas sobre el contenido.
+                </p>
+            </div>
+            
+            <!-- Recordatorio de inicio de sesión -->
+            {% if not current_user.is_authenticated %}
+            <div class="movie-info-card bg-warning bg-opacity-10 border-warning">
+                <h5 class="text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Inicia Sesión
+                </h5>
+                <p class="text-light-60 mb-3">
+                    Para comprar boletos, necesitas iniciar sesión en tu cuenta.
+                </p>
+                <a href="{{ url_for('inicio_sesion') }}" 
+                   class="btn btn-warning w-100">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar cambio de pestañas de fecha
+        const dateTabs = document.querySelectorAll('.function-date-tab');
+        const dateTables = document.querySelectorAll('.function-date-table');
+        
+        dateTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const fecha = this.getAttribute('data-fecha');
+                
+                // Remover clase active de todas las pestañas
+                dateTabs.forEach(t => t.classList.remove('active'));
+                // Agregar clase active a la pestaña clickeada
+                this.classList.add('active');
+                
+                // Ocultar todas las tablas
+                dateTables.forEach(table => table.classList.add('d-none'));
+                // Mostrar solo la tabla correspondiente
+                const targetTable = document.querySelector(`.function-date-table[data-fecha="${fecha}"]`);
+                if (targetTable) {
+                    targetTable.classList.remove('d-none');
+                }
+            });
+        });
+        
+        // Resaltar función al pasar el mouse
+        const functionButtons = document.querySelectorAll('.function-time-btn');
+        functionButtons.forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.boxShadow = '0 5px 15px rgba(255, 193, 7, 0.3)';
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.style.boxShadow = 'none';
+            });
+        });
+        
+        // Validar que el usuario esté autenticado antes de seleccionar asientos
+        functionButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                {% if not current_user.is_authenticated %}
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Inicia sesión',
+                    text: 'Para seleccionar asientos, primero debes iniciar sesión.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Iniciar sesión',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ url_for('inicio_sesion') }}";
+                    }
+                });
+                {% endif %}
+            });
+        });
+    });
+</script>
+{% endblock %}
