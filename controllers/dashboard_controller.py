@@ -82,21 +82,27 @@ class DashboardController:
         """Construye cláusulas WHERE para SQL basadas en los filtros"""
         condiciones = []
         
-        # Filtro de fechas (manejar fechas como strings)
+        # Filtro de fechas (CORREGIDO)
         if params.get('fecha_inicio') and params.get('fecha_fin'):
             fecha_inicio = params['fecha_inicio']
             fecha_fin = params['fecha_fin']
-            condiciones.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora <= '{fecha_fin}'")
+            
+            # Agregar hora completa para incluir todo el día
+            # fecha_inicio a las 00:00:00 (inicio del día)
+            # fecha_fin a las 23:59:59 (final del día)
+            condiciones.append(
+                f"f.FechaHora >= CAST('{fecha_inicio}' AS DATE) "
+                f"AND f.FechaHora < DATEADD(day, 1, CAST('{fecha_fin}' AS DATE))"
+            )
         
         # Filtro de cines
         if params.get('cine_ids') and len(params['cine_ids']) > 0:
             cine_ids = ','.join(map(str, params['cine_ids']))
             condiciones.append(f"s.IdCine IN ({cine_ids})")
         
-        # Filtro de géneros
-        if params.get('genero_ids') and len(params['genero_ids']) > 0:
-            genero_ids = ','.join(map(str, params['genero_ids']))
-            condiciones.append(f"pg.IdGénero IN ({genero_ids})")
+        # Filtro de géneros (NOTA: Este filtro se maneja diferente ahora)
+        # Ya no se incluye aquí porque causa problemas con JOIN
+        # Se maneja con EXISTS en la query principal
         
         # Filtro de películas
         if params.get('pelicula_ids') and len(params['pelicula_ids']) > 0:
