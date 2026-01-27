@@ -57,18 +57,61 @@
                                 </a>
                             </li>
                         {% elif current_user.rol_nombre == "Administrador" %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-speedometer2 me-1"></i> Administración
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-dark">
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-building me-1"></i> Cines</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-easel me-1"></i> Salas</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-film me-1"></i> Películas</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-clock me-1"></i> Funciones</a></li>
-                                </ul>
-                            </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                            </a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Catálogos Pelis
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('clasificacion_lista') }}">Clasificaciones</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('idioma_lista') }}">Idiomas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('genero_lista') }}">Géneros</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('pelicula_lista') }}">Películas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('pelicula_genero_lista') }}">Relación Peli-Género</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Cines y Salas
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('cine_lista') }}">Cines</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('tipo_sala_lista') }}">Tipos de Sala</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('sala_lista') }}">Salas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('asiento_lista') }}">Asientos</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('funcion_lista') }}">Funciones (Cartelera)</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Ventas y Usuarios
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('usuario_lista') }}">Usuarios</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('rol_lista') }}">Roles</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('tipo_boleto_lista') }}">Tipos de Boleto</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('boleto_lista') }}">Boletos Vendidos</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('boleto_cancelado_lista') }}">Boletos Cancelados</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('boleto_usado_lista') }}">Boletos Usados</a></li>
+                            </ul>
+                        </li>
+
                         {% elif current_user.rol_nombre == "Encargado de Entrada" %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('index') }}">
+                                    <i class="bi bi-house-door me-1"></i> Inicio
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('boletos_devueltos') }}">
                                     <i class="bi bi-ticket-perforated me-1"></i> Control de Boletos

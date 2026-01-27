@@ -5,12 +5,24 @@ from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
 from controllers.funcion_controller import FuncionController
 from controllers.boleto_controller import BoletoController
+from controllers.admin_controller import DashboardController
 from models import login_manager, bcrypt
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from datetime import datetime, date
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
+from datetime import datetime, date, timedelta
 from flask_login import login_user, logout_user, current_user, login_required
+from functools import wraps
 import traceback
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.rol_nombre != "Administrador":
+            flash('Acceso restringido.', 'danger')
+            return redirect(url_for('inicio_sesion'))
+        return f(*args, **kwargs)
+    return decorated_function
+    
+    
 app = Flask(__name__)
 app.secret_key = 'cineflow_secret_key_change_in_production_2025'
 
@@ -470,16 +482,266 @@ def confirmar_pago(funcion_id):
             return redirect(url_for('seleccion_asientos', funcion_id=funcion_id))
 
 
-# ==================== RUTAS DE API PARA DESARROLLO ====================
+# ==================== RUTAS DEL DASHBOARD ADMINISTRATIVO ====================
 
-@app.route('/api/sample-data')
-def api_sample_data():
-    """Endpoint para obtener datos de muestra durante desarrollo"""
-    return jsonify({
-        'peliculas_populares': peliculas_populares,  # Tus datos de muestra
-        'ultimas_peliculas': ultimas_peliculas
-    })
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    """Página principal del dashboard administrativo"""
+    
+    # Obtener opciones para los filtros
+    opciones_filtros = DashboardController.obtener_opciones_filtros()
+    
+    # Establecer fechas por defecto (últimos 30 días)
+    fecha_fin = date.today()
+    fecha_inicio = fecha_fin - timedelta(days=30)
+    
+    return render_template('admin_dashboard.html',
+                           opciones_filtros=opciones_filtros,
+                           fecha_inicio_default=fecha_inicio.strftime('%Y-%m-%d'),
+                           fecha_fin_default=fecha_fin.strftime('%Y-%m-%d'))
 
+@app.route('/admin/dashboard/data', methods=['POST'])
+@login_required
+def dashboard_data():
+    """Endpoint para obtener datos del dashboard (AJAX)"""
+    if current_user.rol_nombre != "Administrador":
+        return jsonify({'error': 'Acceso denegado'}), 403
+    
+    try:
+        data = request.get_json()
+        
+        # Validar fechas
+        if not data.get('fecha_inicio') or not data.get('fecha_fin'):
+            return jsonify({'error': 'Fechas de inicio y fin son requeridas'}), 400
+        
+        # Convertir tipos de datos
+        filtros = {
+            'fecha_inicio': data.get('fecha_inicio'),
+            'fecha_fin': data.get('fecha_fin'),
+            'agrupacion': data.get('agrupacion', 'dia')
+        }
+        
+        # Listas de IDs (si están presentes)
+        if data.get('cine_ids'):
+            filtros['cine_ids'] = [int(id) for id in data['cine_ids'] if str(id).isdigit()]
+        
+        if data.get('genero_ids'):
+            filtros['genero_ids'] = [int(id) for id in data['genero_ids'] if str(id).isdigit()]
+        
+        if data.get('pelicula_ids'):
+            filtros['pelicula_ids'] = [int(id) for id in data['pelicula_ids'] if str(id).isdigit()]
+        
+        if data.get('funcion_ids'):
+            filtros['funcion_ids'] = [int(id) for id in data['funcion_ids'] if str(id).isdigit()]
+        
+        if data.get('dias_semana'):
+            filtros['dias_semana'] = [int(dia) for dia in data['dias_semana'] if str(dia).isdigit()]
+        
+        # Obtener datos del dashboard
+        from controllers.dashboard_controller import DashboardController
+        datos = DashboardController.obtener_datos_completos(filtros)
+        
+        return jsonify(datos)
+        
+    except Exception as e:
+        print(f"Error en dashboard_data: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/dashboard/export/excel')
+@login_required
+def dashboard_export_excel():
+    """Exporta datos del dashboard a Excel"""
+    if current_user.rol_nombre != "Administrador":
+        return jsonify({'error': 'Acceso denegado'}), 403
+
+    try:
+        # Obtener parámetros de filtro
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        agrupacion = request.args.get('agrupacion', 'dia')
+        
+        # Listas de IDs
+        cine_ids = request.args.getlist('cine_ids[]')
+        genero_ids = request.args.getlist('genero_ids[]')
+        pelicula_ids = request.args.getlist('pelicula_ids[]')
+        funcion_ids = request.args.getlist('funcion_ids[]')
+        dias_semana = request.args.getlist('dias_semana[]')
+        
+        # Construir diccionario de filtros
+        filtros = {
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'agrupacion': agrupacion,
+            'cine_ids': [int(id) for id in cine_ids if id and str(id).isdigit()],
+            'genero_ids': [int(id) for id in genero_ids if id and str(id).isdigit()],
+            'pelicula_ids': [int(id) for id in pelicula_ids if id and str(id).isdigit()],
+            'funcion_ids': [int(id) for id in funcion_ids if id and str(id).isdigit()],
+            'dias_semana': [int(dia) for dia in dias_semana if dia and str(dia).isdigit()]
+        }
+        
+        # Generar Excel
+        from controllers.dashboard_controller import DashboardController
+        excel_data = DashboardController.generar_excel(filtros)
+        
+        # Nombre del archivo
+        filename = f"cineflow_dashboard_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return send_file(
+            excel_data,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error en exportación Excel: {e}")
+        flash(f'Error al exportar Excel: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/dashboard/export/pdf')
+@login_required
+def dashboard_export_pdf():
+    """Exporta dashboard completo a PDF"""
+    if current_user.rol_nombre != "Administrador":
+        return jsonify({'error': 'Acceso denegado'}), 403
+
+    try:
+        # Obtener parámetros de filtro
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        agrupacion = request.args.get('agrupacion', 'dia')
+        
+        # Listas de IDs
+        cine_ids = request.args.getlist('cine_ids[]')
+        genero_ids = request.args.getlist('genero_ids[]')
+        pelicula_ids = request.args.getlist('pelicula_ids[]')
+        funcion_ids = request.args.getlist('funcion_ids[]')
+        dias_semana = request.args.getlist('dias_semana[]')
+        
+        # Construir diccionario de filtros
+        filtros = {
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'agrupacion': agrupacion,
+            'cine_ids': [int(id) for id in cine_ids if id and str(id).isdigit()],
+            'genero_ids': [int(id) for id in genero_ids if id and str(id).isdigit()],
+            'pelicula_ids': [int(id) for id in pelicula_ids if id and str(id).isdigit()],
+            'funcion_ids': [int(id) for id in funcion_ids if id and str(id).isdigit()],
+            'dias_semana': [int(dia) for dia in dias_semana if dia and str(dia).isdigit()]
+        }
+        
+        # Obtener datos del dashboard
+        from controllers.dashboard_controller import DashboardController
+        datos_dashboard = DashboardController.obtener_datos_completos(filtros)
+        
+        # Generar PDF
+        pdf_data = DashboardController.generar_pdf(datos_dashboard, filtros)
+        
+        # Nombre del archivo
+        filename = f"cineflow_dashboard_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        return send_file(
+            pdf_data,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error en exportación PDF: {e}")
+        flash(f'Error al exportar PDF: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+# ==========================================
+# RUTAS ADMINISTRATIVAS (CRUD LISTAS)
+# ==========================================
+
+# --- Catálogos ---
+@app.route('/admin/clasificaciones')
+@admin_required
+def clasificacion_lista():
+    # Aquí llamarías al controlador: ClasificacionController.listar_todo()
+    return render_template('clasificacion/lista.html')
+
+@app.route('/admin/idiomas')
+@admin_required
+def idioma_lista():
+    return render_template('idioma/lista.html')
+
+@app.route('/admin/generos')
+@admin_required
+def genero_lista():
+    return render_template('genero/lista.html')
+
+@app.route('/admin/roles')
+@admin_required
+def rol_lista():
+    return render_template('rol/lista.html')
+
+@app.route('/admin/tipos-boleto')
+@admin_required
+def tipo_boleto_lista():
+    return render_template('tipo_boleto/lista.html')
+
+# --- Infraestructura ---
+@app.route('/admin/cines')
+@admin_required
+def cine_lista():
+    return render_template('cine/lista.html')
+
+@app.route('/admin/tipos-sala')
+@admin_required
+def tipo_sala_lista():
+    return render_template('tipo_sala/lista.html')
+
+@app.route('/admin/salas')
+@admin_required
+def sala_lista():
+    return render_template('sala/lista.html')
+
+@app.route('/admin/asientos')
+@admin_required
+def asiento_lista():
+    return render_template('asiento/lista.html')
+
+# --- Películas y Funciones ---
+@app.route('/admin/peliculas')
+@admin_required
+def pelicula_lista():
+    return render_template('pelicula/lista.html')
+
+@app.route('/admin/peliculas-generos')
+@admin_required
+def pelicula_genero_lista():
+    return render_template('pelicula_genero/lista.html')
+
+@app.route('/admin/funciones')
+@admin_required
+def funcion_lista():
+    return render_template('funcion/lista.html')
+
+# --- Ventas y Usuarios ---
+@app.route('/admin/usuarios')
+@admin_required
+def usuario_lista():
+    return render_template('usuario/lista.html')
+
+@app.route('/admin/boletos')
+@admin_required
+def boleto_lista():
+    return render_template('boleto/lista.html')
+
+@app.route('/admin/boletos-cancelados')
+@admin_required
+def boleto_cancelado_lista():
+    return render_template('boleto_cancelado/lista.html')
+
+@app.route('/admin/boletos-usados')
+@admin_required
+def boleto_usado_lista():
+    return render_template('boleto_usado/lista.html')
 
 # ==================== EJECUCIÓN ====================
 

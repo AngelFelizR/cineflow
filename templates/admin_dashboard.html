@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrativo - CineFlow{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard Administrativo</h1>
+        <div>
+            <button id="export-excel-btn" class="btn btn-success me-2">
+                <i class="bi bi-file-excel me-1"></i> Exportar Excel
+            </button>
+            <button id="export-pdf-btn" class="btn btn-danger">
+                <i class="bi bi-file-pdf me-1"></i> Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-funnel me-1"></i> Filtros del Dashboard</h5>
+        </div>
+        <div class="card-body">
+            <form id="filtros-form">
+                <div class="row g-3">
+                    <!-- Fechas -->
+                    <div class="col-md-3">
+                        <label for="fecha-inicio" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fecha-inicio" 
+                               name="fecha_inicio" value="{{ fecha_inicio_default }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fecha-fin" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fecha-fin" 
+                               name="fecha_fin" value="{{ fecha_fin_default }}" required>
+                    </div>
+                    
+                    <!-- Cines (Multiselect) -->
+                    <div class="col-md-3">
+                        <label for="cine-select" class="form-label">Cines</label>
+                        <select class="form-control selectpicker" id="cine-select" 
+                                name="cine_ids[]" multiple data-live-search="true" 
+                                data-actions-box="true" title="Todos los cines...">
+                            {% for cine in opciones_filtros.cines %}
+                            <option value="{{ cine.Id }}">{{ cine.Cine }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Géneros (Multiselect) -->
+                    <div class="col-md-3">
+                        <label for="genero-select" class="form-label">Géneros</label>
+                        <select class="form-control selectpicker" id="genero-select" 
+                                name="genero_ids[]" multiple data-live-search="true" 
+                                data-actions-box="true" title="Todos los géneros...">
+                            {% for genero in opciones_filtros.generos %}
+                            <option value="{{ genero.Id }}">{{ genero.Genero }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Películas (Multiselect) -->
+                    <div class="col-md-3">
+                        <label for="pelicula-select" class="form-label">Películas</label>
+                        <select class="form-control selectpicker" id="pelicula-select" 
+                                name="pelicula_ids[]" multiple data-live-search="true" 
+                                data-actions-box="true" title="Todas las películas...">
+                            {% for pelicula in opciones_filtros.peliculas %}
+                            <option value="{{ pelicula.Id }}">{{ pelicula.Titulo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Funciones (Multiselect) -->
+                    <div class="col-md-3">
+                        <label for="funcion-select" class="form-label">Funciones</label>
+                        <select class="form-control selectpicker" id="funcion-select" 
+                                name="funcion_ids[]" multiple data-live-search="true" 
+                                data-actions-box="true" title="Todas las funciones...">
+                            {% for funcion in opciones_filtros.funciones %}
+                            {% set sala_numero = funcion.sala.NumeroDeSala if funcion.sala and funcion.sala.NumeroDeSala else 'N/A' %}
+                            <option value="{{ funcion.Id }}">
+                                {{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }} - Sala {{ sala_numero }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Días de la Semana (Multiselect) -->
+                    <div class="col-md-3">
+                        <label for="dia-semana-select" class="form-label">Días de la Semana</label>
+                        <select class="form-control selectpicker" id="dia-semana-select" 
+                                name="dias_semana[]" multiple data-actions-box="true" 
+                                title="Todos los días...">
+                            {% for dia in opciones_filtros.dias_semana %}
+                            <option value="{{ dia.id }}">{{ dia.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Agrupación Temporal -->
+                    <div class="col-md-3">
+                        <label for="agrupacion-select" class="form-label">Agrupación Temporal</label>
+                        <select class="form-control" id="agrupacion-select" name="agrupacion">
+                            <option value="dia">Por Día</option>
+                            <option value="semana">Por Semana</option>
+                            <option value="mes">Por Mes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Botones de Acción -->
+                <div class="row mt-4">
+                    <div class="col-md-12 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary" id="aplicar-filtros">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar Gráficas
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="limpiar-filtros">
+                            <i class="bi bi-x-circle me-1"></i> Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grid de Gráficas 2x2 -->
+    <div class="row">
+        <!-- Gráfico 1: Ingresos por Boletos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-cash-coin me-1"></i> Ingresos por Boletos ($)</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary download-chart" data-chart="ingresos-chart">
+                            <i class="bi bi-download me-1"></i> PNG
+                        </button>
+                        <button class="btn btn-sm btn-outline-success download-data" data-metric="ingresos">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="ingresos-chart" class="chart-container" style="height: 350px;"></div>
+                    <div class="chart-summary mt-3">
+                        <small class="text-muted" id="ingresos-summary">Cargando datos...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico 2: Ocupación de Sala -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-1"></i> % Ocupación de Sala</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary download-chart" data-chart="ocupacion-chart">
+                            <i class="bi bi-download me-1"></i> PNG
+                        </button>
+                        <button class="btn btn-sm btn-outline-success download-data" data-metric="ocupacion">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="ocupacion-chart" class="chart-container" style="height: 350px;"></div>
+                    <div class="chart-summary mt-3">
+                        <small class="text-muted" id="ocupacion-summary">Cargando datos...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico 3: Boletos Usados -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-ticket-perforated me-1"></i> % Boletos Usados</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary download-chart" data-chart="boletos-usados-chart">
+                            <i class="bi bi-download me-1"></i> PNG
+                        </button>
+                        <button class="btn btn-sm btn-outline-success download-data" data-metric="boletos_usados">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="boletos-usados-chart" class="chart-container" style="height: 350px;"></div>
+                    <div class="chart-summary mt-3">
+                        <small class="text-muted" id="boletos-usados-summary">Cargando datos...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráfico 4: Cancelaciones -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-x-circle me-1"></i> % de Cancelaciones</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary download-chart" data-chart="cancelaciones-chart">
+                            <i class="bi bi-download me-1"></i> PNG
+                        </button>
+                        <button class="btn btn-sm btn-outline-success download-data" data-metric="cancelaciones">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="cancelaciones-chart" class="chart-container" style="height: 350px;"></div>
+                    <div class="chart-summary mt-3">
+                        <small class="text-muted" id="cancelaciones-summary">Cargando datos...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overlay de Carga -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3">Procesando datos del dashboard...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

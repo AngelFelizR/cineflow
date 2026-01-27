@@ -10,7 +10,9 @@ let
       flask-login
       flask-bcrypt
       sqlalchemy
-      pymssql;
+      pymssql
+      reportlab
+      xhtml2pdf;
   };
 
   system_packages = builtins.attrValues {
