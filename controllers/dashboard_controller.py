@@ -171,81 +171,153 @@ class DashboardController:
             return []
         finally:
             session.close()
-    
+
     @staticmethod
     def obtener_ocupacion(filtros: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Obtiene porcentaje de ocupación por período según los filtros"""
+        """Obtiene porcentaje de ocupación por período según los filtros."""
         session = db.get_session()
         try:
+            # Construir filtros base
             where_clause = DashboardController.construir_filtros_sql(filtros)
             agrupacion_sql = DashboardController.obtener_agrupacion_sql(filtros.get('agrupacion', 'dia'))
             
-            # Query para ocupación
+            # IMPORTANTE: Modificar where_clause para no incluir filtros que requieren JOIN problemático
+            # Si hay filtro de géneros, lo manejamos aparte
+            filtro_generos = filtros.get('genero_ids', [])
+            
+            # Crear where_clause SIN el filtro de géneros
+            where_conditions = []
+            
+            # Filtro de fechas
+            if filtros.get('fecha_inicio') and filtros.get('fecha_fin'):
+                fecha_inicio = filtros['fecha_inicio']
+                fecha_fin = filtros['fecha_fin']
+                where_conditions.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora <= '{fecha_fin}'")
+            
+            # Filtro de cines
+            if filtros.get('cine_ids') and len(filtros['cine_ids']) > 0:
+                cine_ids = ','.join(map(str, filtros['cine_ids']))
+                where_conditions.append(f"s.IdCine IN ({cine_ids})")
+            
+            # Filtro de películas
+            if filtros.get('pelicula_ids') and len(filtros['pelicula_ids']) > 0:
+                pelicula_ids = ','.join(map(str, filtros['pelicula_ids']))
+                where_conditions.append(f"f.IdPelícula IN ({pelicula_ids})")
+            
+            # Filtro de funciones
+            if filtros.get('funcion_ids') and len(filtros['funcion_ids']) > 0:
+                funcion_ids = ','.join(map(str, filtros['funcion_ids']))
+                where_conditions.append(f"f.Id IN ({funcion_ids})")
+            
+            # Filtro de días de semana
+            if filtros.get('dias_semana') and len(filtros['dias_semana']) > 0:
+                dias_semana = ','.join(map(str, filtros['dias_semana']))
+                where_conditions.append(f"DATEPART(weekday, f.FechaHora) IN ({dias_semana})")
+            
+            where_clause_sin_generos = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            # Si hay filtro de géneros, agregarlo de forma que no multiplique filas
+            if filtro_generos and len(filtro_generos) > 0:
+                genero_ids = ','.join(map(str, filtro_generos))
+                filtro_genero_sql = f"""
+                    AND EXISTS (
+                        SELECT 1 FROM PelículaGénero pg 
+                        WHERE pg.IdPelícula = p.Id 
+                        AND pg.IdGénero IN ({genero_ids})
+                    )
+                """
+            else:
+                filtro_genero_sql = ""
+            
+            # Query corregida - SIN JOIN con PelículaGénero que multiplica filas
             query = text(f"""
-                WITH CapacidadFunciones AS (
+                WITH FuncionesConCapacidad AS (
+                    -- Paso 1: Obtener cada función con la capacidad de su sala
                     SELECT 
                         f.Id AS FuncionId,
                         f.FechaHora,
                         {agrupacion_sql} AS Periodo,
-                        COUNT(DISTINCT a.Id) AS CapacidadTotal
+                        s.Id AS SalaId,
+                        -- Capacidad de la sala para esta función
+                        (
+                            SELECT COUNT(*) 
+                            FROM Asientos a 
+                            WHERE a.IdSala = s.Id 
+                            AND a.Activo = 1
+                        ) AS CapacidadSala
                     FROM Funciones f
                     INNER JOIN Salas s ON f.IdSala = s.Id
-                    INNER JOIN Asientos a ON s.Id = a.IdSala AND a.Activo = 1
                     INNER JOIN Películas p ON f.IdPelícula = p.Id
-                    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-                    WHERE {where_clause}
+                    WHERE {where_clause_sin_generos}
+                        {filtro_genero_sql}
                         AND f.Activo = 1
-                    GROUP BY f.Id, f.FechaHora, {agrupacion_sql}
                 ),
-                BoletosVendidos AS (
+                BoletosVendidosPorFuncion AS (
+                    -- Paso 2: Contar boletos por función SIN JOINs problemáticos
                     SELECT 
-                        f.Id AS FuncionId,
+                        b.IdFunción AS FuncionId,
                         COUNT(b.Id) AS BoletosVendidos
-                    FROM Funciones f
-                    INNER JOIN Salas s ON f.IdSala = s.Id
-                    INNER JOIN Películas p ON f.IdPelícula = p.Id
-                    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-                    INNER JOIN Boletos b ON f.Id = b.IdFunción
+                    FROM Boletos b
                     LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
-                    WHERE {where_clause}
-                        AND f.Activo = 1
-                        AND bc.Id IS NULL
-                    GROUP BY f.Id
+                    WHERE bc.Id IS NULL  -- Excluir cancelados
+                        -- Filtrar solo funciones que cumplan los criterios
+                        AND b.IdFunción IN (SELECT FuncionId FROM FuncionesConCapacidad)
+                    GROUP BY b.IdFunción
                 )
+                -- Paso 3: Agrupar por período
                 SELECT 
-                    cf.Periodo,
-                    SUM(cf.CapacidadTotal) AS CapacidadTotal,
+                    fc.Periodo,
+                    SUM(fc.CapacidadSala) AS CapacidadTotal,
                     SUM(ISNULL(bv.BoletosVendidos, 0)) AS BoletosVendidos,
                     CASE 
-                        WHEN SUM(cf.CapacidadTotal) > 0 
-                        THEN (SUM(ISNULL(bv.BoletosVendidos, 0)) * 100.0 / SUM(cf.CapacidadTotal))
+                        WHEN SUM(fc.CapacidadSala) > 0 
+                        THEN (SUM(ISNULL(bv.BoletosVendidos, 0)) * 100.0 / SUM(fc.CapacidadSala))
                         ELSE 0 
                     END AS PorcentajeOcupacion
-                FROM CapacidadFunciones cf
-                LEFT JOIN BoletosVendidos bv ON cf.FuncionId = bv.FuncionId
-                GROUP BY cf.Periodo
-                ORDER BY cf.Periodo
+                FROM FuncionesConCapacidad fc
+                LEFT JOIN BoletosVendidosPorFuncion bv ON fc.FuncionId = bv.FuncionId
+                GROUP BY fc.Periodo
+                ORDER BY fc.Periodo
             """)
             
             result = session.execute(query)
             datos = []
             
             for row in result:
+                # VALIDACIÓN CRÍTICA: Nunca más de 100%
+                capacidad = row.CapacidadTotal or 0
+                boletos = row.BoletosVendidos or 0
+                porcentaje = float(row.PorcentajeOcupacion) if row.PorcentajeOcupacion else 0.0
+                
+                # Verificar integridad de datos
+                if boletos > capacidad:
+                    print(f"⚠️ ADVERTENCIA: Más boletos que capacidad en {row.Periodo}")
+                    print(f"   Capacidad: {capacidad}, Boletos: {boletos}")
+                    print(f"   Porcentaje calculado: {porcentaje:.2f}%")
+                    # Limitar a 100% como medida de seguridad
+                    porcentaje = 100.0
+                
                 datos.append({
                     'Periodo': row.Periodo.isoformat() if hasattr(row.Periodo, 'isoformat') else str(row.Periodo),
-                    'CapacidadTotal': row.CapacidadTotal or 0,
-                    'BoletosVendidos': row.BoletosVendidos or 0,
-                    'PorcentajeOcupacion': float(row.PorcentajeOcupacion) if row.PorcentajeOcupacion else 0.0
+                    'CapacidadTotal': capacidad,
+                    'BoletosVendidos': boletos,
+                    'PorcentajeOcupacion': min(porcentaje, 100.0)  # Máximo 100%
                 })
+            
+            # Log para debugging
+            if datos:
+                promedio = sum(d['PorcentajeOcupacion'] for d in datos) / len(datos)
+                print(f"📊 Ocupación calculada: {len(datos)} períodos, promedio {promedio:.2f}%")
             
             return datos
             
         except Exception as e:
-            print(f"Error en obtener_ocupacion: {e}")
+            print(f"❌ Error en obtener_ocupacion: {e}")
             traceback.print_exc()
             return []
         finally:
             session.close()
+
     
     @staticmethod
     def obtener_boletos_usados(filtros: Dict[str, Any]) -> List[Dict[str, Any]]:
