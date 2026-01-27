@@ -62,7 +62,7 @@
                             <tfoot>
                                 <tr class="border-top border-dark-border">
                                     <td colspan="3" class="text-end fw-bold">Total a pagar:</td>
-                                    <td class="text-end fw-bold text-accent">${{ total }}</td>
+                                    <td class="text-end fw-bold text-accent">${{ "%.2f"|format(funcion.sala.precio_nino|float * ninos|int + funcion.sala.precio_adulto|float * adultos|int) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Obtener si se va a usar saldo
         const usarSaldoCheckbox = document.getElementById('usar_saldo');
         const usarSaldo = usarSaldoCheckbox ? usarSaldoCheckbox.checked : false;
-        const total = parseFloat('{{ total|float }}');
+        const total = parseFloat('{{ funcion.sala.precio_nino|float * ninos|int + funcion.sala.precio_adulto|float * adultos|int }}');
         const saldoDisponible = parseFloat('{{ saldo_disponible|float }}');
         
         let mensajeSaldo = '';
