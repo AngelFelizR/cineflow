@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block title %}CineFlow - Mis Boletos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .saldo-container {
+        background: linear-gradient(135deg, var(--dark-card), #2a2a2a);
+        border: 1px solid var(--dark-border);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .saldo-title {
+        color: var(--dark-text-secondary);
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .saldo-amount {
+        color: var(--accent-color);
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    
+    .saldo-info {
+        color: var(--dark-text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .pelicula-group {
+        background-color: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .pelicula-header {
+        background-color: rgba(0, 0, 0, 0.2);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--dark-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .pelicula-header-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+    
+    .pelicula-imagen {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+        border: 2px solid var(--accent-color);
+    }
+    
+    .pelicula-titulo-link {
+        color: white;
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .pelicula-titulo-link:hover {
+        color: var(--accent-color);
+        text-decoration: underline;
+    }
+    
+    .funcion-group {
+        border-bottom: 1px solid var(--dark-border);
+    }
+    
+    .funcion-header {
+        padding: 1.5rem 1.5rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .funcion-header-content {
+        flex: 1;
+    }
+    
+    .funcion-cine {
+        color: var(--accent-color);
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .funcion-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+    }
+    
+    .badge-en-curso {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #f8a5a5;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    
+    .funcion-fecha {
+        color: var(--dark-text-secondary);
+        font-size: 0.95rem;
+    }
+    
+    .tipo-boleto-section {
+        padding: 1rem 1.5rem;
+    }
+    
+    .tipo-boleto-title {
+        color: var(--dark-text);
+        font-weight: bold;
+        padding-left: 1rem;
+        border-left: 3px solid var(--accent-color);
+        margin: 0 0 1rem 0;
+    }
+    
+    .boleto-item {
+        background-color: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--dark-border);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s;
+    }
+    
+    .boleto-item:hover {
+        border-color: var(--accent-color);
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+    
+    .boleto-item.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: rgba(255, 255, 255, 0.01);
+    }
+    
+    .boleto-item.disabled:hover {
+        border-color: var(--dark-border);
+        background-color: rgba(255, 255, 255, 0.01);
+    }
+    
+    .boleto-item.selected {
+        border-color: var(--accent-color);
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .boleto-info {
+        flex: 1;
+    }
+    
+    .boleto-asiento {
+        color: var(--accent-color);
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .boleto-valor {
+        color: var(--dark-text);
+        font-size: 0.95rem;
+    }
+    
+    .boleto-checkbox-container {
+        position: relative;
+    }
+    
+    .boleto-checkbox {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        accent-color: var(--accent-color);
+        position: relative;
+        z-index: 2;
+    }
+    
+    .boleto-checkbox:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .cancelar-btn-container {
+        background-color: var(--dark-card);
+        border: 1px solid var(--dark-border);
+        border-radius: 10px;
+        padding: 1.5rem;
+        position: sticky;
+        bottom: 2rem;
+        margin-top: 2rem;
+        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .cancelar-info {
+        color: var(--dark-text-secondary);
+        font-size: 0.85rem;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 3px solid var(--danger-color);
+        border-radius: 5px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--dark-text-secondary);
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: var(--dark-border);
+        margin-bottom: 1rem;
+    }
+    
+    .modal-dark .modal-content {
+        background-color: var(--dark-card);
+        color: var(--dark-text);
+        border: 1px solid var(--dark-border);
+    }
+    
+    .modal-dark .modal-header {
+        border-bottom: 1px solid var(--dark-border);
+    }
+    
+    .modal-dark .modal-footer {
+        border-top: 1px solid var(--dark-border);
+    }
+    
+    @media (max-width: 768px) {
+        .pelicula-header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .pelicula-imagen {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .saldo-amount {
+            font-size: 2rem;
+        }
+        
+        .boleto-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .boleto-info {
+            order: 2;
+        }
+        
+        .boleto-checkbox-container {
+            order: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">
+        <i class="bi bi-ticket-perforated me-2"></i>Mis Boletos
+    </h1>
+    
+    <!-- Saldo Disponible -->
+    <div class="saldo-container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="saldo-title">Saldo disponible</div>
+                <div class="saldo-amount">${{ "%.2f"|format(saldo_disponible) }}</div>
+                <div class="saldo-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Este saldo es válido por 3 meses desde la fecha de cancelación
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button class="btn btn-outline-warning" onclick="usarSaldo()">
+                    <i class="bi bi-credit-card me-1"></i> Usar Saldo
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Boletos -->
+    {% if boletos_organizados %}
+        <form id="cancelarForm" method="POST" action="{{ url_for('cancelar_boletos') }}">
+            <!-- Grupos por Película -->
+            {% for pelicula_id, pelicula_data in boletos_organizados.items() %}
+            <div class="pelicula-group">
+                <!-- Encabezado de Película -->
+                <div class="pelicula-header">
+                    <div class="pelicula-header-content">
+                        <img src="{{ pelicula_data.pelicula_info.link_to_bajante }}" 
+                             alt="{{ pelicula_data.pelicula_info.titulo }}"
+                             class="pelicula-imagen">
+                        <div>
+                            <a href="{{ url_for('detalle_pelicula', pelicula_id=pelicula_data.pelicula_info.id) }}" 
+                               class="pelicula-titulo-link">
+                                {{ pelicula_data.pelicula_info.titulo }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Funciones de esta película -->
+                {% for funcion_id, funcion_data in pelicula_data.funciones.items() %}
+                {% set ha_comenzado = funcion_data.funcion_info.fecha_hora <= ahora %}
+                <div class="funcion-group">
+                    <!-- Encabezado de Función -->
+                    <div class="funcion-header">
+                        <div class="funcion-header-content">
+                            <div class="funcion-cine">
+                                <i class="bi bi-geo-alt me-1"></i>{{ funcion_data.funcion_info.cine }} - Sala {{ funcion_data.funcion_info.sala_numero }}
+                                {% if ha_comenzado %}
+                                <span class="funcion-badge badge-en-curso">
+                                    <i class="bi bi-clock-history me-1"></i>EN CURSO
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="funcion-fecha">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                {{ funcion_data.funcion_info.fecha_hora.strftime('%d/%m') }}
+                                <i class="bi bi-clock ms-3 me-1"></i>
+                                {{ funcion_data.funcion_info.fecha_hora.strftime('%H:%M') }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tipos de Boletos -->
+                    {% for tipo_id, tipo_data in funcion_data.tipos_boletos.items() %}
+                    <div class="tipo-boleto-section">
+                        <h4 class="tipo-boleto-title">
+                            {{ tipo_data.tipo_boleto_info.nombre }}
+                        </h4>
+                        
+                        <!-- Lista de Boletos individuales -->
+                        {% for boleto in tipo_data.boletos %}
+                        <div class="boleto-item {% if ha_comenzado %}disabled{% endif %}" 
+                             onclick="{% if not ha_comenzado %}toggleBoleto({{ boleto.id }}){% endif %}">
+                            <div class="boleto-info">
+                                <div class="boleto-asiento">
+                                    <i class="bi bi-{{ 'person' if tipo_data.tipo_boleto_info.nombre == 'Adulto' else 'person-heart' }} me-1"></i>
+                                    Asiento {{ boleto.asiento }}
+                                </div>
+                                <div class="boleto-valor">
+                                    ${{ "%.2f"|format(boleto.valor_pagado) }}
+                                    <span class="text-muted ms-2">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        {{ boleto.fecha_compra.strftime('%d/%m/%Y %H:%M') }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="boleto-checkbox-container">
+                                <input type="checkbox" 
+                                       class="boleto-checkbox" 
+                                       name="boletos_seleccionados" 
+                                       value="{{ boleto.id }}"
+                                       id="boleto_{{ boleto.id }}"
+                                       {% if ha_comenzado %}disabled{% endif %}
+                                       onclick="event.stopPropagation(); toggleBoleto({{ boleto.id }})">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            
+            <!-- Botón de Cancelar -->
+            <div class="cancelar-btn-container">
+                <button type="button" class="btn btn-warning w-100 py-3" onclick="confirmarCancelacion()">
+                    <i class="bi bi-x-circle me-2"></i>Cancelar Boletos Seleccionados
+                </button>
+                <div class="cancelar-info">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    En caso de cancelar hacerlo 2 horas antes de la función para evitar penalidades.
+                    Cancelando 2+ horas antes: 100% de reembolso. Menos de 2 horas: 50% de reembolso.
+                </div>
+            </div>
+        </form>
+        
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-ticket"></i>
+            </div>
+            <h3 class="mb-3">No tienes boletos activos</h3>
+            <p class="mb-4">Cuando compres boletos, aparecerán aquí para que puedas gestionarlos.</p>
+            <a href="{{ url_for('lista_cartelera') }}" class="btn btn-warning">
+                <i class="bi bi-film me-1"></i> Ver Cartelera
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade modal-dark" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-accent">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Cancelación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-light">¿Estás seguro de que deseas cancelar los boletos seleccionados?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong class="text-dark">Importante:</strong> 
+                    <span class="text-dark">Tienes 3 meses para usar el saldo acreditado.</span>
+                </div>
+                <div id="resumenCancelacion"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="enviarCancelacion()">
+                    <i class="bi bi-check-circle me-1"></i>Confirmar Cancelación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Seleccionar/deseleccionar boleto
+    function toggleBoleto(boletoId) {
+        const checkbox = document.getElementById('boleto_' + boletoId);
+        if (checkbox.disabled) return;
+        
+        const boletoItem = checkbox.closest('.boleto-item');
+        
+        checkbox.checked = !checkbox.checked;
+        
+        if (checkbox.checked) {
+            boletoItem.classList.add('selected');
+        } else {
+            boletoItem.classList.remove('selected');
+        }
+    }
+    
+    // Contar boletos seleccionados
+    function contarBoletosSeleccionados() {
+        const checkboxes = document.querySelectorAll('input[name="boletos_seleccionados"]:checked:not(:disabled)');
+        return checkboxes.length;
+    }
+    
+    // Confirmar cancelación
+    function confirmarCancelacion() {
+        const totalSeleccionados = contarBoletosSeleccionados();
+        
+        if (totalSeleccionados === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No hay boletos seleccionados',
+                text: 'Por favor selecciona al menos un boleto para cancelar.',
+                confirmButtonColor: '#ffc107',
+                background: 'var(--dark-bg)',
+                color: 'var(--dark-text)'
+            });
+            return;
+        }
+        
+        // Mostrar resumen
+        const resumenHtml = `
+            <div class="alert alert-info">
+                <i class="bi bi-ticket-perforated me-2"></i>
+                <strong>${totalSeleccionados} boleto(s)</strong> serán cancelados.
+            </div>
+        `;
+        
+        document.getElementById('resumenCancelacion').innerHTML = resumenHtml;
+        
+        // Mostrar modal
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        confirmModal.show();
+    }
+    
+    // Enviar formulario de cancelación
+    function enviarCancelacion() {
+        document.getElementById('cancelarForm').submit();
+    }
+    
+    // Función para usar saldo (placeholder)
+    function usarSaldo() {
+        Swal.fire({
+            icon: 'info',
+            title: 'Funcionalidad en desarrollo',
+            text: 'La opción para usar saldo estará disponible próximamente.',
+            confirmButtonColor: '#ffc107',
+            background: 'var(--dark-bg)',
+            color: 'var(--dark-text)'
+        });
+    }
+</script>
+{% endblock %}

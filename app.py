@@ -302,7 +302,59 @@ def usuario_actualizar_password():
 @app.route('/mis-boletos')
 @login_required
 def boletos_lista():
-    return render_template('boletos_lista.html')
+    """Ruta para mostrar los boletos del usuario"""
+    if current_user.rol_nombre != "Cliente":
+        flash('Esta sección es solo para clientes.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Obtener boletos organizados
+    boletos_organizados = BoletoController.obtener_boletos_usuario(current_user.Id)
+    
+    # Obtener saldo disponible
+    saldo_disponible = BoletoController.obtener_saldo_usuario(current_user.Id)
+    
+    return render_template(
+        'boletos/boletos_lista.html',
+        boletos_organizados=boletos_organizados,
+        saldo_disponible=saldo_disponible,
+        ahora=datetime.now() 
+    )
+
+@app.route('/cancelar-boletos', methods=['POST'])
+@login_required
+def cancelar_boletos():
+    """Ruta para cancelar boletos seleccionados"""
+    if current_user.rol_nombre != "Cliente":
+        flash('Esta sección es solo para clientes.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Obtener boletos seleccionados del formulario
+    boletos_seleccionados = request.form.getlist('boletos_seleccionados')
+    
+    if not boletos_seleccionados:
+        flash('No se han seleccionado boletos para cancelar.', 'warning')
+        return redirect(url_for('boletos_lista'))
+    
+    # Convertir a enteros
+    boletos_ids = [int(boleto_id) for boleto_id in boletos_seleccionados if boleto_id.isdigit()]
+    
+    if not boletos_ids:
+        flash('No se han seleccionado boletos válidos.', 'warning')
+        return redirect(url_for('boletos_lista'))
+    
+    # Cancelar boletos
+    saldo_disponible = BoletoController.obtener_saldo_usuario(current_user.Id)
+    success, message, total_acreditado = BoletoController.cancelar_boletos(
+        boletos_ids, current_user.Id
+    )
+    
+    if success:
+        total = saldo_disponible + total_acreditado
+        flash(f'{message} Nuevo Saldo: ${saldo_disponible:.2f} + ${total_acreditado:.2f} = ${total:.2f}', 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('boletos_lista'))
 
 @app.route('/boletos/devueltos')
 @login_required
