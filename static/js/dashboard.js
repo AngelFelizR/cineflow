@@ -14,20 +14,36 @@ $(document).ready(function() {
     
     // Inicializar gráficas
     function inicializarGraficas() {
-        // Inicializar gráfica de ingresos
-        ingresosChart = echarts.init(document.getElementById('ingresos-chart'), 'dark');
+        // Verificar si ECharts está disponible
+        if (typeof echarts === 'undefined') {
+            console.error('ECharts no está cargado. Recargando página...');
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+            return;
+        }
         
-        // Inicializar gráfica de ocupación
-        ocupacionChart = echarts.init(document.getElementById('ocupacion-chart'), 'dark');
-        
-        // Inicializar gráfica de boletos usados
-        boletosUsadosChart = echarts.init(document.getElementById('boletos-usados-chart'), 'dark');
-        
-        // Inicializar gráfica de cancelaciones
-        cancelacionesChart = echarts.init(document.getElementById('cancelaciones-chart'), 'dark');
-        
-        // Configurar opciones iniciales
-        configurarGraficas();
+        try {
+            // Inicializar gráfica de ingresos
+            ingresosChart = echarts.init(document.getElementById('ingresos-chart'), 'dark');
+            
+            // Inicializar gráfica de ocupación
+            ocupacionChart = echarts.init(document.getElementById('ocupacion-chart'), 'dark');
+            
+            // Inicializar gráfica de boletos usados
+            boletosUsadosChart = echarts.init(document.getElementById('boletos-usados-chart'), 'dark');
+            
+            // Inicializar gráfica de cancelaciones
+            cancelacionesChart = echarts.init(document.getElementById('cancelaciones-chart'), 'dark');
+            
+            // Configurar opciones iniciales
+            configurarGraficas();
+            
+            console.log('Gráficas inicializadas correctamente');
+        } catch (error) {
+            console.error('Error al inicializar gráficas:', error);
+            mostrarMensajeError('Error al inicializar las gráficas. Por favor, recarga la página.');
+        }
     }
     
     // Configurar opciones de las gráficas
@@ -45,8 +61,9 @@ $(document).ready(function() {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
+                    if (!params || params.length === 0) return '';
                     const fecha = params[0].name;
-                    const valor = params[0].value;
+                    const valor = params[0].value || 0;
                     return `<strong>${fecha}</strong><br/>Ingresos: <span style="color: #28a745; font-weight: bold;">$${valor.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
                 },
                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -134,8 +151,9 @@ $(document).ready(function() {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
+                    if (!params || params.length === 0) return '';
                     const fecha = params[0].name;
-                    const valor = params[0].value;
+                    const valor = params[0].value || 0;
                     return `<strong>${fecha}</strong><br/>Ocupación: <span style="color: #17a2b8; font-weight: bold;">${valor.toFixed(2)}%</span>`;
                 },
                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -224,8 +242,9 @@ $(document).ready(function() {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
+                    if (!params || params.length === 0) return '';
                     const fecha = params[0].name;
-                    const valor = params[0].value;
+                    const valor = params[0].value || 0;
                     return `<strong>${fecha}</strong><br/>Usados: <span style="color: #ffc107; font-weight: bold;">${valor.toFixed(2)}%</span>`;
                 },
                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -314,8 +333,9 @@ $(document).ready(function() {
             tooltip: {
                 trigger: 'axis',
                 formatter: function(params) {
+                    if (!params || params.length === 0) return '';
                     const fecha = params[0].name;
-                    const valor = params[0].value;
+                    const valor = params[0].value || 0;
                     return `<strong>${fecha}</strong><br/>Cancelaciones: <span style="color: #dc3545; font-weight: bold;">${valor.toFixed(2)}%</span>`;
                 },
                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -391,11 +411,15 @@ $(document).ready(function() {
             backgroundColor: 'transparent'
         };
         
-        // Aplicar opciones
-        ingresosChart.setOption(ingresosOptions);
-        ocupacionChart.setOption(ocupacionOptions);
-        boletosUsadosChart.setOption(boletosUsadosOptions);
-        cancelacionesChart.setOption(cancelacionesOptions);
+        try {
+            // Aplicar opciones
+            if (ingresosChart) ingresosChart.setOption(ingresosOptions);
+            if (ocupacionChart) ocupacionChart.setOption(ocupacionOptions);
+            if (boletosUsadosChart) boletosUsadosChart.setOption(boletosUsadosOptions);
+            if (cancelacionesChart) cancelacionesChart.setOption(cancelacionesOptions);
+        } catch (error) {
+            console.error('Error al configurar gráficas:', error);
+        }
     }
     
     // Función para obtener datos del dashboard
@@ -418,6 +442,19 @@ $(document).ready(function() {
             }
         });
         
+        // Validar fechas
+        if (!data.fecha_inicio || !data.fecha_fin) {
+            $('#loading-overlay').hide();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Las fechas de inicio y fin son requeridas'
+            });
+            return;
+        }
+        
+        console.log('Enviando datos:', data);
+        
         // Enviar solicitud AJAX
         $.ajax({
             url: '/admin/dashboard/data',
@@ -425,6 +462,20 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
+                console.log('Datos recibidos:', response);
+                
+                // Verificar si hay error
+                if (response.error) {
+                    mostrarMensajeError(response.error);
+                    return;
+                }
+                
+                // Verificar si hay datos
+                if (!response || Object.keys(response).length === 0) {
+                    mostrarMensajeSinDatos();
+                    return;
+                }
+                
                 // Actualizar gráficas con los datos recibidos
                 actualizarGraficas(response);
                 actualizarResumenes(response);
@@ -440,11 +491,18 @@ $(document).ready(function() {
                 });
             },
             error: function(xhr) {
+                console.error('Error en AJAX:', xhr);
                 $('#loading-overlay').hide();
+                let errorMsg = 'Error al cargar los datos del dashboard';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                } else if (xhr.statusText) {
+                    errorMsg = xhr.statusText;
+                }
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: xhr.responseJSON?.error || 'Error al cargar los datos del dashboard'
+                    text: errorMsg
                 });
             }
         });
@@ -452,103 +510,195 @@ $(document).ready(function() {
     
     // Actualizar gráficas con datos
     function actualizarGraficas(datos) {
-        // Actualizar gráfica de ingresos
-        if (datos.ingresos && datos.ingresos.length > 0) {
-            const periodos = datos.ingresos.map(item => item.Periodo);
-            const valores = datos.ingresos.map(item => item.Ingresos);
+        try {
+            // Actualizar gráfica de ingresos
+            if (datos.ingresos && datos.ingresos.length > 0) {
+                const periodos = datos.ingresos.map(item => item.Periodo);
+                const valores = datos.ingresos.map(item => item.Ingresos || 0);
+                
+                if (ingresosChart) {
+                    ingresosChart.setOption({
+                        xAxis: { data: periodos },
+                        series: [{ data: valores }]
+                    });
+                }
+            } else {
+                if (ingresosChart) {
+                    ingresosChart.setOption({
+                        title: {
+                            subtext: 'No hay datos disponibles',
+                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
+                        },
+                        xAxis: { data: [] },
+                        series: [{ data: [] }]
+                    });
+                }
+            }
             
-            ingresosChart.setOption({
-                xAxis: { data: periodos },
-                series: [{ data: valores }]
-            });
-        }
-        
-        // Actualizar gráfica de ocupación
-        if (datos.ocupacion && datos.ocupacion.length > 0) {
-            const periodos = datos.ocupacion.map(item => item.Periodo);
-            const valores = datos.ocupacion.map(item => item.PorcentajeOcupacion);
+            // Actualizar gráfica de ocupación
+            if (datos.ocupacion && datos.ocupacion.length > 0) {
+                const periodos = datos.ocupacion.map(item => item.Periodo);
+                const valores = datos.ocupacion.map(item => item.PorcentajeOcupacion || 0);
+                
+                if (ocupacionChart) {
+                    ocupacionChart.setOption({
+                        xAxis: { data: periodos },
+                        series: [{ data: valores }]
+                    });
+                }
+            } else {
+                if (ocupacionChart) {
+                    ocupacionChart.setOption({
+                        title: {
+                            subtext: 'No hay datos disponibles',
+                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
+                        },
+                        xAxis: { data: [] },
+                        series: [{ data: [] }]
+                    });
+                }
+            }
             
-            ocupacionChart.setOption({
-                xAxis: { data: periodos },
-                series: [{ data: valores }]
-            });
-        }
-        
-        // Actualizar gráfica de boletos usados
-        if (datos.boletos_usados && datos.boletos_usados.length > 0) {
-            const periodos = datos.boletos_usados.map(item => item.Periodo);
-            const valores = datos.boletos_usados.map(item => item.PorcentajeUsados);
+            // Actualizar gráfica de boletos usados
+            if (datos.boletos_usados && datos.boletos_usados.length > 0) {
+                const periodos = datos.boletos_usados.map(item => item.Periodo);
+                const valores = datos.boletos_usados.map(item => item.PorcentajeUsados || 0);
+                
+                if (boletosUsadosChart) {
+                    boletosUsadosChart.setOption({
+                        xAxis: { data: periodos },
+                        series: [{ data: valores }]
+                    });
+                }
+            } else {
+                if (boletosUsadosChart) {
+                    boletosUsadosChart.setOption({
+                        title: {
+                            subtext: 'No hay datos disponibles',
+                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
+                        },
+                        xAxis: { data: [] },
+                        series: [{ data: [] }]
+                    });
+                }
+            }
             
-            boletosUsadosChart.setOption({
-                xAxis: { data: periodos },
-                series: [{ data: valores }]
-            });
-        }
-        
-        // Actualizar gráfica de cancelaciones
-        if (datos.cancelaciones && datos.cancelaciones.length > 0) {
-            const periodos = datos.cancelaciones.map(item => item.Periodo);
-            const valores = datos.cancelaciones.map(item => item.PorcentajeCancelaciones);
+            // Actualizar gráfica de cancelaciones
+            if (datos.cancelaciones && datos.cancelaciones.length > 0) {
+                const periodos = datos.cancelaciones.map(item => item.Periodo);
+                const valores = datos.cancelaciones.map(item => item.PorcentajeCancelaciones || 0);
+                
+                if (cancelacionesChart) {
+                    cancelacionesChart.setOption({
+                        xAxis: { data: periodos },
+                        series: [{ data: valores }]
+                    });
+                }
+            } else {
+                if (cancelacionesChart) {
+                    cancelacionesChart.setOption({
+                        title: {
+                            subtext: 'No hay datos disponibles',
+                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
+                        },
+                        xAxis: { data: [] },
+                        series: [{ data: [] }]
+                    });
+                }
+            }
             
-            cancelacionesChart.setOption({
-                xAxis: { data: periodos },
-                series: [{ data: valores }]
-            });
+            // Redimensionar gráficas
+            redimensionarGraficas();
+            
+        } catch (error) {
+            console.error('Error al actualizar gráficas:', error);
         }
+    }
+    
+    // Mostrar mensaje cuando no hay datos
+    function mostrarMensajeSinDatos() {
+        const mensaje = 'No se encontraron datos con los filtros seleccionados.';
+        $('#ingresos-summary').html(`<span class="text-warning">${mensaje}</span>`);
+        $('#ocupacion-summary').html(`<span class="text-warning">${mensaje}</span>`);
+        $('#boletos-usados-summary').html(`<span class="text-warning">${mensaje}</span>`);
+        $('#cancelaciones-summary').html(`<span class="text-warning">${mensaje}</span>`);
+        $('#loading-overlay').hide();
+    }
+    
+    // Mostrar mensaje de error
+    function mostrarMensajeError(mensaje) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: mensaje || 'Error desconocido'
+        });
+        $('#loading-overlay').hide();
     }
     
     // Actualizar resúmenes debajo de cada gráfica
     function actualizarResumenes(datos) {
-        // Resumen de ingresos
-        if (datos.ingresos && datos.ingresos.length > 0) {
-            const totalIngresos = datos.ingresos.reduce((sum, item) => sum + (item.Ingresos || 0), 0);
-            const totalBoletos = datos.ingresos.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
-            const promedioIngresos = totalIngresos / datos.ingresos.length;
+        try {
+            // Resumen de ingresos
+            if (datos.ingresos && datos.ingresos.length > 0) {
+                const totalIngresos = datos.ingresos.reduce((sum, item) => sum + (item.Ingresos || 0), 0);
+                const totalBoletos = datos.ingresos.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
+                const promedioIngresos = datos.ingresos.length > 0 ? totalIngresos / datos.ingresos.length : 0;
+                
+                $('#ingresos-summary').html(`
+                    <strong>Total:</strong> $${totalIngresos.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 
+                    <strong>Boletos:</strong> ${totalBoletos} | 
+                    <strong>Promedio:</strong> $${promedioIngresos.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                `);
+            } else {
+                $('#ingresos-summary').html('<span class="text-warning">No hay datos disponibles</span>');
+            }
             
-            $('#ingresos-summary').html(`
-                <strong>Total:</strong> $${totalIngresos.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 
-                <strong>Boletos:</strong> ${totalBoletos} | 
-                <strong>Promedio:</strong> $${promedioIngresos.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            `);
-        }
-        
-        // Resumen de ocupación
-        if (datos.ocupacion && datos.ocupacion.length > 0) {
-            const ocupacionPromedio = datos.ocupacion.reduce((sum, item) => sum + (item.PorcentajeOcupacion || 0), 0) / datos.ocupacion.length;
-            const capacidadTotal = datos.ocupacion.reduce((sum, item) => sum + (item.CapacidadTotal || 0), 0);
-            const boletosVendidos = datos.ocupacion.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
+            // Resumen de ocupación
+            if (datos.ocupacion && datos.ocupacion.length > 0) {
+                const ocupacionPromedio = datos.ocupacion.reduce((sum, item) => sum + (item.PorcentajeOcupacion || 0), 0) / datos.ocupacion.length;
+                const capacidadTotal = datos.ocupacion.reduce((sum, item) => sum + (item.CapacidadTotal || 0), 0);
+                const boletosVendidos = datos.ocupacion.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
+                
+                $('#ocupacion-summary').html(`
+                    <strong>Ocupación promedio:</strong> ${ocupacionPromedio.toFixed(2)}% | 
+                    <strong>Capacidad total:</strong> ${capacidadTotal} asientos | 
+                    <strong>Boletos vendidos:</strong> ${boletosVendidos}
+                `);
+            } else {
+                $('#ocupacion-summary').html('<span class="text-warning">No hay datos disponibles</span>');
+            }
             
-            $('#ocupacion-summary').html(`
-                <strong>Ocupación promedio:</strong> ${ocupacionPromedio.toFixed(2)}% | 
-                <strong>Capacidad total:</strong> ${capacidadTotal} asientos | 
-                <strong>Boletos vendidos:</strong> ${boletosVendidos}
-            `);
-        }
-        
-        // Resumen de boletos usados
-        if (datos.boletos_usados && datos.boletos_usados.length > 0) {
-            const promedioUsados = datos.boletos_usados.reduce((sum, item) => sum + (item.PorcentajeUsados || 0), 0) / datos.boletos_usados.length;
-            const totalBoletos = datos.boletos_usados.reduce((sum, item) => sum + (item.BoletosTotales || 0), 0);
-            const totalUsados = datos.boletos_usados.reduce((sum, item) => sum + (item.BoletosUsados || 0), 0);
+            // Resumen de boletos usados
+            if (datos.boletos_usados && datos.boletos_usados.length > 0) {
+                const promedioUsados = datos.boletos_usados.reduce((sum, item) => sum + (item.PorcentajeUsados || 0), 0) / datos.boletos_usados.length;
+                const totalBoletos = datos.boletos_usados.reduce((sum, item) => sum + (item.BoletosTotales || 0), 0);
+                const totalUsados = datos.boletos_usados.reduce((sum, item) => sum + (item.BoletosUsados || 0), 0);
+                
+                $('#boletos-usados-summary').html(`
+                    <strong>Promedio usado:</strong> ${promedioUsados.toFixed(2)}% | 
+                    <strong>Total boletos:</strong> ${totalBoletos} | 
+                    <strong>Total usados:</strong> ${totalUsados}
+                `);
+            } else {
+                $('#boletos-usados-summary').html('<span class="text-warning">No hay datos disponibles</span>');
+            }
             
-            $('#boletos-usados-summary').html(`
-                <strong>Promedio usado:</strong> ${promedioUsados.toFixed(2)}% | 
-                <strong>Total boletos:</strong> ${totalBoletos} | 
-                <strong>Total usados:</strong> ${totalUsados}
-            `);
-        }
-        
-        // Resumen de cancelaciones
-        if (datos.cancelaciones && datos.cancelaciones.length > 0) {
-            const promedioCancel = datos.cancelaciones.reduce((sum, item) => sum + (item.PorcentajeCancelaciones || 0), 0) / datos.cancelaciones.length;
-            const totalVendidos = datos.cancelaciones.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
-            const totalCancelados = datos.cancelaciones.reduce((sum, item) => sum + (item.BoletosCancelados || 0), 0);
-            
-            $('#cancelaciones-summary').html(`
-                <strong>Cancelación promedio:</strong> ${promedioCancel.toFixed(2)}% | 
-                <strong>Total vendidos:</strong> ${totalVendidos} | 
-                <strong>Total cancelados:</strong> ${totalCancelados}
-            `);
+            // Resumen de cancelaciones
+            if (datos.cancelaciones && datos.cancelaciones.length > 0) {
+                const promedioCancel = datos.cancelaciones.reduce((sum, item) => sum + (item.PorcentajeCancelaciones || 0), 0) / datos.cancelaciones.length;
+                const totalVendidos = datos.cancelaciones.reduce((sum, item) => sum + (item.BoletosVendidos || 0), 0);
+                const totalCancelados = datos.cancelaciones.reduce((sum, item) => sum + (item.BoletosCancelados || 0), 0);
+                
+                $('#cancelaciones-summary').html(`
+                    <strong>Cancelación promedio:</strong> ${promedioCancel.toFixed(2)}% | 
+                    <strong>Total vendidos:</strong> ${totalVendidos} | 
+                    <strong>Total cancelados:</strong> ${totalCancelados}
+                `);
+            } else {
+                $('#cancelaciones-summary').html('<span class="text-warning">No hay datos disponibles</span>');
+            }
+        } catch (error) {
+            console.error('Error al actualizar resúmenes:', error);
         }
     }
     
@@ -572,24 +722,40 @@ $(document).ready(function() {
                 return;
         }
         
-        const url = chart.getDataURL({
-            type: 'png',
-            pixelRatio: 2,
-            backgroundColor: '#1a202c'
-        });
+        if (!chart) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'La gráfica no está disponible para descargar'
+            });
+            return;
+        }
         
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `cineflow_${chartElementId}_${new Date().toISOString().slice(0,10)}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+            const url = chart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#1a202c'
+            });
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `cineflow_${chartElementId}_${new Date().toISOString().slice(0,10)}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Error al descargar gráfica:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo descargar la gráfica'
+            });
+        }
     }
     
-    // Descargar datos de una métrica específica (simulado - se puede implementar si se necesita)
+    // Descargar datos de una métrica específica
     function descargarDatosMetrica(metrica) {
-        // Por ahora, redirigir a la exportación completa de Excel
-        // Esto se puede modificar para exportar solo una métrica específica
         const formData = $('#filtros-form').serialize();
         window.location.href = `/admin/dashboard/export/excel?${formData}`;
     }
@@ -629,10 +795,14 @@ $(document).ready(function() {
     
     // Redimensionar gráficas al cambiar tamaño de ventana
     function redimensionarGraficas() {
-        if (ingresosChart) ingresosChart.resize();
-        if (ocupacionChart) ocupacionChart.resize();
-        if (boletosUsadosChart) boletosUsadosChart.resize();
-        if (cancelacionesChart) cancelacionesChart.resize();
+        try {
+            if (ingresosChart) ingresosChart.resize();
+            if (ocupacionChart) ocupacionChart.resize();
+            if (boletosUsadosChart) boletosUsadosChart.resize();
+            if (cancelacionesChart) cancelacionesChart.resize();
+        } catch (error) {
+            console.error('Error al redimensionar gráficas:', error);
+        }
     }
     
     // Event Listeners
@@ -659,8 +829,12 @@ $(document).ready(function() {
     $(window).on('resize', redimensionarGraficas);
     
     // Inicializar
-    inicializarGraficas();
-    
-    // Cargar datos iniciales
-    obtenerDatosDashboard();
+    setTimeout(function() {
+        inicializarGraficas();
+        
+        // Cargar datos iniciales después de un breve delay para asegurar que las gráficas estén listas
+        setTimeout(function() {
+            obtenerDatosDashboard();
+        }, 500);
+    }, 100);
 });

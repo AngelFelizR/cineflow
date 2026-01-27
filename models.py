@@ -210,9 +210,14 @@ class Funcion(Base):
     FechaHora: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     Activo: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    pelicula: Mapped["Pelicula"] = relationship(back_populates="funciones")
     sala: Mapped["Sala"] = relationship(back_populates="funciones")
+    pelicula: Mapped["Pelicula"] = relationship(back_populates="funciones")
     boletos: Mapped[List["Boleto"]] = relationship(back_populates="funcion")
+    
+    # Relaciones directas para evitar problemas de carga
+    @property
+    def sala_numero(self):
+        return self.sala.NumeroDeSala if self.sala else "N/A"
 
 
 class Usuario(Base, UserMixin):

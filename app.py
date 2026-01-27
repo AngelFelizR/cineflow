@@ -5,7 +5,7 @@ from controllers.pelicula_controller import PeliculaController
 from controllers.usuario_controller import UsuarioController
 from controllers.funcion_controller import FuncionController
 from controllers.boleto_controller import BoletoController
-from controllers.admin_controller import DashboardController
+from controllers.dashboard_controller import DashboardController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from datetime import datetime, date, timedelta
@@ -269,7 +269,6 @@ def usuario_actualizar_datos():
         )
         
         if success and usuario_actualizado:
-            from flask_login import logout_user, login_user
             logout_user()
             login_user(usuario_actualizado)
             flash(message, 'success')
@@ -538,8 +537,6 @@ def dashboard_data():
         if data.get('dias_semana'):
             filtros['dias_semana'] = [int(dia) for dia in data['dias_semana'] if str(dia).isdigit()]
         
-        # Obtener datos del dashboard
-        from controllers.dashboard_controller import DashboardController
         datos = DashboardController.obtener_datos_completos(filtros)
         
         return jsonify(datos)
@@ -582,7 +579,6 @@ def dashboard_export_excel():
         }
         
         # Generar Excel
-        from controllers.dashboard_controller import DashboardController
         excel_data = DashboardController.generar_excel(filtros)
         
         # Nombre del archivo
@@ -633,7 +629,6 @@ def dashboard_export_pdf():
         }
         
         # Obtener datos del dashboard
-        from controllers.dashboard_controller import DashboardController
         datos_dashboard = DashboardController.obtener_datos_completos(filtros)
         
         # Generar PDF
