@@ -1,9 +1,14 @@
 // Dashboard JavaScript para CineFlow
 $(document).ready(function() {
+    console.log('Inicializando dashboard...');
+    
     // Inicializar selectores
     $('.selectpicker').selectpicker({
         style: 'btn-light',
-        size: 10
+        size: 10,
+        noneSelectedText: 'Ninguno seleccionado',
+        selectAllText: 'Seleccionar todos',
+        deselectAllText: 'Deseleccionar todos'
     });
     
     // Variables para las gráficas ECharts
@@ -24,17 +29,31 @@ $(document).ready(function() {
         }
         
         try {
+            console.log('Inicializando gráficas ECharts...');
+            
             // Inicializar gráfica de ingresos
-            ingresosChart = echarts.init(document.getElementById('ingresos-chart'), 'dark');
+            const ingresosContainer = document.getElementById('ingresos-chart');
+            if (ingresosContainer) {
+                ingresosChart = echarts.init(ingresosContainer, 'dark');
+            }
             
             // Inicializar gráfica de ocupación
-            ocupacionChart = echarts.init(document.getElementById('ocupacion-chart'), 'dark');
+            const ocupacionContainer = document.getElementById('ocupacion-chart');
+            if (ocupacionContainer) {
+                ocupacionChart = echarts.init(ocupacionContainer, 'dark');
+            }
             
             // Inicializar gráfica de boletos usados
-            boletosUsadosChart = echarts.init(document.getElementById('boletos-usados-chart'), 'dark');
+            const boletosUsadosContainer = document.getElementById('boletos-usados-chart');
+            if (boletosUsadosContainer) {
+                boletosUsadosChart = echarts.init(boletosUsadosContainer, 'dark');
+            }
             
             // Inicializar gráfica de cancelaciones
-            cancelacionesChart = echarts.init(document.getElementById('cancelaciones-chart'), 'dark');
+            const cancelacionesContainer = document.getElementById('cancelaciones-chart');
+            if (cancelacionesContainer) {
+                cancelacionesChart = echarts.init(cancelacionesContainer, 'dark');
+            }
             
             // Configurar opciones iniciales
             configurarGraficas();
@@ -411,218 +430,141 @@ $(document).ready(function() {
             backgroundColor: 'transparent'
         };
         
-        try {
-            // Aplicar opciones
-            if (ingresosChart) ingresosChart.setOption(ingresosOptions);
-            if (ocupacionChart) ocupacionChart.setOption(ocupacionOptions);
-            if (boletosUsadosChart) boletosUsadosChart.setOption(boletosUsadosOptions);
-            if (cancelacionesChart) cancelacionesChart.setOption(cancelacionesOptions);
-        } catch (error) {
-            console.error('Error al configurar gráficas:', error);
-        }
+        // Aplicar opciones iniciales
+        if (ingresosChart) ingresosChart.setOption(ingresosOptions);
+        if (ocupacionChart) ocupacionChart.setOption(ocupacionOptions);
+        if (boletosUsadosChart) boletosUsadosChart.setOption(boletosUsadosOptions);
+        if (cancelacionesChart) cancelacionesChart.setOption(cancelacionesOptions);
     }
     
-    // Función para obtener datos del dashboard
+    // Obtener datos del dashboard
     function obtenerDatosDashboard() {
+        console.log('Obteniendo datos del dashboard...');
+        
         // Mostrar overlay de carga
-        $('#loading-overlay').show();
+        $('#loading-overlay').fadeIn();
         
-        // Recolectar datos del formulario
-        const formData = $('#filtros-form').serializeArray();
-        const data = {};
+        // Obtener valores del formulario
+        const filtros = {
+            fecha_inicio: $('#fecha-inicio').val(),
+            fecha_fin: $('#fecha-fin').val(),
+            agrupacion: $('#agrupacion-select').val(),
+            cine_ids: $('#cine-select').val() || [],
+            genero_ids: $('#genero-select').val() || [],
+            pelicula_ids: $('#pelicula-select').val() || [],
+            funcion_ids: $('#funcion-select').val() || [],
+            dias_semana: $('#dia-semana-select').val() || []
+        };
         
-        // Convertir form data a objeto
-        formData.forEach(item => {
-            if (item.name.endsWith('[]')) {
-                const key = item.name.slice(0, -2);
-                if (!data[key]) data[key] = [];
-                data[key].push(item.value);
-            } else {
-                data[item.name] = item.value;
-            }
-        });
+        console.log('Filtros aplicados:', filtros);
         
         // Validar fechas
-        if (!data.fecha_inicio || !data.fecha_fin) {
-            $('#loading-overlay').hide();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Las fechas de inicio y fin son requeridas'
-            });
+        if (!filtros.fecha_inicio || !filtros.fecha_fin) {
+            mostrarMensajeError('Por favor, selecciona las fechas de inicio y fin.');
             return;
         }
         
-        console.log('Enviando datos:', data);
-        
-        // Enviar solicitud AJAX
+        // Realizar solicitud AJAX
         $.ajax({
             url: '/admin/dashboard/data',
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(response) {
-                console.log('Datos recibidos:', response);
+            data: JSON.stringify(filtros),
+            success: function(datos) {
+                console.log('Datos recibidos:', datos);
                 
-                // Verificar si hay error
-                if (response.error) {
-                    mostrarMensajeError(response.error);
+                if (datos.error) {
+                    mostrarMensajeError(datos.error);
                     return;
                 }
                 
-                // Verificar si hay datos
-                if (!response || Object.keys(response).length === 0) {
-                    mostrarMensajeSinDatos();
-                    return;
-                }
+                // Actualizar gráficas con los datos
+                actualizarGraficas(datos);
                 
-                // Actualizar gráficas con los datos recibidos
-                actualizarGraficas(response);
-                actualizarResumenes(response);
-                $('#loading-overlay').hide();
+                // Actualizar resúmenes
+                actualizarResumenes(datos);
                 
-                // Mostrar notificación de éxito
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Datos actualizados',
-                    text: 'Las gráficas se han actualizado con los filtros aplicados.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                // Ocultar overlay
+                $('#loading-overlay').fadeOut();
+                
+                console.log('Dashboard actualizado correctamente');
             },
-            error: function(xhr) {
-                console.error('Error en AJAX:', xhr);
-                $('#loading-overlay').hide();
-                let errorMsg = 'Error al cargar los datos del dashboard';
+            error: function(xhr, status, error) {
+                console.error('Error al obtener datos:', error);
+                console.error('Status:', status);
+                console.error('Response:', xhr.responseText);
+                
+                let mensaje = 'Error al cargar los datos del dashboard.';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMsg = xhr.responseJSON.error;
-                } else if (xhr.statusText) {
-                    errorMsg = xhr.statusText;
+                    mensaje += ' ' + xhr.responseJSON.error;
                 }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: errorMsg
-                });
+                
+                mostrarMensajeError(mensaje);
             }
         });
     }
     
-    // Actualizar gráficas con datos
+    // Actualizar gráficas con nuevos datos
     function actualizarGraficas(datos) {
         try {
+            console.log('Actualizando gráficas...');
+            
             // Actualizar gráfica de ingresos
-            if (datos.ingresos && datos.ingresos.length > 0) {
+            if (ingresosChart && datos.ingresos) {
                 const periodos = datos.ingresos.map(item => item.Periodo);
                 const valores = datos.ingresos.map(item => item.Ingresos || 0);
                 
-                if (ingresosChart) {
-                    ingresosChart.setOption({
-                        xAxis: { data: periodos },
-                        series: [{ data: valores }]
-                    });
-                }
-            } else {
-                if (ingresosChart) {
-                    ingresosChart.setOption({
-                        title: {
-                            subtext: 'No hay datos disponibles',
-                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
-                        },
-                        xAxis: { data: [] },
-                        series: [{ data: [] }]
-                    });
-                }
+                ingresosChart.setOption({
+                    xAxis: { data: periodos },
+                    series: [{ data: valores }]
+                });
+                
+                console.log('Gráfica de ingresos actualizada:', periodos.length, 'puntos');
             }
             
             // Actualizar gráfica de ocupación
-            if (datos.ocupacion && datos.ocupacion.length > 0) {
+            if (ocupacionChart && datos.ocupacion) {
                 const periodos = datos.ocupacion.map(item => item.Periodo);
                 const valores = datos.ocupacion.map(item => item.PorcentajeOcupacion || 0);
                 
-                if (ocupacionChart) {
-                    ocupacionChart.setOption({
-                        xAxis: { data: periodos },
-                        series: [{ data: valores }]
-                    });
-                }
-            } else {
-                if (ocupacionChart) {
-                    ocupacionChart.setOption({
-                        title: {
-                            subtext: 'No hay datos disponibles',
-                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
-                        },
-                        xAxis: { data: [] },
-                        series: [{ data: [] }]
-                    });
-                }
+                ocupacionChart.setOption({
+                    xAxis: { data: periodos },
+                    series: [{ data: valores }]
+                });
+                
+                console.log('Gráfica de ocupación actualizada:', periodos.length, 'puntos');
             }
             
             // Actualizar gráfica de boletos usados
-            if (datos.boletos_usados && datos.boletos_usados.length > 0) {
+            if (boletosUsadosChart && datos.boletos_usados) {
                 const periodos = datos.boletos_usados.map(item => item.Periodo);
                 const valores = datos.boletos_usados.map(item => item.PorcentajeUsados || 0);
                 
-                if (boletosUsadosChart) {
-                    boletosUsadosChart.setOption({
-                        xAxis: { data: periodos },
-                        series: [{ data: valores }]
-                    });
-                }
-            } else {
-                if (boletosUsadosChart) {
-                    boletosUsadosChart.setOption({
-                        title: {
-                            subtext: 'No hay datos disponibles',
-                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
-                        },
-                        xAxis: { data: [] },
-                        series: [{ data: [] }]
-                    });
-                }
+                boletosUsadosChart.setOption({
+                    xAxis: { data: periodos },
+                    series: [{ data: valores }]
+                });
+                
+                console.log('Gráfica de boletos usados actualizada:', periodos.length, 'puntos');
             }
             
             // Actualizar gráfica de cancelaciones
-            if (datos.cancelaciones && datos.cancelaciones.length > 0) {
+            if (cancelacionesChart && datos.cancelaciones) {
                 const periodos = datos.cancelaciones.map(item => item.Periodo);
                 const valores = datos.cancelaciones.map(item => item.PorcentajeCancelaciones || 0);
                 
-                if (cancelacionesChart) {
-                    cancelacionesChart.setOption({
-                        xAxis: { data: periodos },
-                        series: [{ data: valores }]
-                    });
-                }
-            } else {
-                if (cancelacionesChart) {
-                    cancelacionesChart.setOption({
-                        title: {
-                            subtext: 'No hay datos disponibles',
-                            subtextStyle: { color: '#a0aec0', fontSize: 14 }
-                        },
-                        xAxis: { data: [] },
-                        series: [{ data: [] }]
-                    });
-                }
+                cancelacionesChart.setOption({
+                    xAxis: { data: periodos },
+                    series: [{ data: valores }]
+                });
+                
+                console.log('Gráfica de cancelaciones actualizada:', periodos.length, 'puntos');
             }
-            
-            // Redimensionar gráficas
-            redimensionarGraficas();
             
         } catch (error) {
             console.error('Error al actualizar gráficas:', error);
+            mostrarMensajeError('Error al renderizar las gráficas.');
         }
-    }
-    
-    // Mostrar mensaje cuando no hay datos
-    function mostrarMensajeSinDatos() {
-        const mensaje = 'No se encontraron datos con los filtros seleccionados.';
-        $('#ingresos-summary').html(`<span class="text-warning">${mensaje}</span>`);
-        $('#ocupacion-summary').html(`<span class="text-warning">${mensaje}</span>`);
-        $('#boletos-usados-summary').html(`<span class="text-warning">${mensaje}</span>`);
-        $('#cancelaciones-summary').html(`<span class="text-warning">${mensaje}</span>`);
-        $('#loading-overlay').hide();
     }
     
     // Mostrar mensaje de error
@@ -632,7 +574,7 @@ $(document).ready(function() {
             title: 'Error',
             text: mensaje || 'Error desconocido'
         });
-        $('#loading-overlay').hide();
+        $('#loading-overlay').fadeOut();
     }
     
     // Actualizar resúmenes debajo de cada gráfica
@@ -829,6 +771,7 @@ $(document).ready(function() {
     $(window).on('resize', redimensionarGraficas);
     
     // Inicializar
+    console.log('Esperando inicialización...');
     setTimeout(function() {
         inicializarGraficas();
         

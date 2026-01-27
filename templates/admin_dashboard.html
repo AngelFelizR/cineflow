@@ -4,8 +4,35 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+    /* Estilos adicionales para asegurar que las gráficas se vean */
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 350px !important;
+        min-height: 350px !important;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+    }
+    
+    .loading-overlay.show {
+        display: flex !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -48,9 +75,13 @@
                         <select class="form-control selectpicker" id="cine-select" 
                                 name="cine_ids[]" multiple data-live-search="true" 
                                 data-actions-box="true" title="Todos los cines...">
-                            {% for cine in opciones_filtros.cines %}
-                            <option value="{{ cine.Id }}">{{ cine.Cine }}</option>
-                            {% endfor %}
+                            {% if opciones_filtros and opciones_filtros.cines %}
+                                {% for cine in opciones_filtros.cines %}
+                                <option value="{{ cine.Id }}">{{ cine.Cine }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>No hay cines disponibles</option>
+                            {% endif %}
                         </select>
                     </div>
                     
@@ -60,9 +91,13 @@
                         <select class="form-control selectpicker" id="genero-select" 
                                 name="genero_ids[]" multiple data-live-search="true" 
                                 data-actions-box="true" title="Todos los géneros...">
-                            {% for genero in opciones_filtros.generos %}
-                            <option value="{{ genero.Id }}">{{ genero.Genero }}</option>
-                            {% endfor %}
+                            {% if opciones_filtros and opciones_filtros.generos %}
+                                {% for genero in opciones_filtros.generos %}
+                                <option value="{{ genero.Id }}">{{ genero.Genero }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>No hay géneros disponibles</option>
+                            {% endif %}
                         </select>
                     </div>
                     
@@ -72,9 +107,13 @@
                         <select class="form-control selectpicker" id="pelicula-select" 
                                 name="pelicula_ids[]" multiple data-live-search="true" 
                                 data-actions-box="true" title="Todas las películas...">
-                            {% for pelicula in opciones_filtros.peliculas %}
-                            <option value="{{ pelicula.Id }}">{{ pelicula.Titulo }}</option>
-                            {% endfor %}
+                            {% if opciones_filtros and opciones_filtros.peliculas %}
+                                {% for pelicula in opciones_filtros.peliculas %}
+                                <option value="{{ pelicula.Id }}">{{ pelicula.Titulo }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>No hay películas disponibles</option>
+                            {% endif %}
                         </select>
                     </div>
                     
@@ -84,12 +123,16 @@
                         <select class="form-control selectpicker" id="funcion-select" 
                                 name="funcion_ids[]" multiple data-live-search="true" 
                                 data-actions-box="true" title="Todas las funciones...">
-                            {% for funcion in opciones_filtros.funciones %}
-                            {% set sala_numero = funcion.sala.NumeroDeSala if funcion.sala else 'N/A' %}
-                            <option value="{{ funcion.Id }}">
-                                {{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }} - Sala {{ sala_numero }}
-                            </option>
-                            {% endfor %}
+                            {% if opciones_filtros and opciones_filtros.funciones %}
+                                {% for funcion in opciones_filtros.funciones %}
+                                {% set sala_numero = funcion.sala.NumeroDeSala if funcion.sala else 'N/A' %}
+                                <option value="{{ funcion.Id }}">
+                                    {{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }} - Sala {{ sala_numero }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>No hay funciones disponibles</option>
+                            {% endif %}
                         </select>
                     </div>
                     
@@ -99,9 +142,19 @@
                         <select class="form-control selectpicker" id="dia-semana-select" 
                                 name="dias_semana[]" multiple data-actions-box="true" 
                                 title="Todos los días...">
-                            {% for dia in opciones_filtros.dias_semana %}
-                            <option value="{{ dia.id }}">{{ dia.nombre }}</option>
-                            {% endfor %}
+                            {% if opciones_filtros and opciones_filtros.dias_semana %}
+                                {% for dia in opciones_filtros.dias_semana %}
+                                <option value="{{ dia.id }}">{{ dia.nombre }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="1">Lunes</option>
+                                <option value="2">Martes</option>
+                                <option value="3">Miércoles</option>
+                                <option value="4">Jueves</option>
+                                <option value="5">Viernes</option>
+                                <option value="6">Sábado</option>
+                                <option value="7">Domingo</option>
+                            {% endif %}
                         </select>
                     </div>
                     
@@ -148,7 +201,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="ingresos-chart" class="chart-container" style="height: 350px;"></div>
+                    <div id="ingresos-chart" class="chart-container"></div>
                     <div class="chart-summary mt-3">
                         <small class="text-muted" id="ingresos-summary">Cargando datos...</small>
                     </div>
@@ -171,7 +224,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="ocupacion-chart" class="chart-container" style="height: 350px;"></div>
+                    <div id="ocupacion-chart" class="chart-container"></div>
                     <div class="chart-summary mt-3">
                         <small class="text-muted" id="ocupacion-summary">Cargando datos...</small>
                     </div>
@@ -194,7 +247,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="boletos-usados-chart" class="chart-container" style="height: 350px;"></div>
+                    <div id="boletos-usados-chart" class="chart-container"></div>
                     <div class="chart-summary mt-3">
                         <small class="text-muted" id="boletos-usados-summary">Cargando datos...</small>
                     </div>
@@ -217,7 +270,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="cancelaciones-chart" class="chart-container" style="height: 350px;"></div>
+                    <div id="cancelaciones-chart" class="chart-container"></div>
                     <div class="chart-summary mt-3">
                         <small class="text-muted" id="cancelaciones-summary">Cargando datos...</small>
                     </div>
@@ -237,17 +290,34 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- jQuery DEBE CARGARSE PRIMERO -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+<!-- Bootstrap Select -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+
+<!-- Script verificación de carga -->
 <script>
-    // Esperar a que ECharts esté disponible
+    // Verificar que todas las dependencias estén cargadas
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== VERIFICACIÓN DE DEPENDENCIAS ===');
+        console.log('jQuery:', typeof jQuery !== 'undefined' ? '✓ Cargado' : '✗ NO CARGADO');
+        console.log('ECharts:', typeof echarts !== 'undefined' ? '✓ Cargado' : '✗ NO CARGADO');
+        console.log('Bootstrap Select:', typeof $.fn.selectpicker !== 'undefined' ? '✓ Cargado' : '✗ NO CARGADO');
+        console.log('SweetAlert2:', typeof Swal !== 'undefined' ? '✓ Cargado' : '✗ NO CARGADO');
+        console.log('===================================');
+        
+        // Si falta alguna dependencia, mostrar alerta
         if (typeof echarts === 'undefined') {
-            console.error('ECharts no está cargado');
-            // Recargar la página si ECharts no está disponible
+            alert('ERROR: ECharts no se cargó correctamente. Recargando la página...');
             setTimeout(() => location.reload(), 1000);
         }
     });
 </script>
+
+<!-- Dashboard JS (DEBE IR AL FINAL) -->
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
