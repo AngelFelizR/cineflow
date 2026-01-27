@@ -22,7 +22,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
     
-    
+
 app = Flask(__name__)
 app.secret_key = 'cineflow_secret_key_change_in_production_2025'
 
@@ -658,11 +658,12 @@ def dashboard_export_pdf():
 # RUTAS ADMINISTRATIVAS (CRUD LISTAS)
 # ==========================================
 
-# --- Catálogos ---
+# --- Rutas de Gestión (CRUD) ---
+# Cada ruta renderiza el archivo 'lista.html' dentro de su subcarpeta correspondiente
+
 @app.route('/admin/clasificaciones')
 @admin_required
 def clasificacion_lista():
-    # Aquí llamarías al controlador: ClasificacionController.listar_todo()
     return render_template('clasificacion/lista.html')
 
 @app.route('/admin/idiomas')
@@ -678,14 +679,13 @@ def genero_lista():
 @app.route('/admin/roles')
 @admin_required
 def rol_lista():
-    return render_template('rol/lista.html')
+    return render_template('rol_usuario/lista.html')
 
 @app.route('/admin/tipos-boleto')
 @admin_required
 def tipo_boleto_lista():
     return render_template('tipo_boleto/lista.html')
 
-# --- Infraestructura ---
 @app.route('/admin/cines')
 @admin_required
 def cine_lista():
@@ -706,7 +706,6 @@ def sala_lista():
 def asiento_lista():
     return render_template('asiento/lista.html')
 
-# --- Películas y Funciones ---
 @app.route('/admin/peliculas')
 @admin_required
 def pelicula_lista():
@@ -722,7 +721,6 @@ def pelicula_genero_lista():
 def funcion_lista():
     return render_template('funcion/lista.html')
 
-# --- Ventas y Usuarios ---
 @app.route('/admin/usuarios')
 @admin_required
 def usuario_lista():
