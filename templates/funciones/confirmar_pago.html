@@ -82,17 +82,54 @@
                     <h4 class="text-accent mb-4">Confirmar Compra</h4>
                     
                     <form method="POST" action="{{ url_for('confirmar_pago', funcion_id=funcion.id) }}" id="formConfirmarPago">
+                        <!-- Sección de saldo disponible -->
+                        <div class="mb-4">
+                            <h6 class="text-accent mb-3">Saldo disponible</h6>
+                            
+                            <div class="mb-3 p-3 border border-dark-border rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-white">
+                                        <i class="bi bi-wallet me-2"></i>
+                                        Saldo disponible:
+                                    </span>
+                                    <span class="fw-bold text-white">${{ "%.2f"|format(saldo_disponible) }}</span>
+                                </div>
+                                <div class="text-white-50 small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Válido por 3 meses desde la cancelación
+                                </div>
+                            </div>
+                            
+                            {% if saldo_disponible > 0 %}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="usar_saldo" name="usar_saldo">
+                                <label class="form-check-label text-white" for="usar_saldo">
+                                    <strong>Usar saldo disponible para esta compra</strong>
+                                </label>
+                            </div>
+                            <div class="text-white small mt-1">
+                                <i class="bi bi-info-circle me-1"></i>
+                                El saldo se usará automáticamente de los boletos cancelados más antiguos.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                No tienes saldo disponible para usar.
+                            </div>
+                            {% endif %}
+                        </div>
+                        
                         <div class="mb-4">
                             <h6 class="text-accent mb-3">Método de pago</h6>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="radio" name="metodo_pago" id="tarjeta" value="tarjeta" checked>
-                                <label class="form-check-label" for="tarjeta">
+                                <label class="form-check-label text-white" for="tarjeta">
                                     <i class="bi bi-credit-card me-2"></i> Tarjeta de crédito/débito
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="metodo_pago" id="efectivo" value="efectivo">
-                                <label class="form-check-label" for="efectivo">
+                                <label class="form-check-label text-white" for="efectivo">
                                     <i class="bi bi-cash me-2"></i> Efectivo en taquilla
                                 </label>
                             </div>
@@ -131,17 +168,34 @@ document.addEventListener('DOMContentLoaded', function() {
     btnConfirmar.addEventListener('click', function(e) {
         e.preventDefault();
         
+        // Obtener si se va a usar saldo
+        const usarSaldoCheckbox = document.getElementById('usar_saldo');
+        const usarSaldo = usarSaldoCheckbox ? usarSaldoCheckbox.checked : false;
+        const total = parseFloat('{{ total|float }}');
+        const saldoDisponible = parseFloat('{{ saldo_disponible|float }}');
+        
+        let mensajeSaldo = '';
+        if (usarSaldo && saldoDisponible > 0) {
+            if (saldoDisponible >= total) {
+                mensajeSaldo = `<br><br><strong>Se usará tu saldo disponible ($${saldoDisponible.toFixed(2)}) para cubrir el total de la compra.</strong>`;
+            } else {
+                const resto = total - saldoDisponible;
+                mensajeSaldo = `<br><br><strong>Se usará tu saldo disponible ($${saldoDisponible.toFixed(2)}) y pagarás el resto ($${resto.toFixed(2)}) con el método seleccionado.</strong>`;
+            }
+        }
+        
         // Confirmación final
         Swal.fire({
             title: '¿Confirmar compra?',
-            text: `Vas a pagar ${{ total }} por {{ asientos|length }} boleto(s). Esta acción no se puede deshacer.`,
+            html: `Vas a pagar <strong>$${total.toFixed(2)}</strong> por <strong>{{ asientos|length }} boleto(s)</strong>.${mensajeSaldo}<br><br><small>Esta acción no se puede deshacer.</small>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ffc107',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Sí, confirmar',
             cancelButtonText: 'Cancelar',
-            reverseButtons: true
+            reverseButtons: true,
+            width: '500px'
         }).then((result) => {
             if (result.isConfirmed) {
                 // Enviar formulario
