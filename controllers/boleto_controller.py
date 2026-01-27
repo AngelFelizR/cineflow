@@ -9,7 +9,7 @@ import traceback
 
 class BoletoController:
     @staticmethod
-    def crear_boletos(funcion_id: int, usuario_id: int, asientos_seleccionados: list, tipos_asientos: dict):
+    def crear_boletos(funcion_id: int, usuario_id: int, asientos_seleccionados: list, tipos_asientos: dict, usar_saldo: bool = False):
         """
         Crea boletos en la base de datos para una función
         
@@ -18,9 +18,10 @@ class BoletoController:
             usuario_id: ID del usuario que compra
             asientos_seleccionados: Lista de códigos de asientos seleccionados
             tipos_asientos: Diccionario con código_asiento -> tipo ('adulto' o 'nino')
+            usar_saldo: Si se debe usar el saldo disponible del usuario
             
         Returns:
-            tuple: (success: bool, message: str, boletos_creados: list or None)
+            tuple: (success: bool, message: str, boletos_ids: list or None, monto_saldo_usado: float)
         """
         session = db.get_session()
         
@@ -31,14 +32,14 @@ class BoletoController:
             ).filter(Funcion.Id == funcion_id).first()
             
             if not funcion:
-                return False, "La función no existe", None
+                return False, "La función no existe", None, 0.0
             
             # Obtener IDs de tipos de boleto
             tipo_adulto = session.query(TipoBoleto).filter_by(TipoBoleto="Adulto").first()
             tipo_nino = session.query(TipoBoleto).filter_by(TipoBoleto="Niño").first()
             
             if not tipo_adulto or not tipo_nino:
-                return False, "Error en tipos de boleto", None
+                return False, "Error en tipos de boleto", None, 0.0
             
             # Verificar que todos los asientos estén disponibles
             for codigo_asiento in asientos_seleccionados:
@@ -49,10 +50,10 @@ class BoletoController:
                 ).first()
                 
                 if not asiento:
-                    return False, f"Asiento {codigo_asiento} no encontrado", None
+                    return False, f"Asiento {codigo_asiento} no encontrado", None, 0.0
                 
                 if not asiento.Activo:
-                    return False, f"Asiento {codigo_asiento} no está activo", None
+                    return False, f"Asiento {codigo_asiento} no está activo", None, 0.0
                 
                 # Verificar si ya está vendido (y no cancelado)
                 boleto_existente = session.query(Boleto).filter_by(
@@ -67,9 +68,29 @@ class BoletoController:
                     ).first()
                     
                     if not boleto_cancelado:
-                        return False, f"Asiento {codigo_asiento} ya está ocupado", None
+                        return False, f"Asiento {codigo_asiento} ya está ocupado", None, 0.0
             
-            boletos_creados = []
+            # Calcular el total a pagar
+            total_a_pagar = 0.0
+            for codigo_asiento in asientos_seleccionados:
+                tipo = tipos_asientos.get(codigo_asiento, 'adulto')
+                if tipo == 'nino':
+                    precio = funcion.sala.tipo_sala.PrecioNino
+                else:
+                    precio = funcion.sala.tipo_sala.PrecioAdulto
+                total_a_pagar += float(precio)
+            
+            monto_saldo_usado = 0.0
+            mensaje_saldo = ""
+            
+            # Usar saldo si se solicitó
+            if usar_saldo and total_a_pagar > 0:
+                success_saldo, mensaje_saldo, monto_saldo_usado, boletos_actualizados = BoletoController.utilizar_saldo_en_compra(usuario_id, total_a_pagar)
+                if not success_saldo:
+                    # Si falla el uso de saldo, no continuamos
+                    return False, f"No se pudo usar el saldo: {mensaje_saldo}", None, 0.0
+            
+            boletos_ids = []
             
             # Crear boletos
             for codigo_asiento in asientos_seleccionados:
@@ -99,17 +120,22 @@ class BoletoController:
                 
                 session.add(boleto)
                 session.flush()  # Para obtener el ID
-                boletos_creados.append(boleto.Id)
+                boletos_ids.append(boleto.Id)
             
             # Confirmar transacción
             session.commit()
             
-            return True, f"{len(boletos_creados)} boletos creados exitosamente", boletos_creados
+            mensaje = f"{len(boletos_ids)} boletos creados exitosamente."
+            if usar_saldo:
+                mensaje += " " + mensaje_saldo
+            
+            return True, mensaje, boletos_ids, monto_saldo_usado
             
         except Exception as e:
             session.rollback()
             print(f"Error al crear boletos: {e}")
-            return False, f"Error al crear boletos: {str(e)}", None
+            traceback.print_exc()
+            return False, f"Error al crear boletos: {str(e)}", None, 0.0
             
         finally:
             session.close()
@@ -332,5 +358,82 @@ class BoletoController:
             print(f"Error al cancelar boletos: {e}")
             traceback.print_exc()
             return False, f"Error al cancelar boletos: {str(e)}", 0.0
+        finally:
+            session.close()
+
+    @staticmethod
+    def utilizar_saldo_en_compra(usuario_id: int, monto_a_pagar: float):
+        """
+        Utiliza el saldo disponible del usuario para pagar parte o todo el monto.
+        Usa los boletos cancelados más antiguos (dentro de los últimos 3 meses).
+        
+        Args:
+            usuario_id: ID del usuario
+            monto_a_pagar: Monto total a pagar
+            
+        Returns:
+            tuple: (success: bool, message: str, monto_saldo_usado: float, boletos_actualizados: list)
+        """
+        session = db.get_session()
+        try:
+            # Fecha límite: 3 meses atrás desde hoy
+            fecha_limite = datetime.now() - timedelta(days=90)
+            
+            # Obtener boletos cancelados no canjeados, dentro del límite de tiempo, ordenados por fecha de cancelación (más antiguos primero)
+            boletos_cancelados = session.query(BoletoCancelado).join(
+                Boleto, BoletoCancelado.IdBoleto == Boleto.Id
+            ).filter(
+                Boleto.IdUsuario == usuario_id,
+                BoletoCancelado.Canjeado == False,
+                BoletoCancelado.FechaCancelacion >= fecha_limite
+            ).order_by(BoletoCancelado.FechaCancelacion.asc()).all()
+            
+            if not boletos_cancelados:
+                return False, "No hay saldo disponible", 0.0, []
+            
+            monto_restante = monto_a_pagar
+            monto_saldo_usado = 0.0
+            boletos_actualizados = []
+            
+            for boleto_cancelado in boletos_cancelados:
+                if monto_restante <= 0:
+                    break
+                    
+                # Si el valor acreditado es menor o igual al monto restante, usamos todo y marcamos como canjeado
+                if boleto_cancelado.ValorAcreditado <= monto_restante:
+                    monto_restante -= float(boleto_cancelado.ValorAcreditado)
+                    monto_saldo_usado += float(boleto_cancelado.ValorAcreditado)
+                    boleto_cancelado.Canjeado = True
+                    boletos_actualizados.append({
+                        'id': boleto_cancelado.Id,
+                        'valor_acreditado': float(boleto_cancelado.ValorAcreditado),
+                        'canjeado': True
+                    })
+                else:
+                    # Si el valor acreditado es mayor, usamos solo lo necesario y actualizamos el valor restante
+                    monto_saldo_usado += monto_restante
+                    boleto_cancelado.ValorAcreditado -= monto_restante
+                    boletos_actualizados.append({
+                        'id': boleto_cancelado.Id,
+                        'valor_acreditado': float(boleto_cancelado.ValorAcreditado),
+                        'canjeado': False
+                    })
+                    monto_restante = 0
+            
+            session.commit()
+            
+            mensaje = f"Se utilizó ${monto_saldo_usado:.2f} de saldo. "
+            if monto_restante > 0:
+                mensaje += f"Falta pagar ${monto_restante:.2f} con otro método."
+            else:
+                mensaje += "El saldo cubrió el total de la compra."
+                
+            return True, mensaje, monto_saldo_usado, boletos_actualizados
+            
+        except Exception as e:
+            session.rollback()
+            print(f"Error al utilizar saldo: {e}")
+            traceback.print_exc()
+            return False, f"Error al utilizar saldo: {str(e)}", 0.0, []
         finally:
             session.close()

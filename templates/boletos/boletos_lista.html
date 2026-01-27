@@ -32,6 +32,16 @@
         margin-top: 0.5rem;
     }
     
+    .saldo-instructions {
+        color: var(--dark-text);
+        font-size: 0.9rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background-color: rgba(255, 193, 7, 0.1);
+        border-left: 3px solid var(--accent-color);
+        border-radius: 5px;
+    }
+    
     .pelicula-group {
         background-color: var(--dark-card);
         border: 1px solid var(--dark-border);
@@ -287,19 +297,18 @@
     
     <!-- Saldo Disponible -->
     <div class="saldo-container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
+        <div class="row">
+            <div class="col-12">
                 <div class="saldo-title">Saldo disponible</div>
                 <div class="saldo-amount">${{ "%.2f"|format(saldo_disponible) }}</div>
                 <div class="saldo-info">
                     <i class="bi bi-info-circle me-1"></i>
                     Este saldo es válido por 3 meses desde la fecha de cancelación
                 </div>
-            </div>
-            <div class="col-md-4 text-md-end">
-                <button class="btn btn-outline-warning" onclick="usarSaldo()">
-                    <i class="bi bi-credit-card me-1"></i> Usar Saldo
-                </button>
+                <div class="saldo-instructions">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    Para usar este saldo, active la opción <strong>"Usar saldo disponible"</strong> al comprar boletos.
+                </div>
             </div>
         </div>
     </div>
@@ -509,18 +518,6 @@
     // Enviar formulario de cancelación
     function enviarCancelacion() {
         document.getElementById('cancelarForm').submit();
-    }
-    
-    // Función para usar saldo (placeholder)
-    function usarSaldo() {
-        Swal.fire({
-            icon: 'info',
-            title: 'Funcionalidad en desarrollo',
-            text: 'La opción para usar saldo estará disponible próximamente.',
-            confirmButtonColor: '#ffc107',
-            background: 'var(--dark-bg)',
-            color: 'var(--dark-text)'
-        });
     }
 </script>
 {% endblock %}

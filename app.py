@@ -450,6 +450,9 @@ def confirmar_pago(funcion_id):
         flash('La función no existe o no está disponible.', 'danger')
         return redirect(url_for('lista_cartelera'))
     
+    # Obtener saldo disponible del usuario
+    saldo_disponible = BoletoController.obtener_saldo_usuario(current_user.Id)
+    
     if request.method == 'GET':
         # Obtener parámetros de la compra desde GET
         asientos_params = []
@@ -485,7 +488,8 @@ def confirmar_pago(funcion_id):
             asientos=asientos_params,
             total=total,
             adultos=adultos,
-            ninos=ninos
+            ninos=ninos,
+            saldo_disponible=saldo_disponible
         )
     
     elif request.method == 'POST':
@@ -503,19 +507,41 @@ def confirmar_pago(funcion_id):
         # Extraer solo los códigos de asientos
         asientos_codigos = [codigo for codigo, _ in asientos_params]
         
-        # Crear boletos en la base de datos
-        success, message, boletos_ids = BoletoController.crear_boletos(
+        # Obtener si se desea usar saldo (el checkbox devuelve 'on' cuando está marcado)
+        usar_saldo = request.form.get('usar_saldo') == 'on'
+        
+        # Obtener método de pago
+        metodo_pago = request.form.get('metodo_pago', 'tarjeta')
+        
+        # Crear boletos en la base de datos (incluyendo lógica de saldo si se solicitó)
+        success, message, boletos_ids, monto_saldo_usado = BoletoController.crear_boletos(
             funcion_id=funcion_id,
             usuario_id=current_user.Id,
             asientos_seleccionados=asientos_codigos,
-            tipos_asientos=tipos_asientos
+            tipos_asientos=tipos_asientos,
+            usar_saldo=usar_saldo
         )
         
         if success:
             # Limpiar sesión temporal
             session.pop('compra_temporal', None)
             
-            flash(f'¡Pago confirmado! {message} Tu número de transacción: {", ".join(map(str, boletos_ids))}', 'success')
+            # Preparar mensaje detallado
+            total_float = float(compra_temporal['total'])
+            
+            if usar_saldo and monto_saldo_usado > 0:
+                resto_pagado = total_float - monto_saldo_usado
+                if resto_pagado > 0:
+                    # Se usó saldo pero no cubrió todo
+                    message = f'¡Pago confirmado! {message} Se usó ${monto_saldo_usado:.2f} de saldo y se pagó ${resto_pagado:.2f} con {metodo_pago}. Tu número de transacción: {", ".join(map(str, boletos_ids))}'
+                else:
+                    # El saldo cubrió todo
+                    message = f'¡Pago confirmado! {message} Se usó ${monto_saldo_usado:.2f} de saldo. Tu número de transacción: {", ".join(map(str, boletos_ids))}'
+            else:
+                # No se usó saldo
+                message = f'¡Pago confirmado! {message} Se pagó ${total_float:.2f} con {metodo_pago}. Tu número de transacción: {", ".join(map(str, boletos_ids))}'
+            
+            flash(message, 'success')
             return redirect(url_for('index'))
         else:
             flash(f'Error al procesar el pago: {message}', 'danger')
