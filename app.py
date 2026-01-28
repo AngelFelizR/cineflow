@@ -741,11 +741,10 @@ def dashboard_export_pdf():
 @admin_required
 def clasificacion_lista():
     """Lista todas las clasificaciones"""
-    controller = ClasificacionController()
-    clasificaciones = controller.obtener_todas()
+    clasificaciones = ClasificacionController.obtener_todas()
     return render_template('clasificacion/lista.html', clasificaciones=clasificaciones)
 
-@app.route('/admin/clasificaciones/nuevo', methods=['GET'])
+@app.route('/admin/clasificaciones/nuevo')
 @admin_required
 def clasificacion_nuevo():
     """Formulario para nueva clasificación"""
@@ -760,12 +759,24 @@ def clasificacion_crear():
     
     if success:
         flash(message, 'success')
-        return redirect(url_for('clasificacion_detalle', id=clasificacion.Id))
+        return redirect(url_for('clasificacion_lista'))  # Redirige a la lista
     else:
         flash(message, 'danger')
         return redirect(url_for('clasificacion_nuevo'))
 
-@app.route('/admin/clasificaciones/<int:id>/editar', methods=['GET'])
+@app.route('/admin/clasificaciones/<int:id>')
+@admin_required
+def clasificacion_detalle(id):
+    """Muestra el detalle de una clasificación"""
+    clasificacion = ClasificacionController.obtener_por_id(id)  # Llamar directamente al método estático
+    
+    if not clasificacion:
+        flash('Clasificación no encontrada', 'danger')
+        return redirect(url_for('clasificacion_lista'))
+    
+    return render_template('clasificacion/detalle.html', clasificacion=clasificacion)
+
+@app.route('/admin/clasificaciones/<int:id>/editar')
 @admin_required
 def clasificacion_editar(id):
     """Formulario para editar clasificación"""
@@ -787,6 +798,7 @@ def clasificacion_actualizar(id):
     
     if success:
         flash(message, 'success')
+        # CORREGIDO: Agregar el parámetro id
         return redirect(url_for('clasificacion_detalle', id=id))
     else:
         flash(message, 'danger')
@@ -805,19 +817,6 @@ def clasificacion_eliminar(id):
         flash(message, 'danger')
     
     return redirect(url_for('clasificacion_lista'))
-
-@app.route('/admin/clasificaciones/<int:id>')
-@admin_required
-def clasificacion_detalle(id):
-    """Muestra el detalle de una clasificación"""
-    controller = ClasificacionController()
-    clasificacion = controller.obtener_por_id(id)
-    
-    if not clasificacion:
-        flash('Clasificación no encontrada', 'danger')
-        return redirect(url_for('clasificacion_lista'))
-    
-    return render_template('clasificacion/detalle.html', clasificacion=clasificacion)
 
 @app.route('/admin/idiomas')
 @admin_required

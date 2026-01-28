@@ -67,11 +67,11 @@
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
                                     <button type="button" 
-                                            class="btn btn-danger btn-eliminar" 
+                                            class="btn btn-outline-danger btn-sm btn-eliminar" 
                                             data-id="{{ clasif.Id }}"
                                             data-nombre="{{ clasif.Clasificacion }}"
                                             title="Eliminar">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="bi bi-trash"></i> Eliminar
                                     </button>
                                 </div>
                             </td>
@@ -96,20 +96,54 @@
 
 <!-- Modal de Confirmación de Eliminación -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content dark-card">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-dark text-light border-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de que deseas eliminar la clasificación "<span id="nombreClasificacion"></span>"?</p>
-                <p class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Esta acción no se puede deshacer.</p>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">¿Eliminar Clasificación?</h6>
+                            <p class="mb-1">Se eliminará la clasificación: <strong id="nombreClasificacion" class="text-danger"></strong></p>
+                            <p class="mb-0 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-danger mt-3">
+                    <div class="card-header bg-danger text-white py-2">
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Advertencia
+                    </div>
+                    <div class="card-body bg-dark py-3">
+                        <ul class="mb-0 small">
+                            <li>No se podrá eliminar si está siendo usada por películas</li>
+                            <li>Las películas existentes mantendrán esta clasificación</li>
+                            <li>No aparecerá en listas de selección futuras</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <div class="modal-footer bg-dark border-warning">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
                 <form id="formEliminar" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i> Sí, Eliminar
+                    </button>
                 </form>
             </div>
         </div>
@@ -131,17 +165,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.getAttribute('data-id');
             const nombre = this.getAttribute('data-nombre');
             
+            // Resaltar el nombre en el modal
             nombreClasificacion.textContent = nombre;
+            nombreClasificacion.style.color = '#ff6b6b';
+            nombreClasificacion.style.fontWeight = 'bold';
+            
+            // Establecer acción del formulario
             formEliminar.action = "{{ url_for('clasificacion_eliminar', id=0) }}".replace('0', id);
             
+            // Mostrar modal con animación
             modalEliminar.show();
         });
     });
     
-    // Inicializar tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+    // Efecto hover en botones
+    const eliminarBtns = document.querySelectorAll('.btn-eliminar');
+    eliminarBtns.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+            this.style.transition = 'transform 0.2s';
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
     });
 });
 </script>

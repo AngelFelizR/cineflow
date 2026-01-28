@@ -1,12 +1,13 @@
 # controllers/clasificacion_controller.py
 from database import db
 from models import Clasificacion
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from flask import flash
 
 class ClasificacionController:
     """Controlador para operaciones CRUD de Clasificaciones"""
-    
+
     @staticmethod
     def obtener_todas():
         """Obtiene todas las clasificaciones activas"""
@@ -24,11 +25,18 @@ class ClasificacionController:
     
     @staticmethod
     def obtener_por_id(id):
-        """Obtiene una clasificación por su ID"""
+        """Obtiene una clasificación por su ID con sus películas"""
         session = db.get_session()
         try:
+            # Cargar clasificación con películas relacionadas
             clasificacion = session.query(Clasificacion).\
+                options(joinedload(Clasificacion.peliculas)).\
                 filter(Clasificacion.Id == id).first()
+            
+            # Forzar la carga de la relación mientras la sesión está abierta
+            if clasificacion and hasattr(clasificacion, 'peliculas'):
+                _ = list(clasificacion.peliculas)  # Esto carga la relación
+            
             return clasificacion
         except Exception as e:
             flash(f'Error al obtener clasificación: {str(e)}', 'danger')
@@ -38,16 +46,7 @@ class ClasificacionController:
     
     @staticmethod
     def crear(data):
-        """
-        Crea una nueva clasificación
-        
-        Args:
-            data: Diccionario con datos de la clasificación
-                - Clasificacion (str): Nombre de la clasificación
-                
-        Returns:
-            tuple: (success, message, clasificacion)
-        """
+        """Crea una nueva clasificación"""
         session = db.get_session()
         try:
             # Validaciones
@@ -65,7 +64,6 @@ class ClasificacionController:
                     # Reactivar la existente
                     existente.Activo = True
                     session.commit()
-                    session.expunge(existente)
                     return True, 'Clasificación reactivada exitosamente', existente
             
             # Crear nueva
@@ -76,8 +74,6 @@ class ClasificacionController:
             
             session.add(nueva_clasificacion)
             session.commit()
-            session.expunge(nueva_clasificacion)
-            
             return True, 'Clasificación creada exitosamente', nueva_clasificacion
             
         except IntegrityError:
@@ -91,16 +87,7 @@ class ClasificacionController:
     
     @staticmethod
     def actualizar(id, data):
-        """
-        Actualiza una clasificación existente
-        
-        Args:
-            id: ID de la clasificación a actualizar
-            data: Diccionario con datos actualizados
-            
-        Returns:
-            tuple: (success, message, clasificacion)
-        """
+        """Actualiza una clasificación existente"""
         session = db.get_session()
         try:
             clasificacion = session.query(Clasificacion).\
@@ -126,9 +113,10 @@ class ClasificacionController:
             # Actualizar
             clasificacion.Clasificacion = data['Clasificacion'].strip()
             
-            session.commit()
-            session.expunge(clasificacion)
+            if 'Activo' in data:
+                clasificacion.Activo = data['Activo'] == 'on' if isinstance(data['Activo'], str) else bool(data['Activo'])
             
+            session.commit()
             return True, 'Clasificación actualizada exitosamente', clasificacion
             
         except Exception as e:
@@ -139,15 +127,7 @@ class ClasificacionController:
     
     @staticmethod
     def eliminar(id):
-        """
-        Elimina (desactiva) una clasificación
-        
-        Args:
-            id: ID de la clasificación a eliminar
-            
-        Returns:
-            tuple: (success, message)
-        """
+        """Elimina (desactiva) una clasificación"""
         session = db.get_session()
         try:
             clasificacion = session.query(Clasificacion).\
