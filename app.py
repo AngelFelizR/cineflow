@@ -6,6 +6,7 @@ from controllers.usuario_controller import UsuarioController
 from controllers.funcion_controller import FuncionController
 from controllers.boleto_controller import BoletoController
 from controllers.dashboard_controller import DashboardController
+from controllers.clasificacion_controller import ClasificacionController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from datetime import datetime, date, timedelta
@@ -734,10 +735,89 @@ def dashboard_export_pdf():
 # --- Rutas de Gestión (CRUD) ---
 # Cada ruta renderiza el archivo 'lista.html' dentro de su subcarpeta correspondiente
 
+# ==================== RUTAS CRUD PARA CLASIFICACIÓN ====================
+
 @app.route('/admin/clasificaciones')
 @admin_required
 def clasificacion_lista():
-    return render_template('clasificacion/lista.html')
+    """Lista todas las clasificaciones"""
+    controller = ClasificacionController()
+    clasificaciones = controller.obtener_todas()
+    return render_template('clasificacion/lista.html', clasificaciones=clasificaciones)
+
+@app.route('/admin/clasificaciones/nuevo', methods=['GET'])
+@admin_required
+def clasificacion_nuevo():
+    """Formulario para nueva clasificación"""
+    return render_template('clasificacion/nuevo.html')
+
+@app.route('/admin/clasificaciones/crear', methods=['POST'])
+@admin_required
+def clasificacion_crear():
+    """Crea una nueva clasificación"""
+    controller = ClasificacionController()
+    success, message, clasificacion = controller.crear(request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('clasificacion_detalle', id=clasificacion.Id))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('clasificacion_nuevo'))
+
+@app.route('/admin/clasificaciones/<int:id>/editar', methods=['GET'])
+@admin_required
+def clasificacion_editar(id):
+    """Formulario para editar clasificación"""
+    controller = ClasificacionController()
+    clasificacion = controller.obtener_por_id(id)
+    
+    if not clasificacion:
+        flash('Clasificación no encontrada', 'danger')
+        return redirect(url_for('clasificacion_lista'))
+    
+    return render_template('clasificacion/editar.html', clasificacion=clasificacion)
+
+@app.route('/admin/clasificaciones/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def clasificacion_actualizar(id):
+    """Actualiza una clasificación existente"""
+    controller = ClasificacionController()
+    success, message, clasificacion = controller.actualizar(id, request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('clasificacion_detalle', id=id))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('clasificacion_editar', id=id))
+
+@app.route('/admin/clasificaciones/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def clasificacion_eliminar(id):
+    """Elimina (desactiva) una clasificación"""
+    controller = ClasificacionController()
+    success, message = controller.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('clasificacion_lista'))
+
+@app.route('/admin/clasificaciones/<int:id>')
+@admin_required
+def clasificacion_detalle(id):
+    """Muestra el detalle de una clasificación"""
+    controller = ClasificacionController()
+    clasificacion = controller.obtener_por_id(id)
+    
+    if not clasificacion:
+        flash('Clasificación no encontrada', 'danger')
+        return redirect(url_for('clasificacion_lista'))
+    
+    return render_template('clasificacion/detalle.html', clasificacion=clasificacion)
 
 @app.route('/admin/idiomas')
 @admin_required

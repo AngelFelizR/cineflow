@@ -24,7 +24,8 @@
         box-shadow: 0 8px 30px rgba(255, 193, 7, 0.15);
         height: fit-content;
         position: sticky;
-        top: 20px;
+        top: 80px; /* Cambiado de 20px a 80px para estar debajo del navbar */
+        z-index: 900; /* Reducido de 1000 a 900 */
     }
     
     .sidebar-filters .form-label {
@@ -199,6 +200,7 @@
             width: 100%;
             position: static;
             margin-bottom: 20px;
+            top: auto;
         }
         
         .charts-grid {
@@ -232,21 +234,28 @@
         }
     }
     
-    /* Encabezado fijo */
+    /* Encabezado fijo - CORREGIDO */
     .dashboard-header {
         background: rgba(18, 18, 18, 0.95);
         padding: 15px 0;
         margin-bottom: 20px;
         position: sticky;
-        top: 0;
-        z-index: 1000;
+        top: 70px; /* Cambiado de 0 a 70px para estar debajo del navbar */
+        z-index: 800; /* Reducido de 1000 a 800 */
         border-bottom: 1px solid var(--dark-border);
+    }
+    
+    /* Navbar de Bootstrap tiene z-index: 1030 por defecto, así que los nuestros deben ser menores */
+    
+    /* Asegurar que el contenido principal tenga margen superior para el navbar */
+    .container-fluid.px-3 {
+        margin-top: 20px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-3">
+<div class="container-fluid px-3" style="margin-top: 20px;"> <!-- Añadido margen superior -->
     <!-- Encabezado con título y botones de exportación -->
     <div class="dashboard-header">
         <div class="d-flex justify-content-between align-items-center">
