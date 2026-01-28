@@ -29,11 +29,19 @@ class DashboardController:
             # Géneros activos
             generos = session.query(Genero).filter_by(Activo=True).order_by(Genero.Genero).all()
             
-            # Películas activas
-            peliculas = session.query(Pelicula).filter_by(Activo=True).order_by(Pelicula.Titulo).all()
+            # Películas activas con funciones que ya han sido emitidas (hoy o antes)
+            ahora = datetime.now()
             
-            # Funciones futuras y recientes (últimos 3 meses)
-            fecha_limite = datetime.now() - timedelta(days=90)
+            # Solo películas que tienen funciones con fecha/hora <= ahora
+            peliculas = session.query(Pelicula).filter_by(Activo=True).join(
+                Funcion, Pelicula.Id == Funcion.IdPelicula
+            ).filter(
+                Funcion.FechaHora <= ahora,
+                Funcion.Activo == True
+            ).distinct().order_by(Pelicula.Titulo).all()
+            
+            # Funciones futuras y recientes (últimos 3 meses) - solo funciones ya emitidas
+            fecha_limite = ahora - timedelta(days=90)
             
             # Cargar funciones con sus relaciones sala y película
             funciones = session.query(Funcion).options(
@@ -41,6 +49,7 @@ class DashboardController:
                 joinedload(Funcion.pelicula)
             ).filter(
                 Funcion.FechaHora >= fecha_limite,
+                Funcion.FechaHora <= ahora,  # Solo funciones ya emitidas
                 Funcion.Activo == True
             ).order_by(Funcion.FechaHora.desc()).limit(100).all()
             
