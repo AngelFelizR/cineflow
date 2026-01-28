@@ -184,37 +184,6 @@ Esto cargará automáticamente:
 - SQL Server tools
 - Variables de entorno configuradas
 
-### 📁 Estructura dentro del contenedor
-
-```
-/root/cineflow/
-├── app.py              # Punto de entrada principal
-├── controllers/        # Controladores MVC
-├── models.py          # Modelos SQLAlchemy
-├── templates/         # Vistas HTML
-├── cineflow_setup.sql # Script de BD
-└── default.nix        # Configuración del entorno
-```
-
-### 🔧 Comandos útiles dentro del contenedor
-
-```bash
-# Activar entorno y ejecutar la aplicación
-nix-shell --run "python app.py"
-
-# Ejecutar scripts específicos
-nix-shell --run "python crear_usuarios_hash.py"
-
-# Abrir shell Python interactivo con entorno cargado
-nix-shell --run "python"
-
-# Verificar conexión a SQL Server
-nix-shell --run "python -c 'from database import engine; print(engine)'"
-
-# Probar consultas a la base de datos
-nix-shell --run "python -c 'from models import Pelicula; from database import Session; session = Session(); print(session.query(Pelicula).all())'"
-```
-
 ### 💡 ¿Por qué SSH + nix-shell?
 
 1. **Desarrollo aislado**: Todo ocurre dentro del contenedor, sin afectar tu sistema local
