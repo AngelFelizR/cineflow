@@ -13,7 +13,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import traceback
-import json
 from typing import List, Dict, Any, Optional
 
 class DashboardController:
