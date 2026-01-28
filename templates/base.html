@@ -64,45 +64,34 @@
                             </a>
                         </li>
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                Catálogos Pelis
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('pelicula_lista') }}">
+                                <i class="bi bi-film me-1"></i> Películas
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('clasificacion_lista') }}">Clasificaciones</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('idioma_lista') }}">Idiomas</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('genero_lista') }}">Géneros</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('pelicula_lista') }}">Películas</a></li>
-                            </ul>
                         </li>
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                Cines y Salas
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('funcion_lista') }}">
+                                <i class="bi bi-calendar-event me-1"></i> Funciones
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('cine_lista') }}">Cines</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('tipo_sala_lista') }}">Tipos de Sala</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('sala_lista') }}">Salas</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('asiento_lista') }}">Asientos</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('funcion_lista') }}">Funciones (Cartelera)</a></li>
-                            </ul>
                         </li>
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                Ventas y Usuarios
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('clasificacion_lista') }}">
+                                <i class="bi bi-tag me-1"></i> Clasificaciones
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('usuario_lista') }}">Usuarios</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('rol_lista') }}">Roles</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('tipo_boleto_lista') }}">Tipos de Boleto</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('boleto_lista') }}">Boletos Vendidos</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('boleto_cancelado_lista') }}">Boletos Cancelados</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('boleto_usado_lista') }}">Boletos Usados</a></li>
-                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('genero_lista') }}">
+                                <i class="bi bi-grid-3x3-gap me-1"></i> Géneros
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('idioma_lista') }}">
+                                <i class="bi bi-translate me-1"></i> Idiomas
+                            </a>
                         </li>
 
                         {% elif current_user.rol_nombre == "Encargado de Entrada" %}
