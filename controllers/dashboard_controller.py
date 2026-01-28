@@ -679,6 +679,25 @@ class DashboardController:
         try:
             # Obtener datos raw
             df_raw = DashboardController.obtener_datos_raw(filtros)
+
+            if not df_raw.empty:
+                # 1. Conversión de COLUMNAS NUMÉRICAS
+                columnas_numericas = [
+                    'FuncionId', 'NúmeroDeSala', 'BoletoId', 
+                    'ValorPagado', 'Cancelado', 'ValorAcreditado', 'Usado'
+                ]
+                for col in columnas_numericas:
+                    if col in df_raw.columns:
+                        df_raw[col] = pd.to_numeric(df_raw[col], errors='coerce').fillna(0)
+
+                # 2. Conversión de COLUMNAS DE FECHA
+                # Esto elimina la zona horaria para que Excel no se confunda
+                columnas_fecha = [
+                    'FechaHora', 'FechaCreacion', 'FechaCancelacion', 'FechaUso'
+                ]
+                for col in columnas_fecha:
+                    if col in df_raw.columns:
+                        df_raw[col] = pd.to_datetime(df_raw[col], errors='coerce').dt.tz_localize(None)
             
             # Obtener datos agregados
             datos_completos = DashboardController.obtener_datos_completos(filtros)
