@@ -1,5 +1,5 @@
-# controllers/admin_controller.py
-# Controlador para operaciones del dashboard administrativo
+# controllers/dashboard_controller.py
+# Controlador completo corregido para operaciones del dashboard administrativo
 
 from database import db
 from models import Cine, Genero, Pelicula, Funcion, Sala, Usuario, Boleto, TipoSala
@@ -87,9 +87,6 @@ class DashboardController:
             fecha_inicio = params['fecha_inicio']
             fecha_fin = params['fecha_fin']
             
-            # Agregar hora completa para incluir todo el día
-            # fecha_inicio a las 00:00:00 (inicio del día)
-            # fecha_fin a las 23:59:59 (final del día)
             condiciones.append(
                 f"f.FechaHora >= CAST('{fecha_inicio}' AS DATE) "
                 f"AND f.FechaHora < DATEADD(day, 1, CAST('{fecha_fin}' AS DATE))"
@@ -100,9 +97,8 @@ class DashboardController:
             cine_ids = ','.join(map(str, params['cine_ids']))
             condiciones.append(f"s.IdCine IN ({cine_ids})")
         
-        # Filtro de géneros (NOTA: Este filtro se maneja diferente ahora)
-        # Ya no se incluye aquí porque causa problemas con JOIN
-        # Se maneja con EXISTS en la query principal
+        # NOTA: No incluimos filtro de géneros aquí para evitar duplicaciones
+        # Se manejará con EXISTS en las consultas principales
         
         # Filtro de películas
         if params.get('pelicula_ids') and len(params['pelicula_ids']) > 0:
@@ -140,7 +136,19 @@ class DashboardController:
             where_clause = DashboardController.construir_filtros_sql(filtros)
             agrupacion_sql = DashboardController.obtener_agrupacion_sql(filtros.get('agrupacion', 'dia'))
             
-            # Query SQL para ingresos usando la función de la base de datos
+            # Condición de géneros si existe
+            condicion_generos = ""
+            if filtros.get('genero_ids') and len(filtros['genero_ids']) > 0:
+                genero_ids = ','.join(map(str, filtros['genero_ids']))
+                condicion_generos = f"""
+                    AND EXISTS (
+                        SELECT 1 FROM PelículaGénero pg 
+                        WHERE pg.IdPelícula = p.Id 
+                        AND pg.IdGénero IN ({genero_ids})
+                    )
+                """
+            
+            # Query SQL corregida para ingresos
             query = text(f"""
                 SELECT 
                     {agrupacion_sql} AS Periodo,
@@ -149,12 +157,12 @@ class DashboardController:
                 FROM Funciones f
                 INNER JOIN Salas s ON f.IdSala = s.Id
                 INNER JOIN Películas p ON f.IdPelícula = p.Id
-                LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
                 INNER JOIN Boletos b ON f.Id = b.IdFunción
                 LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
                 WHERE {where_clause}
                     AND f.Activo = 1
                     AND bc.Id IS NULL  -- Excluir boletos cancelados
+                    {condicion_generos}
                 GROUP BY {agrupacion_sql}
                 ORDER BY Periodo
             """)
@@ -177,7 +185,7 @@ class DashboardController:
             return []
         finally:
             session.close()
-
+    
     @staticmethod
     def obtener_ocupacion(filtros: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Obtiene porcentaje de ocupación por período según los filtros."""
@@ -323,49 +331,97 @@ class DashboardController:
             return []
         finally:
             session.close()
-
     
     @staticmethod
     def obtener_boletos_usados(filtros: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Obtiene porcentaje de boletos usados por período"""
+        """Obtiene porcentaje de boletos usados por período - VERSIÓN SIMPLIFICADA Y CORREGIDA"""
         session = db.get_session()
         try:
-            where_clause = DashboardController.construir_filtros_sql(filtros)
-            agrupacion_sql = DashboardController.obtener_agrupacion_sql(filtros.get('agrupacion', 'dia'))
+            # Construir filtros base sin condiciones de género para evitar problemas
+            where_conditions = []
             
+            # Filtro de fechas
+            if filtros.get('fecha_inicio') and filtros.get('fecha_fin'):
+                fecha_inicio = filtros['fecha_inicio']
+                fecha_fin = filtros['fecha_fin']
+                where_conditions.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora < DATEADD(day, 1, '{fecha_fin}')")
+            
+            # Filtro de cines
+            if filtros.get('cine_ids') and len(filtros['cine_ids']) > 0:
+                cine_ids = ','.join(map(str, filtros['cine_ids']))
+                where_conditions.append(f"s.IdCine IN ({cine_ids})")
+            
+            # Filtro de películas
+            if filtros.get('pelicula_ids') and len(filtros['pelicula_ids']) > 0:
+                pelicula_ids = ','.join(map(str, filtros['pelicula_ids']))
+                where_conditions.append(f"f.IdPelícula IN ({pelicula_ids})")
+            
+            # Filtro de funciones
+            if filtros.get('funcion_ids') and len(filtros['funcion_ids']) > 0:
+                funcion_ids = ','.join(map(str, filtros['funcion_ids']))
+                where_conditions.append(f"f.Id IN ({funcion_ids})")
+            
+            # Filtro de días de semana
+            if filtros.get('dias_semana') and len(filtros['dias_semana']) > 0:
+                dias_semana = ','.join(map(str, filtros['dias_semana']))
+                where_conditions.append(f"DATEPART(weekday, f.FechaHora) IN ({dias_semana})")
+            
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            # Agrupación
+            agrupacion = filtros.get('agrupacion', 'dia')
+            if agrupacion == 'semana':
+                agrupacion_sql = "DATEADD(day, 1 - DATEPART(weekday, f.FechaHora), CONVERT(DATE, f.FechaHora))"
+            elif agrupacion == 'mes':
+                agrupacion_sql = "DATEFROMPARTS(YEAR(f.FechaHora), MONTH(f.FechaHora), 1)"
+            else:  # 'dia'
+                agrupacion_sql = "CONVERT(DATE, f.FechaHora)"
+            
+            # Consulta simplificada y corregida - Cambiando nombres de CTEs
             query = text(f"""
-                WITH BoletosTotales AS (
+                -- Total de boletos vendidos por período
+                WITH BoletosVendidosCTE AS (
                     SELECT 
-                        f.Id AS FuncionId,
-                        f.FechaHora,
                         {agrupacion_sql} AS Periodo,
-                        COUNT(b.Id) AS BoletosTotales,
-                        COUNT(bu.Id) AS BoletosUsados
-                    FROM Funciones f
+                        COUNT(*) AS TotalBoletos
+                    FROM Boletos b
+                    INNER JOIN Funciones f ON b.IdFunción = f.Id
                     INNER JOIN Salas s ON f.IdSala = s.Id
                     INNER JOIN Películas p ON f.IdPelícula = p.Id
-                    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-                    INNER JOIN Boletos b ON f.Id = b.IdFunción
-                    LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
-                    LEFT JOIN BoletosUsados bu ON b.Id = bu.IdBoleto
                     WHERE {where_clause}
                         AND f.Activo = 1
-                        AND bc.Id IS NULL
-                    GROUP BY f.Id, f.FechaHora, {agrupacion_sql}
+                    GROUP BY {agrupacion_sql}
+                ),
+                -- Boletos usados por período
+                BoletosUsadosCTE AS (
+                    SELECT 
+                        {agrupacion_sql} AS Periodo,
+                        COUNT(*) AS BoletosUsados
+                    FROM Boletos b
+                    INNER JOIN Funciones f ON b.IdFunción = f.Id
+                    INNER JOIN Salas s ON f.IdSala = s.Id
+                    INNER JOIN Películas p ON f.IdPelícula = p.Id
+                    INNER JOIN BoletosUsados bu ON b.Id = bu.IdBoleto
+                    WHERE {where_clause}
+                        AND f.Activo = 1
+                    GROUP BY {agrupacion_sql}
                 )
+                -- Combinar resultados
                 SELECT 
-                    Periodo,
-                    SUM(BoletosTotales) AS BoletosTotales,
-                    SUM(BoletosUsados) AS BoletosUsados,
+                    COALESCE(bv.Periodo, bu.Periodo) AS Periodo,
+                    COALESCE(bv.TotalBoletos, 0) AS BoletosTotales,
+                    COALESCE(bu.BoletosUsados, 0) AS BoletosUsados,
                     CASE 
-                        WHEN SUM(BoletosTotales) > 0 
-                        THEN (SUM(BoletosUsados) * 100.0 / SUM(BoletosTotales))
+                        WHEN COALESCE(bv.TotalBoletos, 0) > 0 
+                        THEN (COALESCE(bu.BoletosUsados, 0) * 100.0 / COALESCE(bv.TotalBoletos, 0))
                         ELSE 0 
                     END AS PorcentajeUsados
-                FROM BoletosTotales
-                GROUP BY Periodo
+                FROM BoletosVendidosCTE bv
+                FULL OUTER JOIN BoletosUsadosCTE bu ON bv.Periodo = bu.Periodo
                 ORDER BY Periodo
             """)
+            
+            print(f"📋 Query Boletos Usados: {query}")  # Para depuración
             
             result = session.execute(query)
             datos = []
@@ -378,10 +434,11 @@ class DashboardController:
                     'PorcentajeUsados': float(row.PorcentajeUsados) if row.PorcentajeUsados else 0.0
                 })
             
+            print(f"📊 Boletos Usados: {len(datos)} períodos encontrados")  # Para depuración
             return datos
             
         except Exception as e:
-            print(f"Error en obtener_boletos_usados: {e}")
+            print(f"❌ Error en obtener_boletos_usados: {e}")
             traceback.print_exc()
             return []
         finally:
@@ -389,43 +446,94 @@ class DashboardController:
     
     @staticmethod
     def obtener_cancelaciones(filtros: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Obtiene porcentaje de cancelaciones por período"""
+        """Obtiene porcentaje de cancelaciones por período - VERSIÓN CORREGIDA"""
         session = db.get_session()
         try:
-            where_clause = DashboardController.construir_filtros_sql(filtros)
-            agrupacion_sql = DashboardController.obtener_agrupacion_sql(filtros.get('agrupacion', 'dia'))
+            # Construir filtros base sin condiciones de género para evitar problemas
+            where_conditions = []
             
+            # Filtro de fechas
+            if filtros.get('fecha_inicio') and filtros.get('fecha_fin'):
+                fecha_inicio = filtros['fecha_inicio']
+                fecha_fin = filtros['fecha_fin']
+                where_conditions.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora < DATEADD(day, 1, '{fecha_fin}')")
+            
+            # Filtro de cines
+            if filtros.get('cine_ids') and len(filtros['cine_ids']) > 0:
+                cine_ids = ','.join(map(str, filtros['cine_ids']))
+                where_conditions.append(f"s.IdCine IN ({cine_ids})")
+            
+            # Filtro de películas
+            if filtros.get('pelicula_ids') and len(filtros['pelicula_ids']) > 0:
+                pelicula_ids = ','.join(map(str, filtros['pelicula_ids']))
+                where_conditions.append(f"f.IdPelícula IN ({pelicula_ids})")
+            
+            # Filtro de funciones
+            if filtros.get('funcion_ids') and len(filtros['funcion_ids']) > 0:
+                funcion_ids = ','.join(map(str, filtros['funcion_ids']))
+                where_conditions.append(f"f.Id IN ({funcion_ids})")
+            
+            # Filtro de días de semana
+            if filtros.get('dias_semana') and len(filtros['dias_semana']) > 0:
+                dias_semana = ','.join(map(str, filtros['dias_semana']))
+                where_conditions.append(f"DATEPART(weekday, f.FechaHora) IN ({dias_semana})")
+            
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            # Agrupación
+            agrupacion = filtros.get('agrupacion', 'dia')
+            if agrupacion == 'semana':
+                agrupacion_sql = "DATEADD(day, 1 - DATEPART(weekday, f.FechaHora), CONVERT(DATE, f.FechaHora))"
+            elif agrupacion == 'mes':
+                agrupacion_sql = "DATEFROMPARTS(YEAR(f.FechaHora), MONTH(f.FechaHora), 1)"
+            else:  # 'dia'
+                agrupacion_sql = "CONVERT(DATE, f.FechaHora)"
+            
+            # Consulta simplificada y corregida - Cambiando nombres de CTEs
             query = text(f"""
-                WITH BoletosVendidos AS (
+                -- Total de boletos vendidos por período
+                WITH BoletosVendidosCTE AS (
                     SELECT 
-                        f.Id AS FuncionId,
-                        f.FechaHora,
                         {agrupacion_sql} AS Periodo,
-                        COUNT(b.Id) AS BoletosVendidos,
-                        COUNT(bc.Id) AS BoletosCancelados
-                    FROM Funciones f
+                        COUNT(*) AS TotalBoletos
+                    FROM Boletos b
+                    INNER JOIN Funciones f ON b.IdFunción = f.Id
                     INNER JOIN Salas s ON f.IdSala = s.Id
                     INNER JOIN Películas p ON f.IdPelícula = p.Id
-                    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-                    INNER JOIN Boletos b ON f.Id = b.IdFunción
-                    LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
                     WHERE {where_clause}
                         AND f.Activo = 1
-                    GROUP BY f.Id, f.FechaHora, {agrupacion_sql}
+                    GROUP BY {agrupacion_sql}
+                ),
+                -- Boletos cancelados por período
+                CancelacionesCTE AS (
+                    SELECT 
+                        {agrupacion_sql} AS Periodo,
+                        COUNT(*) AS BoletosCancelados
+                    FROM Boletos b
+                    INNER JOIN Funciones f ON b.IdFunción = f.Id
+                    INNER JOIN Salas s ON f.IdSala = s.Id
+                    INNER JOIN Películas p ON f.IdPelícula = p.Id
+                    INNER JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
+                    WHERE {where_clause}
+                        AND f.Activo = 1
+                    GROUP BY {agrupacion_sql}
                 )
+                -- Combinar resultados
                 SELECT 
-                    Periodo,
-                    SUM(BoletosVendidos) AS BoletosVendidos,
-                    SUM(BoletosCancelados) AS BoletosCancelados,
+                    COALESCE(bv.Periodo, cc.Periodo) AS Periodo,
+                    COALESCE(bv.TotalBoletos, 0) AS BoletosVendidos,
+                    COALESCE(cc.BoletosCancelados, 0) AS BoletosCancelados,
                     CASE 
-                        WHEN SUM(BoletosVendidos) > 0 
-                        THEN (SUM(BoletosCancelados) * 100.0 / SUM(BoletosVendidos))
+                        WHEN COALESCE(bv.TotalBoletos, 0) > 0 
+                        THEN (COALESCE(cc.BoletosCancelados, 0) * 100.0 / COALESCE(bv.TotalBoletos, 0))
                         ELSE 0 
                     END AS PorcentajeCancelaciones
-                FROM BoletosVendidos
-                GROUP BY Periodo
+                FROM BoletosVendidosCTE bv
+                FULL OUTER JOIN CancelacionesCTE cc ON bv.Periodo = cc.Periodo
                 ORDER BY Periodo
             """)
+            
+            print(f"📋 Query Cancelaciones: {query}")  # Para depuración
             
             result = session.execute(query)
             datos = []
@@ -438,10 +546,11 @@ class DashboardController:
                     'PorcentajeCancelaciones': float(row.PorcentajeCancelaciones) if row.PorcentajeCancelaciones else 0.0
                 })
             
+            print(f"📊 Cancelaciones: {len(datos)} períodos encontrados")  # Para depuración
             return datos
             
         except Exception as e:
-            print(f"Error en obtener_cancelaciones: {e}")
+            print(f"❌ Error en obtener_cancelaciones: {e}")
             traceback.print_exc()
             return []
         finally:
@@ -451,10 +560,18 @@ class DashboardController:
     def obtener_datos_completos(filtros: Dict[str, Any]) -> Dict[str, Any]:
         """Obtiene todos los datos del dashboard en un solo llamado"""
         try:
+            print(f"🎯 Obteniendo datos completos con filtros: {filtros}")
+            
             ingresos = DashboardController.obtener_ingresos(filtros)
             ocupacion = DashboardController.obtener_ocupacion(filtros)
             boletos_usados = DashboardController.obtener_boletos_usados(filtros)
             cancelaciones = DashboardController.obtener_cancelaciones(filtros)
+            
+            print(f"📈 Resultados:")
+            print(f"  - Ingresos: {len(ingresos)} períodos")
+            print(f"  - Ocupación: {len(ocupacion)} períodos")
+            print(f"  - Boletos usados: {len(boletos_usados)} períodos")
+            print(f"  - Cancelaciones: {len(cancelaciones)} períodos")
             
             return {
                 'ingresos': ingresos,
@@ -465,7 +582,7 @@ class DashboardController:
             }
             
         except Exception as e:
-            print(f"Error en obtener_datos_completos: {e}")
+            print(f"❌ Error en obtener_datos_completos: {e}")
             traceback.print_exc()
             return {
                 'ingresos': [],
@@ -477,10 +594,22 @@ class DashboardController:
     
     @staticmethod
     def obtener_datos_raw(filtros: Dict[str, Any]) -> pd.DataFrame:
-        """Obtiene datos sin procesar para exportación a Excel"""
+        """Obtiene datos sin procesar para exportación a Excel - VERSIÓN CORREGIDA"""
         session = db.get_session()
         try:
             where_clause = DashboardController.construir_filtros_sql(filtros)
+            
+            # Condición de géneros si existe
+            condicion_generos = ""
+            if filtros.get('genero_ids') and len(filtros['genero_ids']) > 0:
+                genero_ids = ','.join(map(str, filtros['genero_ids']))
+                condicion_generos = f"""
+                    AND EXISTS (
+                        SELECT 1 FROM PelículaGénero pg 
+                        WHERE pg.IdPelícula = p.Id 
+                        AND pg.IdGénero IN ({genero_ids})
+                    )
+                """
             
             query = text(f"""
                 SELECT 
@@ -493,7 +622,13 @@ class DashboardController:
                     p.TítuloPelícula AS Pelicula,
                     cl.Clasificación,
                     i.Idioma,
-                    g.Género,
+                    STUFF((
+                        SELECT ', ' + g.Género
+                        FROM PelículaGénero pg2
+                        INNER JOIN Géneros g ON pg2.IdGénero = g.Id
+                        WHERE pg2.IdPelícula = p.Id
+                        FOR XML PATH('')
+                    ), 1, 2, '') AS Generos,
                     b.Id AS BoletoId,
                     b.FechaCreacion,
                     tb.TipoBoleto,
@@ -512,8 +647,6 @@ class DashboardController:
                 INNER JOIN Películas p ON f.IdPelícula = p.Id
                 INNER JOIN Clasificaciones cl ON p.IdClasificación = cl.Id
                 INNER JOIN Idiomas i ON p.IdIdioma = i.Id
-                LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-                LEFT JOIN Géneros g ON pg.IdGénero = g.Id
                 LEFT JOIN Boletos b ON f.Id = b.IdFunción
                 LEFT JOIN TipoBoletos tb ON b.IdTipoBoleto = tb.Id
                 LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
@@ -522,6 +655,7 @@ class DashboardController:
                 LEFT JOIN Asientos a ON b.IdAsiento = a.Id
                 WHERE {where_clause}
                     AND f.Activo = 1
+                    {condicion_generos}
                 ORDER BY f.FechaHora, c.Cine, s.NúmeroDeSala
             """)
             
