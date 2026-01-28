@@ -206,7 +206,7 @@ class DashboardController:
             if filtros.get('fecha_inicio') and filtros.get('fecha_fin'):
                 fecha_inicio = filtros['fecha_inicio']
                 fecha_fin = filtros['fecha_fin']
-                where_conditions.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora <= '{fecha_fin}'")
+                where_conditions.append(f"f.FechaHora >= '{fecha_inicio}' AND f.FechaHora < DATEADD(day, 1, '{fecha_fin}')")
             
             # Filtro de cines
             if filtros.get('cine_ids') and len(filtros['cine_ids']) > 0:
