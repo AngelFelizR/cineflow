@@ -10,12 +10,20 @@ class GeneroController:
 
     @staticmethod
     def obtener_todos():
-        """Obtiene todos los géneros activos"""
+        """Obtiene todos los géneros activos con el conteo de películas"""
         session = db.get_session()
         try:
+            # Usar joinedload para cargar las películas junto con los géneros
             generos = session.query(Genero).\
+                options(joinedload(Genero.peliculas)).\
                 filter(Genero.Activo == True).\
                 order_by(Genero.Genero).all()
+            
+            # Forzar la carga de las películas mientras la sesión está abierta
+            for genero in generos:
+                if hasattr(genero, 'peliculas'):
+                    _ = list(genero.peliculas)  # Esto fuerza la carga
+            
             return generos
         except Exception as e:
             flash(f'Error al obtener géneros: {str(e)}', 'danger')
@@ -25,15 +33,22 @@ class GeneroController:
     
     @staticmethod
     def obtener_por_id(id):
-        """Obtiene un género por su ID con sus películas"""
+        """Obtiene un género por su ID con sus películas y detalles completos"""
         session = db.get_session()
         try:
-            genero = session.query(Genero).\
-                options(joinedload(Genero.peliculas)).\
-                filter(Genero.Id == id).first()
+            from models import Pelicula
             
-            if genero and hasattr(genero, 'peliculas'):
-                _ = list(genero.peliculas)
+            # Consulta optimizada que carga todo en una sola query
+            genero = session.query(Genero).\
+                outerjoin(
+                    Genero.peliculas
+                ).outerjoin(
+                    PeliculaGenero.pelicula
+                ).\
+                options(
+                    joinedload(Genero.peliculas).joinedload(PeliculaGenero.pelicula)
+                ).\
+                filter(Genero.Id == id).first()
             
             return genero
         except Exception as e:
@@ -127,11 +142,15 @@ class GeneroController:
             if not genero:
                 return False, 'Género no encontrado'
             
-            peliculas = session.query(PeliculaGenero).\
+            # Verificar si hay películas usando este género
+            peliculas_count = session.query(PeliculaGenero).\
                 filter(PeliculaGenero.IdGenero == id).count()
             
-            if peliculas > 0:
-                return False, f'No se puede eliminar el género porque está siendo usado por {peliculas} película(s)'
+            if peliculas_count > 0:
+                # Solo desactivar, no impedir la acción
+                genero.Activo = False
+                session.commit()
+                return True, f'Género desactivado. Nota: Está siendo usado por {peliculas_count} película(s)'
             
             genero.Activo = False
             session.commit()
@@ -162,5 +181,19 @@ class GeneroController:
         except Exception as e:
             print(f"Error al obtener géneros para select: {e}")
             return []
+        finally:
+            session.close()
+
+    @staticmethod
+    def contar_peliculas_por_genero(genero_id):
+        """Cuenta cuántas películas tienen un género específico"""
+        session = db.get_session()
+        try:
+            count = session.query(PeliculaGenero).\
+                filter(PeliculaGenero.IdGenero == genero_id).count()
+            return count
+        except Exception as e:
+            print(f"Error al contar películas por género: {e}")
+            return 0
         finally:
             session.close()

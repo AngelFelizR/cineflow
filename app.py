@@ -8,6 +8,9 @@ from controllers.boleto_controller import BoletoController
 from controllers.dashboard_controller import DashboardController
 from controllers.clasificacion_controller import ClasificacionController
 from controllers.idioma_controller import IdiomaController
+from controllers.pelicula_genero_controller import PeliculaGeneroController
+from controllers.genero_controller import GeneroController
+from controllers.pelicula_admin_controller import PeliculaAdminController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from datetime import datetime, date, timedelta
@@ -897,10 +900,250 @@ def idioma_eliminar(id):
     
     return redirect(url_for('idioma_lista'))
 
+
+# ==================== RUTAS CRUD PARA PELICULA_GENERO ====================
+
+@app.route('/admin/peliculas-generos')
+@admin_required
+def pelicula_genero_lista():
+    """Lista todas las relaciones película-género con paginación"""
+    try:
+        # Obtener parámetros de filtro
+        pagina = request.args.get('page', 1, type=int)
+        pelicula_id = request.args.get('pelicula_id', '')
+        genero_id = request.args.get('genero_id', '')
+        
+        # Preparar filtros
+        filtros = {}
+        if pelicula_id:
+            filtros['pelicula_id'] = int(pelicula_id)
+        if genero_id:
+            filtros['genero_id'] = int(genero_id)
+        
+        # Obtener datos paginados del controlador
+        resultado = PeliculaGeneroController.obtener_todos_paginados(
+            pagina=pagina, 
+            por_pagina=25,
+            filtros=filtros
+        )
+        
+        # Obtener datos adicionales para filtros
+        peliculas_filtro = PeliculaAdminController.obtener_todas_activas()
+        generos_filtro = GeneroController.obtener_todos()
+        
+        # Calcular estadísticas
+        total_peliculas = len(set([rel.IdPelicula for rel in resultado['relaciones']]))
+        total_generos = len(set([rel.IdGenero for rel in resultado['relaciones']]))
+        
+        # Calcular promedio de géneros por película
+        if total_peliculas > 0:
+            promedio_generos = round(len(resultado['relaciones']) / total_peliculas, 1)
+        else:
+            promedio_generos = 0
+        
+        return render_template(
+            'pelicula_genero/lista.html',
+            relaciones=resultado['relaciones'],
+            total_relaciones=resultado['total'],
+            total_peliculas=total_peliculas,
+            total_generos=total_generos,
+            promedio_generos=promedio_generos,
+            peliculas_filtro=peliculas_filtro,
+            generos_filtro=generos_filtro,
+            pelicula_id=pelicula_id,
+            genero_id=genero_id,
+            pagination={
+                'page': resultado['pagina'],
+                'per_page': resultado['por_pagina'],
+                'total': resultado['total'],
+                'pages': resultado['paginas'],
+                'has_prev': resultado['pagina'] > 1,
+                'has_next': resultado['pagina'] < resultado['paginas'],
+                'prev_num': resultado['pagina'] - 1 if resultado['pagina'] > 1 else None,
+                'next_num': resultado['pagina'] + 1 if resultado['pagina'] < resultado['paginas'] else None,
+                'iter_pages': range(1, resultado['paginas'] + 1) if resultado['paginas'] > 0 else []
+            }
+        )
+    except Exception as e:
+        flash(f'Error al obtener relaciones: {str(e)}', 'danger')
+        return render_template('pelicula_genero/lista.html', relaciones=[], total_relaciones=0)
+
+@app.route('/admin/peliculas-generos/nuevo')
+@admin_required
+def pelicula_genero_nuevo():
+    """Formulario para nueva relación película-género"""
+    
+    peliculas = PeliculaController.obtener_todas_con_generos()
+    generos = GeneroController.obtener_todos()
+    
+    return render_template(
+        'pelicula_genero/nuevo.html',
+        peliculas=peliculas,
+        generos=generos
+    )
+
+@app.route('/admin/peliculas-generos/crear', methods=['POST'])
+@admin_required
+def pelicula_genero_crear():
+    """Crea una nueva relación película-género"""
+    success, message, relacion = PeliculaGeneroController.crear(request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('pelicula_genero_lista'))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('pelicula_genero_nuevo'))
+
+@app.route('/admin/peliculas-generos/<int:id>')
+@admin_required
+def pelicula_genero_detalle(id):
+    """Muestra el detalle de una relación"""
+    
+    relacion = PeliculaGeneroController.obtener_por_id(id)
+    
+    if not relacion:
+        flash('Relación no encontrada', 'danger')
+        return redirect(url_for('pelicula_genero_lista'))
+    
+    # Obtener estadísticas adicionales
+    # Total de géneros que tiene esta película
+    total_generos_pelicula = PeliculaController.contar_generos_por_pelicula(relacion.IdPelicula)
+    
+    # Total de películas que tienen este género
+    total_peliculas_genero = GeneroController.contar_peliculas_por_genero(relacion.IdGenero)
+    
+    return render_template(
+        'pelicula_genero/detalle.html',
+        relacion=relacion,
+        total_generos_pelicula=total_generos_pelicula,
+        total_peliculas_genero=total_peliculas_genero
+    )
+
+@app.route('/admin/peliculas-generos/<int:id>/editar')
+@admin_required
+def pelicula_genero_editar(id):
+    """Formulario para editar relación película-género"""
+
+    relacion = PeliculaGeneroController.obtener_por_id(id)
+    
+    if not relacion:
+        flash('Relación no encontrada', 'danger')
+        return redirect(url_for('pelicula_genero_lista'))
+    
+    peliculas = PeliculaAdminController.obtener_todas_activas()
+    generos = GeneroController.obtener_todos()
+    
+    return render_template(
+        'pelicula_genero/editar.html',
+        relacion=relacion,
+        peliculas=peliculas,
+        generos=generos
+    )
+
+@app.route('/admin/peliculas-generos/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def pelicula_genero_actualizar(id):
+    """Actualiza una relación existente"""
+    success, message, relacion = PeliculaGeneroController.actualizar(id, request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('pelicula_genero_detalle', id=id))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('pelicula_genero_editar', id=id))
+
+@app.route('/admin/peliculas-generos/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def pelicula_genero_eliminar(id):
+    """Elimina una relación película-género"""
+    success, message = PeliculaGeneroController.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('pelicula_genero_lista'))
+
+# ==================== RUTAS CRUD PARA GENERO ====================
+
 @app.route('/admin/generos')
 @admin_required
 def genero_lista():
-    return render_template('genero/lista.html')
+    """Lista todos los géneros"""
+    generos = GeneroController.obtener_todos()
+    return render_template('genero/lista.html', generos=generos)
+
+@app.route('/admin/generos/nuevo')
+@admin_required
+def genero_nuevo():
+    """Formulario para nuevo género"""
+    return render_template('genero/nuevo.html')
+
+@app.route('/admin/generos/crear', methods=['POST'])
+@admin_required
+def genero_crear():
+    """Crea un nuevo género"""
+    success, message, genero = GeneroController.crear(request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('genero_lista'))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('genero_nuevo'))
+
+@app.route('/admin/generos/<int:id>')
+@admin_required
+def genero_detalle(id):
+    """Muestra el detalle de un género"""
+    genero = GeneroController.obtener_por_id(id)
+    
+    if not genero:
+        flash('Género no encontrado', 'danger')
+        return redirect(url_for('genero_lista'))
+    
+    return render_template('genero/detalle.html', genero=genero)
+
+@app.route('/admin/generos/<int:id>/editar')
+@admin_required
+def genero_editar(id):
+    """Formulario para editar género"""
+    genero = GeneroController.obtener_por_id(id)
+    
+    if not genero:
+        flash('Género no encontrado', 'danger')
+        return redirect(url_for('genero_lista'))
+    
+    return render_template('genero/editar.html', genero=genero)
+
+@app.route('/admin/generos/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def genero_actualizar(id):
+    """Actualiza un género existente"""
+    success, message, genero = GeneroController.actualizar(id, request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('genero_detalle', id=id))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('genero_editar', id=id))
+
+@app.route('/admin/generos/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def genero_eliminar(id):
+    """Elimina (desactiva) un género"""
+    success, message = GeneroController.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('genero_lista'))
 
 @app.route('/admin/roles')
 @admin_required
@@ -936,11 +1179,6 @@ def asiento_lista():
 @admin_required
 def pelicula_lista():
     return render_template('pelicula/lista.html')
-
-@app.route('/admin/peliculas-generos')
-@admin_required
-def pelicula_genero_lista():
-    return render_template('pelicula_genero/lista.html')
 
 @app.route('/admin/funciones')
 @admin_required

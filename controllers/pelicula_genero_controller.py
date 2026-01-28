@@ -189,11 +189,14 @@ class PeliculaGeneroController:
             if not relacion:
                 return False, 'Relación no encontrada'
             
-            # Eliminar (eliminación física, ya que es una tabla de relación)
+            # Guardar información para el mensaje
+            pelicula_id = relacion.IdPelicula
+            genero_id = relacion.IdGenero
+            
             session.delete(relacion)
             session.commit()
             
-            return True, 'Relación eliminada exitosamente'
+            return True, f'Relación película-género eliminada exitosamente'
             
         except Exception as e:
             session.rollback()

@@ -286,3 +286,37 @@ class PeliculaAdminController:
             return False, f'Error al eliminar película: {str(e)}'
         finally:
             session.close()
+
+    @staticmethod
+    def contar_generos_por_pelicula(pelicula_id):
+        """Cuenta cuántos géneros tiene una película"""
+        session = db.get_session()
+        try:
+            count = session.query(PeliculaGenero).\
+                filter(PeliculaGenero.IdPelicula == pelicula_id).count()
+            return count
+        except Exception as e:
+            print(f"Error al contar géneros: {e}")
+            return 0
+        finally:
+            session.close()
+
+    # Método para obtener películas con sus géneros precargados
+    @staticmethod
+    def obtener_todas_con_generos():
+        """Obtiene todas las películas activas con sus géneros"""
+        session = db.get_session()
+        try:
+            peliculas = session.query(Pelicula).\
+                options(
+                    joinedload(Pelicula.generos).joinedload(PeliculaGenero.genero)
+                ).\
+                filter(Pelicula.Activo == True).\
+                order_by(Pelicula.Titulo).all()
+            
+            return peliculas
+        except Exception as e:
+            flash(f'Error al obtener películas: {str(e)}', 'danger')
+            return []
+        finally:
+            session.close()
