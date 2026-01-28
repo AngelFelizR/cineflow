@@ -147,7 +147,7 @@
                                     <td>{{ funcion.Id }}</td>
                                     <td>
                                         {% if funcion.sala %}
-                                        Sala {{ funcion.sala.NumeroDeSala }}
+                                        Sala {{ funcion.sala.NumeroDeSala if funcion.sala.NumeroDeSala else 'N/A' }}
                                         {% else %}
                                         N/A
                                         {% endif %}
@@ -282,33 +282,35 @@
 <!-- Modal de Confirmación de Eliminación -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-danger">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-shield-exclamation me-2"></i>
-                    Eliminación Permanente
+        <div class="modal-content dark-card delete-modal">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title text-warning fw-bold">
+                    <i class="bi bi-shield-exclamation me-2 text-warning"></i>
+                    Eliminar Película
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body bg-dark text-light">
+            <div class="modal-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="flex-shrink-0">
-                        <i class="bi bi-exclamation-triangle-fill text-warning fs-1"></i>
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="fw-bold mb-1">¿Está seguro de eliminar esta película?</h6>
-                        <p class="mb-0">Película: <span id="nombrePelicula" class="fw-bold text-warning"></span></p>
+                        <h6 class="fw-bold mb-1 text-light">¿Está seguro de eliminar esta película?</h6>
+                        <p class="mb-0 text-light">
+                            Película: <span id="nombrePelicula" class="fw-bold text-warning"></span>
+                        </p>
                     </div>
                 </div>
                 
-                <div class="alert alert-dark border-warning">
+                <div class="alert alert-dark border-warning mt-3">
                     <div class="d-flex">
                         <div class="flex-shrink-0">
                             <i class="bi bi-info-circle text-info"></i>
                         </div>
-                        <div class="flex-grow-1 ms-2">
-                            <small>
-                                <strong>Esta acción:</strong><br>
+                        <div class="flex-grow-1 ms-3">
+                            <small class="text-light">
+                                <strong class="text-warning">Esta acción:</strong><br>
                                 • Cambiará el estado a "Inactivo"<br>
                                 • No aparecerá en la cartelera<br>
                                 • Cancelará todas las funciones futuras<br>
@@ -318,13 +320,13 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-dark">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left me-1"></i> Volver
                 </button>
                 <form id="formEliminar" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-check-circle me-1"></i> Confirmar Eliminación
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
                     </button>
                 </form>
             </div>

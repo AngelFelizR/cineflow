@@ -379,3 +379,254 @@ main {
 .modal.fade .modal-dialog {
     animation: modalAppear 0.3s ease-out;
 }
+
+/* Mejoras para Dropdowns */
+.dropdown-menu {
+    background-color: var(--dark-card) !important;
+    border: 1px solid var(--accent-color) !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    min-width: 200px;
+}
+
+.dropdown-item {
+    color: var(--dark-text) !important;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    color: var(--accent-color) !important;
+}
+
+.dropdown-item.active, .dropdown-item:active {
+    background-color: var(--accent-color) !important;
+    color: #121212 !important;
+}
+
+.dropdown-divider {
+    border-top-color: rgba(255, 193, 7, 0.3) !important;
+}
+
+/* Selects mejorados */
+.form-select {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--dark-border) !important;
+    color: var(--dark-text) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffc107' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+.form-select:focus {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25) !important;
+}
+
+.form-select option {
+    background-color: var(--dark-card) !important;
+    color: var(--dark-text) !important;
+}
+
+/* Checkboxes personalizados */
+.form-check-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--dark-border);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+}
+
+/* Mejoras para tablas */
+.table-dark {
+    --bs-table-bg: rgba(0, 0, 0, 0.2);
+    --bs-table-border-color: var(--dark-border);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.table-sm th, .table-sm td {
+    padding: 0.5rem;
+}
+
+/* Badges mejorados */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.bg-primary {
+    background-color: rgba(13, 110, 253, 0.8) !important;
+}
+
+.bg-success {
+    background-color: rgba(25, 135, 84, 0.8) !important;
+}
+
+.bg-danger {
+    background-color: rgba(220, 53, 69, 0.8) !important;
+}
+
+.bg-warning {
+    background-color: rgba(255, 193, 7, 0.8) !important;
+    color: #121212 !important;
+}
+
+/* ====================
+   MODALES MEJORADOS CON CONTRASTE
+   ==================== */
+
+.modal-content {
+    background-color: var(--dark-card) !important;
+    border: 2px solid var(--accent-color) !important;
+    box-shadow: 0 10px 40px rgba(255, 193, 7, 0.2) !important;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
+    border-bottom: 2px solid var(--accent-color) !important;
+    color: var(--accent-color) !important;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--accent-color) !important;
+}
+
+.modal-body {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: var(--dark-text) !important;
+    font-size: 1rem;
+}
+
+.modal-body strong {
+    color: var(--accent-color) !important;
+    font-weight: 600;
+}
+
+.modal-footer {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.3));
+    border-top: 1px solid var(--dark-border) !important;
+}
+
+/* Modal específico para eliminación */
+.modal-content.delete-modal {
+    border-color: #dc3545 !important;
+    box-shadow: 0 10px 40px rgba(220, 53, 69, 0.3) !important;
+}
+
+.modal-content.delete-modal .modal-header {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.1));
+    border-bottom-color: #dc3545 !important;
+    color: #ff6b6b !important;
+}
+
+.modal-content.delete-modal .modal-title {
+    color: #ff6b6b !important;
+}
+
+.modal-content.delete-modal .alert-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border: 1px solid var(--warning-color) !important;
+    color: #ffeaa7 !important;
+}
+
+/* Botones en modales */
+.modal-footer .btn {
+    min-width: 100px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.modal-footer .btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.modal-footer .btn-danger:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+}
+
+.modal-footer .btn-secondary {
+    background-color: var(--secondary-color) !important;
+    border-color: var(--dark-border) !important;
+    color: var(--dark-text) !important;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #5a6268 !important;
+    transform: translateY(-2px);
+}
+
+/* Mejoras para el ícono de advertencia */
+.bi-exclamation-triangle-fill.text-warning {
+    color: #ffc107 !important;
+    filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.5));
+    font-size: 2rem;
+}
+
+/* Texto con mejor contraste */
+.modal-body p {
+    color: #e0e0e0 !important;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Fondo del modal más oscuro */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.modal-backdrop.show {
+    opacity: 0.9 !important;
+}
+
+/* Close button mejorado */
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.8;
+}
+
+.btn-close-white:hover {
+    opacity: 1;
+    filter: invert(1) grayscale(100%) brightness(200%) drop-shadow(0 0 3px var(--accent-color));
+}
+
+/* Animación para modales */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal.fade .modal-dialog {
+    animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-content {
+        border-width: 1px !important;
+    }
+}

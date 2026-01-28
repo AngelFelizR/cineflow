@@ -901,172 +901,6 @@ def idioma_eliminar(id):
     return redirect(url_for('idioma_lista'))
 
 
-# ==================== RUTAS CRUD PARA PELICULA_GENERO ====================
-
-@app.route('/admin/peliculas-generos')
-@admin_required
-def pelicula_genero_lista():
-    """Lista todas las relaciones película-género con paginación"""
-    try:
-        # Obtener parámetros de filtro
-        pagina = request.args.get('page', 1, type=int)
-        pelicula_id = request.args.get('pelicula_id', '')
-        genero_id = request.args.get('genero_id', '')
-        
-        # Preparar filtros
-        filtros = {}
-        if pelicula_id:
-            filtros['pelicula_id'] = int(pelicula_id)
-        if genero_id:
-            filtros['genero_id'] = int(genero_id)
-        
-        # Obtener datos paginados del controlador
-        resultado = PeliculaGeneroController.obtener_todos_paginados(
-            pagina=pagina, 
-            por_pagina=25,
-            filtros=filtros
-        )
-        
-        # Obtener datos adicionales para filtros
-        peliculas_filtro = PeliculaAdminController.obtener_todas_activas()
-        generos_filtro = GeneroController.obtener_todos()
-        
-        # Calcular estadísticas
-        total_peliculas = len(set([rel.IdPelicula for rel in resultado['relaciones']]))
-        total_generos = len(set([rel.IdGenero for rel in resultado['relaciones']]))
-        
-        # Calcular promedio de géneros por película
-        if total_peliculas > 0:
-            promedio_generos = round(len(resultado['relaciones']) / total_peliculas, 1)
-        else:
-            promedio_generos = 0
-        
-        return render_template(
-            'pelicula_genero/lista.html',
-            relaciones=resultado['relaciones'],
-            total_relaciones=resultado['total'],
-            total_peliculas=total_peliculas,
-            total_generos=total_generos,
-            promedio_generos=promedio_generos,
-            peliculas_filtro=peliculas_filtro,
-            generos_filtro=generos_filtro,
-            pelicula_id=pelicula_id,
-            genero_id=genero_id,
-            pagination={
-                'page': resultado['pagina'],
-                'per_page': resultado['por_pagina'],
-                'total': resultado['total'],
-                'pages': resultado['paginas'],
-                'has_prev': resultado['pagina'] > 1,
-                'has_next': resultado['pagina'] < resultado['paginas'],
-                'prev_num': resultado['pagina'] - 1 if resultado['pagina'] > 1 else None,
-                'next_num': resultado['pagina'] + 1 if resultado['pagina'] < resultado['paginas'] else None,
-                'iter_pages': range(1, resultado['paginas'] + 1) if resultado['paginas'] > 0 else []
-            }
-        )
-    except Exception as e:
-        flash(f'Error al obtener relaciones: {str(e)}', 'danger')
-        return render_template('pelicula_genero/lista.html', relaciones=[], total_relaciones=0)
-
-@app.route('/admin/peliculas-generos/nuevo')
-@admin_required
-def pelicula_genero_nuevo():
-    """Formulario para nueva relación película-género"""
-    
-    peliculas = PeliculaController.obtener_todas_con_generos()
-    generos = GeneroController.obtener_todos()
-    
-    return render_template(
-        'pelicula_genero/nuevo.html',
-        peliculas=peliculas,
-        generos=generos
-    )
-
-@app.route('/admin/peliculas-generos/crear', methods=['POST'])
-@admin_required
-def pelicula_genero_crear():
-    """Crea una nueva relación película-género"""
-    success, message, relacion = PeliculaGeneroController.crear(request.form)
-    
-    if success:
-        flash(message, 'success')
-        return redirect(url_for('pelicula_genero_lista'))
-    else:
-        flash(message, 'danger')
-        return redirect(url_for('pelicula_genero_nuevo'))
-
-@app.route('/admin/peliculas-generos/<int:id>')
-@admin_required
-def pelicula_genero_detalle(id):
-    """Muestra el detalle de una relación"""
-    
-    relacion = PeliculaGeneroController.obtener_por_id(id)
-    
-    if not relacion:
-        flash('Relación no encontrada', 'danger')
-        return redirect(url_for('pelicula_genero_lista'))
-    
-    # Obtener estadísticas adicionales
-    # Total de géneros que tiene esta película
-    total_generos_pelicula = PeliculaController.contar_generos_por_pelicula(relacion.IdPelicula)
-    
-    # Total de películas que tienen este género
-    total_peliculas_genero = GeneroController.contar_peliculas_por_genero(relacion.IdGenero)
-    
-    return render_template(
-        'pelicula_genero/detalle.html',
-        relacion=relacion,
-        total_generos_pelicula=total_generos_pelicula,
-        total_peliculas_genero=total_peliculas_genero
-    )
-
-@app.route('/admin/peliculas-generos/<int:id>/editar')
-@admin_required
-def pelicula_genero_editar(id):
-    """Formulario para editar relación película-género"""
-
-    relacion = PeliculaGeneroController.obtener_por_id(id)
-    
-    if not relacion:
-        flash('Relación no encontrada', 'danger')
-        return redirect(url_for('pelicula_genero_lista'))
-    
-    peliculas = PeliculaAdminController.obtener_todas_activas()
-    generos = GeneroController.obtener_todos()
-    
-    return render_template(
-        'pelicula_genero/editar.html',
-        relacion=relacion,
-        peliculas=peliculas,
-        generos=generos
-    )
-
-@app.route('/admin/peliculas-generos/<int:id>/actualizar', methods=['POST'])
-@admin_required
-def pelicula_genero_actualizar(id):
-    """Actualiza una relación existente"""
-    success, message, relacion = PeliculaGeneroController.actualizar(id, request.form)
-    
-    if success:
-        flash(message, 'success')
-        return redirect(url_for('pelicula_genero_detalle', id=id))
-    else:
-        flash(message, 'danger')
-        return redirect(url_for('pelicula_genero_editar', id=id))
-
-@app.route('/admin/peliculas-generos/<int:id>/eliminar', methods=['POST'])
-@admin_required
-def pelicula_genero_eliminar(id):
-    """Elimina una relación película-género"""
-    success, message = PeliculaGeneroController.eliminar(id)
-    
-    if success:
-        flash(message, 'success')
-    else:
-        flash(message, 'danger')
-    
-    return redirect(url_for('pelicula_genero_lista'))
-
 # ==================== RUTAS CRUD PARA GENERO ====================
 
 @app.route('/admin/generos')
@@ -1145,6 +979,246 @@ def genero_eliminar(id):
     
     return redirect(url_for('genero_lista'))
 
+
+# ==================== RUTAS CRUD PARA FUNCIONES ====================
+
+@app.route('/admin/funciones')
+@admin_required
+def funcion_lista():
+    """Lista todas las funciones"""
+    return render_template('funcion/lista.html')
+
+@app.route('/admin/funciones/nuevo')
+@admin_required
+def funcion_nuevo():
+    """Formulario para nueva función"""
+    pelicula_id = request.args.get('pelicula_id', '')
+    return render_template('funcion/nuevo.html', pelicula_id=pelicula_id)
+
+@app.route('/admin/funciones/crear', methods=['POST'])
+@admin_required
+def funcion_crear():
+    """Crea una nueva función"""
+    # Implementar lógica de creación
+    pass
+
+@app.route('/admin/funciones/<int:id>')
+@admin_required
+def funcion_detalle(id):
+    """Muestra el detalle de una función"""
+    return render_template('funcion/detalle.html', id=id)
+
+@app.route('/admin/funciones/<int:id>/editar')
+@admin_required
+def funcion_editar(id):
+    """Formulario para editar función"""
+    return render_template('funcion/editar.html', id=id)
+
+@app.route('/admin/funciones/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def funcion_actualizar(id):
+    """Actualiza una función existente"""
+    # Implementar lógica de actualización
+    pass
+
+@app.route('/admin/funciones/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def funcion_eliminar(id):
+    """Elimina (desactiva) una función"""
+    # Implementar lógica de eliminación
+    pass
+
+# ==================== RUTAS CRUD PARA PELÍCULAS ====================
+
+@app.route('/admin/peliculas')
+@admin_required
+def pelicula_lista():
+    """Lista todas las películas"""
+    # Obtener parámetros de paginación
+    pagina = request.args.get('pagina', 1, type=int)
+    por_pagina = request.args.get('por_pagina', 25, type=int)
+    
+    # Obtener filtros
+    filtros = {}
+    titulo = request.args.get('titulo', '').strip()
+    if titulo:
+        filtros['titulo'] = titulo
+    
+    activo = request.args.get('activo', '')
+    if activo.lower() == 'true':
+        filtros['activo'] = True
+    elif activo.lower() == 'false':
+        filtros['activo'] = False
+    
+    # Obtener películas usando el controlador
+    resultado = PeliculaAdminController.obtener_todas_paginadas(pagina, por_pagina, filtros)
+    
+    # Obtener opciones para filtros
+    clasificaciones = ClasificacionController.obtener_todas()
+    idiomas = IdiomaController.obtener_todos()
+    generos = GeneroController.obtener_todos()
+    
+    return render_template('pelicula/lista.html',
+                         resultado=resultado,
+                         clasificaciones=clasificaciones,
+                         idiomas=idiomas,
+                         generos=generos,
+                         filtros=filtros)
+
+@app.route('/admin/peliculas/nuevo')
+@admin_required
+def pelicula_nuevo():
+    """Formulario para nueva película"""
+    # Obtener opciones para el formulario
+    clasificaciones = ClasificacionController.obtener_todas()
+    idiomas = IdiomaController.obtener_todos()
+    generos = GeneroController.obtener_todos()
+    
+    return render_template('pelicula/nuevo.html',
+                         clasificaciones=clasificaciones,
+                         idiomas=idiomas,
+                         generos=generos)
+
+@app.route('/admin/peliculas/crear', methods=['POST'])
+@admin_required
+def pelicula_crear():
+    """Crea una nueva película"""
+    try:
+        # Obtener datos del formulario
+        data = {
+            'Titulo': request.form.get('Titulo', '').strip(),
+            'DescripcionCorta': request.form.get('DescripcionCorta', '').strip(),
+            'DescripcionLarga': request.form.get('DescripcionLarga', '').strip(),
+            'DuracionMinutos': request.form.get('DuracionMinutos', '0'),
+            'IdClasificacion': request.form.get('IdClasificacion'),
+            'IdIdioma': request.form.get('IdIdioma'),
+            'LinkToBanner': request.form.get('LinkToBanner', '').strip(),
+            'LinkToBajante': request.form.get('LinkToBajante', '').strip(),
+            'LinkToTrailer': request.form.get('LinkToTrailer', '').strip(),
+            'generos': request.form.getlist('generos')  # Lista de IDs de géneros
+        }
+        
+        # Crear película usando el controlador
+        success, message, pelicula = PeliculaAdminController.crear(data)
+        
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('pelicula_detalle', id=pelicula.Id))
+        else:
+            flash(message, 'danger')
+            return redirect(url_for('pelicula_nuevo'))
+            
+    except Exception as e:
+        flash(f'Error al crear película: {str(e)}', 'danger')
+        return redirect(url_for('pelicula_nuevo'))
+
+@app.route('/admin/peliculas/<int:id>')
+@admin_required
+def pelicula_detalle(id):
+    """Muestra el detalle de una película"""
+    # Obtener película usando el controlador
+    pelicula = PeliculaAdminController.obtener_por_id(id)
+    
+    if not pelicula:
+        flash('Película no encontrada', 'danger')
+        return redirect(url_for('pelicula_lista'))
+    
+    # Obtener funciones relacionadas
+    funciones = PeliculaAdminController.obtener_funciones_por_pelicula(id)
+    
+    # Contar boletos vendidos
+    total_boletos = PeliculaAdminController.contar_boletos_por_pelicula(id)
+    
+    # Contar funciones activas y futuras
+    funciones_activas = sum(1 for f in funciones if f.Activo)
+    funciones_futuras = sum(1 for f in funciones if f.FechaHora > datetime.now())
+    
+    return render_template('pelicula/detalle.html',
+                         pelicula=pelicula,
+                         funciones=funciones,
+                         total_boletos=total_boletos,
+                         funciones_activas=funciones_activas,
+                         funciones_futuras=funciones_futuras)
+
+@app.route('/admin/peliculas/<int:id>/editar')
+@admin_required
+def pelicula_editar(id):
+    """Formulario para editar película"""
+    # Obtener película usando el controlador
+    pelicula = PeliculaAdminController.obtener_por_id(id)
+    
+    if not pelicula:
+        flash('Película no encontrada', 'danger')
+        return redirect(url_for('pelicula_lista'))
+    
+    # Obtener opciones para el formulario
+    clasificaciones = ClasificacionController.obtener_todas()
+    idiomas = IdiomaController.obtener_todos()
+    generos = GeneroController.obtener_todos()
+    
+    # Obtener géneros seleccionados
+    generos_seleccionados = [pg.IdGenero for pg in pelicula.generos]
+    
+    return render_template('pelicula/editar.html',
+                         pelicula=pelicula,
+                         clasificaciones=clasificaciones,
+                         idiomas=idiomas,
+                         generos=generos,
+                         generos_seleccionados=generos_seleccionados)
+
+@app.route('/admin/peliculas/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def pelicula_actualizar(id):
+    """Actualiza una película existente"""
+    try:
+        # Obtener datos del formulario
+        data = {
+            'Titulo': request.form.get('Titulo', '').strip(),
+            'DescripcionCorta': request.form.get('DescripcionCorta', '').strip(),
+            'DescripcionLarga': request.form.get('DescripcionLarga', '').strip(),
+            'DuracionMinutos': request.form.get('DuracionMinutos', '0'),
+            'IdClasificacion': request.form.get('IdClasificacion'),
+            'IdIdioma': request.form.get('IdIdioma'),
+            'LinkToBanner': request.form.get('LinkToBanner', '').strip(),
+            'LinkToBajante': request.form.get('LinkToBajante', '').strip(),
+            'LinkToTrailer': request.form.get('LinkToTrailer', '').strip(),
+            'Activo': request.form.get('Activo', 'off'),
+            'generos': request.form.getlist('generos')  # Lista de IDs de géneros
+        }
+        
+        # Actualizar película usando el controlador
+        success, message, pelicula = PeliculaAdminController.actualizar(id, data)
+        
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('pelicula_detalle', id=id))
+        else:
+            flash(message, 'danger')
+            return redirect(url_for('pelicula_editar', id=id))
+            
+    except Exception as e:
+        flash(f'Error al actualizar película: {str(e)}', 'danger')
+        return redirect(url_for('pelicula_editar', id=id))
+
+@app.route('/admin/peliculas/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def pelicula_eliminar(id):
+    """Elimina (desactiva) una película"""
+    success, message = PeliculaAdminController.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('pelicula_lista'))
+
+@app.route('/admin/peliculas/<int:pelicula_id>/funciones/nueva')
+@admin_required
+def funcion_nueva_por_pelicula(pelicula_id):
+    """Redirige al formulario de nueva función con la película pre-seleccionada"""
+    return redirect(url_for('funcion_nuevo') + f'?pelicula_id={pelicula_id}')
+
 @app.route('/admin/roles')
 @admin_required
 def rol_lista():
@@ -1174,16 +1248,6 @@ def sala_lista():
 @admin_required
 def asiento_lista():
     return render_template('asiento/lista.html')
-
-@app.route('/admin/peliculas')
-@admin_required
-def pelicula_lista():
-    return render_template('pelicula/lista.html')
-
-@app.route('/admin/funciones')
-@admin_required
-def funcion_lista():
-    return render_template('funcion/lista.html')
 
 @app.route('/admin/usuarios')
 @admin_required

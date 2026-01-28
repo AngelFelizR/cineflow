@@ -1,85 +1,133 @@
+<!-- templates/pelicula/lista.html -->
 {% extends "base.html" %}
 
-{% block title %}Películas - CineFlow{% endblock %}
+{% block title %}Lista de Películas - Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
+<div class="container mt-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h2">
             <i class="bi bi-film me-2"></i>Películas
         </h1>
-        <div>
-            <a href="{{ url_for('pelicula_nuevo') }}" class="btn btn-warning">
-                <i class="bi bi-plus-circle me-1"></i> Nueva Película
-            </a>
+        <a href="{{ url_for('pelicula_nuevo') }}" class="btn btn-warning">
+            <i class="bi bi-plus-circle me-1"></i> Nueva Película
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card dark-card mb-4">
+        <div class="card-header dark-card-header">
+            <h6 class="mb-0"><i class="bi bi-funnel me-1"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" 
+                           name="titulo" 
+                           class="form-control" 
+                           placeholder="Buscar por título..."
+                           value="{{ filtros.get('titulo', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="activo" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="true" {% if filtros.get('activo') == True %}selected{% endif %}>Activas</option>
+                        <option value="false" {% if filtros.get('activo') == False %}selected{% endif %}>Inactivas</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="por_pagina" class="form-select">
+                        <option value="10" {% if resultado.por_pagina == 10 %}selected{% endif %}>10 por página</option>
+                        <option value="25" {% if resultado.por_pagina == 25 %}selected{% endif %}>25 por página</option>
+                        <option value="50" {% if resultado.por_pagina == 50 %}selected{% endif %}>50 por página</option>
+                        <option value="100" {% if resultado.por_pagina == 100 %}selected{% endif %}>100 por página</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i> Filtrar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Mensajes Flash -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ resultado.total }}</h5>
+                    <p class="card-text text-light-60">Total Películas</p>
                 </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">{{ resultado.peliculas|length }}</h5>
+                    <p class="card-text text-light-60">Mostradas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ resultado.pagina }}</h5>
+                    <p class="card-text text-light-60">Página Actual</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ resultado.paginas }}</h5>
+                    <p class="card-text text-light-60">Total Páginas</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Tabla de Películas -->
     <div class="card dark-card">
-        <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Lista de Películas</h5>
-            <span class="badge bg-warning text-dark">{{ peliculas|length }} registros</span>
+        <div class="card-header dark-card-header">
+            <h6 class="mb-0">Lista de Películas</h6>
         </div>
         <div class="card-body">
-            {% if peliculas %}
+            {% if resultado.peliculas %}
             <div class="table-responsive">
                 <table class="table table-dark table-hover">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Portada</th>
                             <th>Título</th>
-                            <th>Duración</th>
                             <th>Clasificación</th>
                             <th>Idioma</th>
+                            <th>Géneros</th>
+                            <th>Duración</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for pelicula in peliculas %}
+                        {% for pelicula in resultado.peliculas %}
                         <tr>
-                            <td>{{ pelicula.Id }}</td>
+                            <td>{{ pelicula.id }}</td>
                             <td>
-                                {% if pelicula.LinkToBanner %}
-                                <img src="{{ pelicula.LinkToBanner }}" 
-                                     alt="{{ pelicula.Titulo }}" 
-                                     class="img-thumbnail" 
-                                     style="width: 60px; height: 80px; object-fit: cover;">
-                                {% else %}
-                                <div class="bg-secondary d-flex align-items-center justify-content-center" 
-                                     style="width: 60px; height: 80px;">
-                                    <i class="bi bi-film text-light-60"></i>
-                                </div>
-                                {% endif %}
+                                <strong>{{ pelicula.titulo }}</strong><br>
+                                <small class="text-light-60">{{ pelicula.descripcion_corta|truncate(50) }}</small>
                             </td>
+                            <td>{{ pelicula.clasificacion }}</td>
+                            <td>{{ pelicula.idioma }}</td>
                             <td>
-                                <strong>{{ pelicula.Titulo }}</strong><br>
-                                <small class="text-light-60">{{ pelicula.DescripcionCorta[:50] }}...</small>
+                                {% for genero in pelicula.generos %}
+                                <span class="badge bg-primary me-1">{{ genero }}</span>
+                                {% endfor %}
                             </td>
-                            <td>{{ pelicula.DuracionMinutos }} min</td>
+                            <td>{{ pelicula.duracion_minutos }} min</td>
                             <td>
-                                <span class="badge bg-info">{{ pelicula.clasificacion.Clasificacion if pelicula.clasificacion else 'N/A' }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ pelicula.idioma.Idioma if pelicula.idioma else 'N/A' }}</span>
-                            </td>
-                            <td>
-                                {% if pelicula.Activo %}
+                                {% if pelicula.activo %}
                                 <span class="badge bg-success">Activa</span>
                                 {% else %}
                                 <span class="badge bg-danger">Inactiva</span>
@@ -87,25 +135,25 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('pelicula_detalle', id=pelicula.Id) }}" 
-                                       class="btn btn-info" title="Ver detalle">
+                                    <a href="{{ url_for('pelicula_detalle', id=pelicula.id) }}" 
+                                       class="btn btn-info" 
+                                       title="Ver Detalle">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ url_for('pelicula_editar', id=pelicula.Id) }}" 
-                                       class="btn btn-warning" title="Editar">
+                                    <a href="{{ url_for('pelicula_editar', id=pelicula.id) }}" 
+                                       class="btn btn-warning" 
+                                       title="Editar">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <a href="{{ url_for('detalle_pelicula', pelicula_id=pelicula.Id) }}" 
-                                       class="btn btn-primary" title="Ver como cliente" target="_blank">
-                                        <i class="bi bi-display"></i>
-                                    </a>
+                                    {% if pelicula.activo %}
                                     <button type="button" 
-                                            class="btn btn-outline-danger btn-sm btn-eliminar" 
-                                            data-id="{{ pelicula.Id }}"
-                                            data-nombre="{{ pelicula.Titulo }}"
-                                            title="Eliminar">
+                                            class="btn btn-danger btn-sm btn-eliminar" 
+                                            title="Eliminar"
+                                            data-id="{{ pelicula.id }}"
+                                            data-titulo="{{ pelicula.titulo }}">
                                         <i class="bi bi-trash"></i>
                                     </button>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -115,68 +163,101 @@
             </div>
             {% else %}
             <div class="text-center py-5">
-                <i class="bi bi-film" style="font-size: 3rem; color: var(--accent-color);"></i>
-                <h4 class="mt-3">No hay películas registradas</h4>
-                <p class="text-light-60">Comienza creando una nueva película.</p>
-                <a href="{{ url_for('pelicula_nuevo') }}" class="btn btn-warning mt-2">
-                    <i class="bi bi-plus-circle me-1"></i> Crear Película
-                </a>
+                <i class="bi bi-film fs-1 text-light-60 mb-3"></i>
+                <h5 class="text-light-60">No se encontraron películas</h5>
+                <p class="text-light-60">Intenta con otros filtros o crea una nueva película</p>
             </div>
             {% endif %}
         </div>
+        
+        <!-- Paginación -->
+        {% if resultado.paginas > 1 %}
+        <div class="card-footer dark-card-header">
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if resultado.pagina > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="{{ url_for('pelicula_lista', pagina=resultado.pagina-1, por_pagina=resultado.por_pagina, titulo=filtros.get('titulo', ''), activo=filtros.get('activo', '')) }}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, resultado.paginas + 1) %}
+                        {% if p >= resultado.pagina - 2 and p <= resultado.pagina + 2 %}
+                        <li class="page-item {% if p == resultado.pagina %}active{% endif %}">
+                            <a class="page-link" 
+                               href="{{ url_for('pelicula_lista', pagina=p, por_pagina=resultado.por_pagina, titulo=filtros.get('titulo', ''), activo=filtros.get('activo', '')) }}">
+                                {{ p }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if resultado.pagina < resultado.paginas %}
+                    <li class="page-item">
+                        <a class="page-link" 
+                           href="{{ url_for('pelicula_lista', pagina=resultado.pagina+1, por_pagina=resultado.por_pagina, titulo=filtros.get('titulo', ''), activo=filtros.get('activo', '')) }}">
+                            Siguiente
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-<!-- Modal de Confirmación de Eliminación -->
-<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-warning">
-            <div class="modal-header bg-dark text-light border-warning">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+        <div class="modal-content dark-card delete-modal">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title text-warning fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
                     Confirmar Eliminación
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body bg-dark text-light">
-                <div class="alert alert-warning">
-                    <div class="d-flex">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h6 class="alert-heading mb-2">¿Eliminar Película?</h6>
-                            <p class="mb-1">Se eliminará la película: <strong id="nombrePelicula" class="text-danger"></strong></p>
-                            <p class="mb-0 small text-muted">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Esta acción no se puede deshacer.
-                            </p>
-                        </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-3"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="mb-0">
+                            ¿Estás seguro de eliminar la película 
+                            <strong class="text-warning" id="peliculaTitulo"></strong>?
+                        </p>
                     </div>
                 </div>
                 
-                <div class="card border-danger mt-3">
-                    <div class="card-header bg-danger text-white py-2">
-                        <i class="bi bi-shield-exclamation me-1"></i>
-                        Advertencia
-                    </div>
-                    <div class="card-body bg-dark py-3">
-                        <ul class="mb-0 small">
-                            <li>No se podrá eliminar si tiene funciones programadas</li>
-                            <li>Las funciones futuras se cancelarán</li>
-                            <li>No aparecerá en la cartelera</li>
-                            <li>Los boletos vendidos mantendrán la información</li>
-                        </ul>
+                <div class="alert alert-warning border-warning mt-3">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <small class="d-block fw-bold mb-1">Esta acción no se puede deshacer</small>
+                            <small class="d-block">
+                                • La película cambiará a estado "Inactivo"<br>
+                                • No aparecerá en la cartelera<br>
+                                • Las funciones futuras se cancelarán<br>
+                                • Los boletos vendidos se mantendrán
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-dark border-warning">
-                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i> Cancelar
                 </button>
-                <form id="formEliminar" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash-fill me-1"></i> Sí, Eliminar
+                <form id="deleteForm" method="POST">
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-check-circle me-1"></i> Eliminar
                     </button>
                 </form>
             </div>
@@ -188,23 +269,19 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Configurar modal de eliminación
-    const btnsEliminar = document.querySelectorAll('.btn-eliminar');
-    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
-    const nombrePelicula = document.getElementById('nombrePelicula');
-    const formEliminar = document.getElementById('formEliminar');
+    const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    const peliculaTitulo = document.getElementById('peliculaTitulo');
     
-    btnsEliminar.forEach(btn => {
-        btn.addEventListener('click', function() {
+    document.querySelectorAll('.btn-eliminar').forEach(button => {
+        button.addEventListener('click', function() {
             const id = this.getAttribute('data-id');
-            const nombre = this.getAttribute('data-nombre');
+            const titulo = this.getAttribute('data-titulo');
             
-            nombrePelicula.textContent = nombre;
-            nombrePelicula.style.color = '#ff6b6b';
-            nombrePelicula.style.fontWeight = 'bold';
+            peliculaTitulo.textContent = titulo;
+            deleteForm.action = "{{ url_for('pelicula_eliminar', id=0) }}".replace('0', id);
             
-            formEliminar.action = "{{ url_for('pelicula_eliminar', id=0) }}".replace('0', id);
-            modalEliminar.show();
+            deleteModal.show();
         });
     });
 });
