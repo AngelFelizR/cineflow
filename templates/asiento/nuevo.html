@@ -35,7 +35,7 @@
                                         data-capacidad="{{ sala.capacidad_actual }}"
                                         data-asientos="{{ sala.asientos|map(attribute='CodigoAsiento')|list|tojson }}">
                                     Sala {{ sala.NumeroDeSala }} - {{ sala.cine.Cine }} 
-                                    ({{ sala.asientos|length }} asientos de {{ sala.capacidad_maxima }})
+                                    ({{ sala.capacidad }} asientos de {{ sala.capacidad_maxima }})
                                 </option>
                                 {% endfor %}
                             </select>
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             numero: "{{ sala.NumeroDeSala }}",
             cine: "{{ sala.cine.Cine }}",
             tipo: "{{ sala.tipo_sala.Tipo }}",
-            capacidadActual: {{ sala.asientos|length }},
+            capacidadActual: {{ sala.capacidad }},
             capacidadMaxima: {{ sala.capacidad_maxima }},
             asientos: {{ sala.asientos|map(attribute='CodigoAsiento')|list|tojson }}
         },

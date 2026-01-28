@@ -1524,8 +1524,6 @@ def pelicula_eliminar(id):
     
     return redirect(url_for('pelicula_lista'))
 
-
-
 @app.route('/admin/roles')
 @admin_required
 def rol_lista():
