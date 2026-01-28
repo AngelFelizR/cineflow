@@ -5,12 +5,13 @@ let
     inherit (pkgs.python313Packages)
       pip
       ipykernel
-      pandas
       flask
       flask-login
       flask-bcrypt
       sqlalchemy
       pymssql
+      pandas
+      openpyxl
       reportlab
       xhtml2pdf;
   };
