@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Rol - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Rol
+                </h1>
+                <a href="{{ url_for('rol_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Rol</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('rol_crear') }}" class="needs-validation" novalidate>
+                        <!-- Campo Rol -->
+                        <div class="mb-3">
+                            <label for="rol" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Rol *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="rol" 
+                                   name="Rol" 
+                                   required
+                                   minlength="2"
+                                   maxlength="50"
+                                   placeholder="Ej: Supervisor, Cajero, Manager, etc.">
+                            <div class="form-text">
+                                Ingresa el nombre del rol (máx. 50 caracteres). Evita usar nombres de roles del sistema.
+                            </div>
+                            <div class="invalid-feedback">
+                                El rol es requerido y debe tener al menos 2 caracteres.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('rol_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Rol
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Roles del Sistema (no se pueden crear):</strong>
+                            <ul class="mt-2">
+                                <li><span class="badge bg-danger">Administrador</span> - Acceso completo al sistema</li>
+                                <li><span class="badge bg-success">Cliente</span> - Usuarios que compran boletos</li>
+                                <li><span class="badge bg-info">Encargado de Entrada</span> - Validación de boletos</li>
+                            </ul>
+                        </li>
+                        <li class="mt-3">Los roles definen los permisos y accesos dentro del sistema.</li>
+                        <li>No se permiten roles duplicados.</li>
+                        <li>Un rol solo se puede eliminar si no está siendo usado por ningún usuario.</li>
+                        <li>Se recomienda usar nombres descriptivos como: "Supervisor de Sala", "Gerente de Ventas", etc.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Validar que no se use nombre de rol del sistema
+    const rolInput = document.getElementById('rol');
+    rolInput.addEventListener('blur', function() {
+        const sistemaRoles = ['administrador', 'cliente', 'encargado de entrada', 'admin', 'customer', 'staff'];
+        const valor = this.value.toLowerCase().trim();
+        
+        if (sistemaRoles.includes(valor)) {
+            this.setCustomValidity('Este nombre está reservado para roles del sistema. Use otro nombre.');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

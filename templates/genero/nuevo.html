@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Género - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Género
+                </h1>
+                <a href="{{ url_for('genero_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Género</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('genero_crear') }}" class="needs-validation" novalidate>
+                        <!-- Campo Género -->
+                        <div class="mb-3">
+                            <label for="genero" class="form-label">
+                                <i class="bi bi-film me-1"></i>Género *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="genero" 
+                                   name="Genero" 
+                                   required
+                                   minlength="2"
+                                   maxlength="50"
+                                   placeholder="Ej: Acción, Comedia, Drama, etc.">
+                            <div class="form-text">
+                                Ingresa el nombre del género (máx. 50 caracteres)
+                            </div>
+                            <div class="invalid-feedback">
+                                El género es requerido y debe tener al menos 2 caracteres.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('genero_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Género
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Los géneros se utilizan para categorizar las películas por tipo.</li>
+                        <li>Ejemplos comunes: Acción, Comedia, Drama, Terror, Ciencia Ficción, Animación.</li>
+                        <li>No se permiten géneros duplicados.</li>
+                        <li>Un género solo se puede eliminar si no está siendo usado por ninguna película.</li>
+                        <li>Una película puede tener múltiples géneros.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}

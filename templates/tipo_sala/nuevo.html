@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Tipo de Sala - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Tipo de Sala
+                </h1>
+                <a href="{{ url_for('tipo_sala_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Tipo de Sala</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('tipo_sala_crear') }}" class="needs-validation" novalidate>
+                        <!-- Nombre del Tipo -->
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">
+                                <i class="bi bi-camera-video me-1"></i>Nombre del Tipo *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="tipo" 
+                                   name="Tipo" 
+                                   required
+                                   minlength="2"
+                                   maxlength="50"
+                                   placeholder="Ej: Estándar, VIP, IMAX, 4DX, 3D, etc.">
+                            <div class="form-text">
+                                Nombre descriptivo del tipo de sala (máx. 50 caracteres)
+                            </div>
+                            <div class="invalid-feedback">
+                                El nombre del tipo es requerido y debe tener al menos 2 caracteres.
+                            </div>
+                        </div>
+
+                        <!-- Precios -->
+                        <div class="row">
+                            <!-- Precio Adulto -->
+                            <div class="col-md-6 mb-3">
+                                <label for="precioAdulto" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Precio Adulto *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="precioAdulto" 
+                                           name="PrecioAdulto" 
+                                           step="0.01"
+                                           min="0.01"
+                                           max="1000"
+                                           required
+                                           placeholder="0.00">
+                                </div>
+                                <div class="form-text">
+                                    Precio para adultos mayores de 12 años (mín. $0.01)
+                                </div>
+                                <div class="invalid-feedback">
+                                    El precio para adulto es requerido y debe ser mayor a 0.
+                                </div>
+                            </div>
+
+                            <!-- Precio Niño -->
+                            <div class="col-md-6 mb-3">
+                                <label for="precioNino" class="form-label">
+                                    <i class="bi bi-emoji-smile me-1"></i>Precio Niño *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="precioNino" 
+                                           name="PrecioNino" 
+                                           step="0.01"
+                                           min="0.01"
+                                           max="1000"
+                                           required
+                                           placeholder="0.00">
+                                </div>
+                                <div class="form-text">
+                                    Precio para niños menores de 12 años (mín. $0.01)
+                                </div>
+                                <div class="invalid-feedback">
+                                    El precio para niño es requerido y debe ser mayor a 0.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calculadora de Descuento -->
+                        <div class="card bg-dark border-secondary mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title text-light-60">
+                                    <i class="bi bi-calculator me-1"></i> Calculadora de Descuento
+                                </h6>
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <p class="mb-1 small">Descuento aplicado:</p>
+                                        <div class="d-flex align-items-center">
+                                            <span id="descuentoPorcentaje" class="badge bg-info me-2">0%</span>
+                                            <span id="descuentoMonto" class="small text-light-60">$0.00</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1 small">Recomendación:</p>
+                                        <div id="recomendacionDescuento" class="small">
+                                            <span class="text-light-60">Ingrese ambos precios</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('tipo_sala_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="reset" class="btn btn-outline-light me-2">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-1"></i> Guardar Tipo
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Los tipos de sala definen diferentes experiencias de visualización.</li>
+                        <li>No se permiten tipos duplicados.</li>
+                        <li>Los precios deben ser mayores a 0.</li>
+                        <li>Se recomienda que el precio para niño sea 20-30% más bajo que el precio para adulto.</li>
+                        <li>Un tipo solo se puede eliminar si no está siendo usado por ninguna sala.</li>
+                        <li>Los cambios en precios no afectan a boletos ya vendidos.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Ejemplos de Tipos de Sala -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb me-1"></i> Ejemplos de Tipos de Sala</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-dark border-primary h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">Estándar</h6>
+                                    <p class="card-text small mb-1">Asientos regulares, proyección 2D</p>
+                                    <p class="mb-0">
+                                        <small>Adulto: <span class="text-success">$120.00</span></small><br>
+                                        <small>Niño: <span class="text-info">$90.00</span></small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-dark border-warning h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning">VIP</h6>
+                                    <p class="card-text small mb-1">Asientos reclinables, servicio a butaca</p>
+                                    <p class="mb-0">
+                                        <small>Adulto: <span class="text-success">$250.00</span></small><br>
+                                        <small>Niño: <span class="text-info">$200.00</span></small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-dark border-danger h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-danger">IMAX</h6>
+                                    <p class="card-text small mb-1">Pantalla gigante, sonido envolvente</p>
+                                    <p class="mb-0">
+                                        <small>Adulto: <span class="text-success">$180.00</span></small><br>
+                                        <small>Niño: <span class="text-info">$135.00</span></small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Calculadora de descuento
+    const precioAdultoInput = document.getElementById('precioAdulto');
+    const precioNinoInput = document.getElementById('precioNino');
+    const descuentoPorcentaje = document.getElementById('descuentoPorcentaje');
+    const descuentoMonto = document.getElementById('descuentoMonto');
+    const recomendacionDescuento = document.getElementById('recomendacionDescuento');
+    
+    function calcularDescuento() {
+        const precioAdulto = parseFloat(precioAdultoInput.value) || 0;
+        const precioNino = parseFloat(precioNinoInput.value) || 0;
+        
+        if (precioAdulto > 0 && precioNino > 0) {
+            const descuento = precioAdulto - precioNino;
+            const porcentaje = (descuento / precioAdulto) * 100;
+            
+            // Actualizar visualización
+            descuentoPorcentaje.textContent = porcentaje.toFixed(1) + '%';
+            descuentoMonto.textContent = '$' + descuento.toFixed(2);
+            
+            // Dar recomendación
+            if (porcentaje < 20) {
+                descuentoPorcentaje.className = 'badge bg-danger me-2';
+                recomendacionDescuento.innerHTML = `
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Descuento muy bajo para niños (recomendado: 20-30%)
+                    </span>
+                `;
+            } else if (porcentaje > 40) {
+                descuentoPorcentaje.className = 'badge bg-warning me-2';
+                recomendacionDescuento.innerHTML = `
+                    <span class="text-warning">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Descuento muy alto para niños (recomendado: 20-30%)
+                    </span>
+                `;
+            } else {
+                descuentoPorcentaje.className = 'badge bg-success me-2';
+                recomendacionDescuento.innerHTML = `
+                    <span class="text-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Descuento apropiado para niños
+                    </span>
+                `;
+            }
+        } else {
+            descuentoPorcentaje.textContent = '0%';
+            descuentoPorcentaje.className = 'badge bg-secondary me-2';
+            descuentoMonto.textContent = '$0.00';
+            recomendacionDescuento.innerHTML = `
+                <span class="text-light-60">Ingrese ambos precios</span>
+            `;
+        }
+    }
+    
+    // Escuchar cambios en los precios
+    precioAdultoInput.addEventListener('input', calcularDescuento);
+    precioNinoInput.addEventListener('input', calcularDescuento);
+    
+    // Validar que precio niño sea menor que precio adulto
+    precioNinoInput.addEventListener('blur', function() {
+        const precioAdulto = parseFloat(precioAdultoInput.value) || 0;
+        const precioNino = parseFloat(this.value) || 0;
+        
+        if (precioAdulto > 0 && precioNino > 0 && precioNino >= precioAdulto) {
+            this.setCustomValidity('El precio para niño debe ser menor que el precio para adulto.');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

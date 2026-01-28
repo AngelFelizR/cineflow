@@ -1,0 +1,1032 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Función - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Columna Principal -->
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-calendar3 me-2"></i>Detalle de Función
+                </h1>
+                <div>
+                    <a href="{{ url_for('funcion_lista') }}" class="btn btn-outline-warning me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                    </a>
+                    <a href="{{ url_for('funcion_editar', id=funcion.Id) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Información Principal -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Información de la Función</h5>
+                    <div>
+                        {% if funcion.Activo %}
+                            {% if funcion.FechaHora > ahora %}
+                            <span class="badge bg-success">Programada</span>
+                            {% else %}
+                            <span class="badge bg-info">Realizada</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-danger">Cancelada</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Información de la Película -->
+                        <div class="col-md-4 mb-4">
+                            {% if funcion.pelicula.LinkToBanner %}
+                            <img src="{{ funcion.pelicula.LinkToBanner }}" 
+                                 alt="{{ funcion.pelicula.Titulo }}" 
+                                 class="img-fluid rounded mb-3">
+                            {% else %}
+                            <div class="bg-secondary d-flex align-items-center justify-content-center rounded mb-3" 
+                                 style="height: 200px;">
+                                <i class="bi bi-film text-light-60" style="font-size: 3rem;"></i>
+                            </div>
+                            {% endif %}
+                            <h4>{{ funcion.pelicula.Titulo }}</h4>
+                            <div class="mb-2">
+                                <span class="badge bg-secondary me-1">{{ funcion.pelicula.DuracionMinutos }} min</span>
+                                <span class="badge bg-info me-1">{{ funcion.pelicula.clasificacion.Clasificacion }}</span>
+                                <span class="badge bg-warning">{{ funcion.pelicula.idioma.Idioma }}</span>
+                            </div>
+                            <p class="text-light-60 small">{{ funcion.pelicula.DescripcionCorta }}</p>
+                        </div>
+                        
+                        <!-- Información de la Función -->
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">ID</label>
+                                    <div class="form-control bg-dark text-light">{{ funcion.Id }}</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">Fecha y Hora</label>
+                                    <div class="form-control bg-dark text-light">
+                                        {{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">Sala</label>
+                                    <div class="form-control bg-dark text-light">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi bi-door-open text-warning"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-2">
+                                                <strong>Sala {{ funcion.sala.NumeroDeSala }}</strong>
+                                                <small class="text-light-60 d-block">{{ funcion.sala.tipo_sala.Tipo }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">Cine</label>
+                                    <div class="form-control bg-dark text-light">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi bi-building text-info"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-2">
+                                                <strong>{{ funcion.sala.cine.Cine }}</strong>
+                                                <small class="text-light-60 d-block">{{ funcion.sala.cine.Direccion[:30] }}...</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">Precios</label>
+                                    <div class="card bg-dark border-warning">
+                                        <div class="card-body py-2">
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <small class="text-light-60">Adulto</small>
+                                                    <div class="text-warning">${{ funcion.sala.tipo_sala.PrecioAdulto }}</div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-light-60">Niño</small>
+                                                    <div class="text-primary">${{ funcion.sala.tipo_sala.PrecioNino }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">Estado</label>
+                                    <div class="form-control bg-dark text-light">
+                                        {% if funcion.Activo %}
+                                            {% if funcion.FechaHora > ahora %}
+                                            <span class="badge bg-success">Programada - {{ tiempo_restante }}</span>
+                                            {% else %}
+                                            <span class="badge bg-info">Realizada hace {{ tiempo_transcurrido }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="badge bg-danger">Cancelada</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de Capacidad -->
+                            <div class="card border-info bg-dark mb-3">
+                                <div class="card-header bg-info text-dark">
+                                    <h6 class="mb-0"><i class="bi bi-people me-1"></i> Ocupación de la Sala</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="display-6">{{ capacidad_total }}</div>
+                                            <small class="text-light-60">Capacidad</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="display-6 text-success">{{ boletos_vendidos }}</div>
+                                            <small class="text-light-60">Vendidos</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="display-6 text-warning">{{ asientos_disponibles }}</div>
+                                            <small class="text-light-60">Disponibles</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="display-6 {% if porcentaje_ocupacion > 80 %}text-danger{% elif porcentaje_ocupacion > 50 %}text-warning{% else %}text-success{% endif %}">
+                                                {{ porcentaje_ocupacion|round(1) }}%
+                                            </div>
+                                            <small class="text-light-60">Ocupación</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Barra de progreso -->
+                                    <div class="progress mt-3" style="height: 20px;">
+                                        <div class="progress-bar bg-success" 
+                                             role="progressbar" 
+                                             style="width: {{ porcentaje_ocupacion }}%"
+                                             aria-valuenow="{{ porcentaje_ocupacion }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ boletos_vendidos }} / {{ capacidad_total }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer dark-card-header">
+                    <small class="text-light-60">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ID de la función: {{ funcion.Id }} | 
+                        Creada: {{ funcion.FechaCreacion.strftime('%d/%m/%Y %H:%M') if funcion.FechaCreacion else 'N/A' }}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Sección de Boletos Vendidos -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-ticket-perforated me-1"></i> 
+                        Boletos Vendidos ({{ boletos_vendidos }})
+                    </h5>
+                    <span class="badge bg-warning">Ingresos: ${{ ingresos_totales|round(2) }}</span>
+                </div>
+                <div class="card-body">
+                    {% if boletos %}
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID Boleto</th>
+                                    <th>Usuario</th>
+                                    <th>Asiento</th>
+                                    <th>Tipo</th>
+                                    <th>Precio</th>
+                                    <th>Fecha Compra</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for boleto in boletos %}
+                                <tr>
+                                    <td>{{ boleto.Id }}</td>
+                                    <td>
+                                        {% if boleto.usuario %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi bi-person-circle text-info"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-2">
+                                                <strong>{{ boleto.usuario.Nombre }} {{ boleto.usuario.Apellidos }}</strong>
+                                                <small class="text-light-60 d-block">{{ boleto.usuario.CorreoElectronico }}</small>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-light-60">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ boleto.asiento.CodigoAsiento }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if boleto.tipo_boleto.TipoBoleto == 'Adulto' %}bg-warning{% else %}bg-primary{% endif %}">
+                                            {{ boleto.tipo_boleto.TipoBoleto }}
+                                        </span>
+                                    </td>
+                                    <td class="text-warning">${{ boleto.ValorPagado }}</td>
+                                    <td>{{ boleto.FechaCreacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if boleto.cancelado %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        {% elif boleto.usado %}
+                                        <span class="badge bg-success">Usado</span>
+                                        {% else %}
+                                        <span class="badge bg-info">Vendido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('boleto_detalle', id=boleto.Id) }}" 
+                                               class="btn btn-info" title="Ver boleto">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if not boleto.cancelado and not boleto.usado and funcion.FechaHora > ahora %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger btn-sm btn-cancelar-boleto"
+                                                    data-id="{{ boleto.Id }}"
+                                                    data-usuario="{{ boleto.usuario.Nombre if boleto.usuario else 'N/A' }} {{ boleto.usuario.Apellidos if boleto.usuario else '' }}"
+                                                    data-asiento="{{ boleto.asiento.CodigoAsiento }}"
+                                                    data-precio="{{ boleto.ValorPagado }}">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if boletos_vendidos > 10 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('boleto_lista') }}?funcion_id={{ funcion.Id }}" 
+                           class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye me-1"></i> Ver todos los boletos
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-ticket" style="font-size: 2rem; color: var(--accent-color);"></i>
+                        <h5 class="mt-3">No hay boletos vendidos para esta función</h5>
+                        <p class="text-light-60">Los boletos aparecerán aquí una vez que sean vendidos.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Lateral -->
+        <div class="col-lg-4">
+            <!-- Estadísticas -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart me-1"></i> Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="display-6">{{ boletos_vendidos }}</div>
+                            <small class="text-light-60">Boletos Vendidos</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="display-6">{{ boletos_adultos }}</div>
+                            <small class="text-light-60">Adultos</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="display-6">{{ boletos_ninos }}</div>
+                            <small class="text-light-60">Niños</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="display-6">{{ boletos_cancelados }}</div>
+                            <small class="text-light-60">Cancelados</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-light-60 d-block mb-1">Distribución por Tipo</small>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning" 
+                                 style="width: {{ porcentaje_adultos }}%"
+                                 title="Adultos: {{ boletos_adultos }}">
+                            </div>
+                            <div class="progress-bar bg-primary" 
+                                 style="width: {{ porcentaje_ninos }}%"
+                                 title="Niños: {{ boletos_ninos }}">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-warning">Adultos: {{ porcentaje_adultos|round(1) }}%</small>
+                            <small class="text-primary">Niños: {{ porcentaje_ninos|round(1) }}%</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="border-light-20 my-3">
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="display-6">${{ ingresos_adultos|round(2) }}</div>
+                            <small class="text-light-60">Ingresos Adultos</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="display-6">${{ ingresos_ninos|round(2) }}</div>
+                            <small class="text-light-60">Ingresos Niños</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear me-1"></i> Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if funcion.Activo and funcion.FechaHora > ahora %}
+                        <a href="{{ url_for('seleccion_asientos', funcion_id=funcion.Id) }}" 
+                           class="btn btn-primary" target="_blank">
+                            <i class="bi bi-ticket me-1"></i> Ver Selección de Asientos
+                        </a>
+                        
+                        <a href="{{ url_for('boleto_nuevo') }}?funcion_id={{ funcion.Id }}" 
+                           class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i> Vender Boleto Manualmente
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-outline-warning btn-actualizar-estado"
+                                data-id="{{ funcion.Id }}"
+                                data-estado-actual="activo">
+                            <i class="bi bi-pause-circle me-1"></i> Pausar Venta
+                        </button>
+                        
+                        <button type="button" 
+                                class="btn btn-danger btn-cancelar-funcion"
+                                data-id="{{ funcion.Id }}"
+                                data-pelicula="{{ funcion.pelicula.Titulo }}"
+                                data-fecha="{{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}"
+                                data-sala="{{ funcion.sala.NumeroDeSala }}"
+                                data-cine="{{ funcion.sala.cine.Cine }}"
+                                data-boletos="{{ boletos_vendidos }}">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar Función
+                        </button>
+                        
+                        {% elif funcion.Activo and funcion.FechaHora <= ahora %}
+                        <button type="button" class="btn btn-success btn-marcar-realizada"
+                                data-id="{{ funcion.Id }}"
+                                data-pelicula="{{ funcion.pelicula.Titulo }}"
+                                data-fecha="{{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}">
+                            <i class="bi bi-check-circle me-1"></i> Marcar como Realizada
+                        </button>
+                        
+                        <a href="{{ url_for('boleto_usado_registrar') }}?funcion_id={{ funcion.Id }}" 
+                           class="btn btn-warning">
+                            <i class="bi bi-qr-code-scan me-1"></i> Registrar Boletos Usados
+                        </a>
+                        
+                        {% elif not funcion.Activo %}
+                        <button type="button" 
+                                class="btn btn-outline-success btn-actualizar-estado"
+                                data-id="{{ funcion.Id }}"
+                                data-estado-actual="inactivo">
+                            <i class="bi bi-play-circle me-1"></i> Reactivar Función
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('funcion_editar', id=funcion.Id) }}" 
+                           class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> Editar Función
+                        </a>
+                        
+                        <a href="{{ url_for('funcion_lista') }}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-list-ul me-1"></i> Ver Todas
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Técnica -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-code-slash me-1"></i> Información Técnica</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt class="text-light-60">ID Función</dt>
+                        <dd>{{ funcion.Id }}</dd>
+                        
+                        <dt class="text-light-60">ID Película</dt>
+                        <dd>{{ funcion.IdPelicula }}</dd>
+                        
+                        <dt class="text-light-60">ID Sala</dt>
+                        <dd>{{ funcion.IdSala }}</dd>
+                        
+                        <dt class="text-light-60">Fecha/Hora BD</dt>
+                        <dd>{{ funcion.FechaHora.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                        
+                        <dt class="text-light-60">Estado en BD</dt>
+                        <dd>{% if funcion.Activo %}1 (Activo){% else %}0 (Inactivo){% endif %}</dd>
+                        
+                        <dt class="text-light-60">Última Modificación</dt>
+                        <dd>{{ funcion.FechaModificacion.strftime('%d/%m/%Y %H:%M') if funcion.FechaModificacion else 'N/A' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Enlaces Rápidos -->
+            <div class="card dark-card mt-4">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-link me-1"></i> Enlaces Rápidos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('pelicula_detalle', id=funcion.IdPelicula) }}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-film me-1"></i> Ver Película
+                        </a>
+                        <a href="{{ url_for('sala_detalle', id=funcion.IdSala) }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-door-open me-1"></i> Ver Sala
+                        </a>
+                        <a href="{{ url_for('cine_detalle', id=funcion.sala.cine.Id) }}" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-building me-1"></i> Ver Cine
+                        </a>
+                        <a href="{{ url_for('detalle_pelicula', pelicula_id=funcion.IdPelicula) }}" 
+                           class="btn btn-outline-warning btn-sm" target="_blank">
+                            <i class="bi bi-display me-1"></i> Ver como Cliente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cancelación de Función -->
+<div class="modal fade" id="modalCancelarFuncion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    Cancelar Función
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-1"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="fw-bold mb-1">¿Cancelar esta función?</h6>
+                        <p class="mb-1">Película: <strong id="modalPelicula" class="text-info"></strong></p>
+                        <p class="mb-1">Fecha: <strong id="modalFecha" class="text-warning"></strong></p>
+                        <p class="mb-1">Sala: <strong id="modalSala" class="text-primary"></strong></p>
+                        <p class="mb-0">Cine: <strong id="modalCine" class="text-success"></strong></p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-dark border-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <small>
+                                <strong>Esta acción afectará a <span id="modalBoletos" class="text-warning"></span> boleto(s):</strong><br>
+                                • Los boletos serán automáticamente cancelados<br>
+                                • Los clientes recibirán saldo acreditado según política<br>
+                                • La función no aparecerá en cartelera<br>
+                                • Esta acción no se puede deshacer
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="motivoCancelacion" class="form-label">Motivo de cancelación</label>
+                    <select class="form-select" id="motivoCancelacion">
+                        <option value="">Seleccionar motivo...</option>
+                        <option value="problemas_tecnico">Problemas técnicos</option>
+                        <option value="falta_personal">Falta de personal</option>
+                        <option value="baja_demanda">Baja demanda</option>
+                        <option value="evento_especial">Evento especial</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="notificarClientesCancelacion">
+                    <label class="form-check-label" for="notificarClientesCancelacion">
+                        Notificar a los clientes por correo electrónico
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="acreditarSaldoCompleto">
+                    <label class="form-check-label" for="acreditarSaldoCompleto">
+                        Acreditar saldo completo (100%) a los clientes
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </button>
+                <form id="formCancelarFuncion" method="POST" style="display: inline;">
+                    <input type="hidden" id="funcionIdCancelar" name="funcion_id">
+                    <input type="hidden" id="motivoInput" name="motivo">
+                    <input type="hidden" id="notificarInput" name="notificar_clientes" value="false">
+                    <input type="hidden" id="acreditarCompletoInput" name="acreditar_completo" value="false">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar Cancelación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cancelación de Boleto Individual -->
+<div class="modal fade" id="modalCancelarBoleto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-ticket-perforated me-2"></i>
+                    Cancelar Boleto Individual
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">¿Cancelar este boleto?</h6>
+                            <p class="mb-1">Usuario: <strong id="modalUsuarioBoleto" class="text-info"></strong></p>
+                            <p class="mb-1">Asiento: <strong id="modalAsientoBoleto" class="text-primary"></strong></p>
+                            <p class="mb-1">Precio: <strong id="modalPrecioBoleto" class="text-warning"></strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="devolverSaldo">
+                    <label class="form-check-label" for="devolverSaldo">
+                        Devolver saldo al usuario según política de cancelación
+                    </label>
+                </div>
+                
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="Motivo de cancelación" 
+                              id="motivoBoleto" style="height: 100px"></textarea>
+                    <label for="motivoBoleto">Motivo de cancelación (opcional)</label>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <form id="formCancelarBoleto" method="POST" style="display: inline;">
+                    <input type="hidden" id="boletoIdCancelar" name="boleto_id">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Marcar como Realizada -->
+<div class="modal fade" id="modalMarcarRealizada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-success">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Marcar Función como Realizada
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="fw-bold mb-1">¿Marcar esta función como realizada?</h6>
+                        <p class="mb-1">Película: <strong id="modalPeliculaRealizada" class="text-info"></strong></p>
+                        <p class="mb-0">Fecha: <strong id="modalFechaRealizada" class="text-warning"></strong></p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-dark border-success">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <small>
+                                <strong>Esta acción:</strong><br>
+                                • Cambiará el estado de la función a "Realizada"<br>
+                                • Los boletos no usados se marcarán como "No utilizados"<br>
+                                • La función dejará de aparecer en la cartelera activa<br>
+                                • Se actualizarán las estadísticas del dashboard
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="marcarBoletosNoUsados">
+                    <label class="form-check-label" for="marcarBoletosNoUsados">
+                        Marcar boletos no usados como "No asistió"
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </button>
+                <form id="formMarcarRealizada" method="POST" style="display: inline;">
+                    <input type="hidden" id="funcionIdRealizada" name="funcion_id">
+                    <input type="hidden" id="marcarBoletosInput" name="marcar_boletos" value="false">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal de cancelación de función
+    const btnCancelarFuncion = document.querySelector('.btn-cancelar-funcion');
+    const modalCancelarFuncion = new bootstrap.Modal(document.getElementById('modalCancelarFuncion'));
+    const modalPelicula = document.getElementById('modalPelicula');
+    const modalFecha = document.getElementById('modalFecha');
+    const modalSala = document.getElementById('modalSala');
+    const modalCine = document.getElementById('modalCine');
+    const modalBoletos = document.getElementById('modalBoletos');
+    const motivoCancelacion = document.getElementById('motivoCancelacion');
+    const notificarClientesCancelacion = document.getElementById('notificarClientesCancelacion');
+    const acreditarSaldoCompleto = document.getElementById('acreditarSaldoCompleto');
+    const formCancelarFuncion = document.getElementById('formCancelarFuncion');
+    const motivoInput = document.getElementById('motivoInput');
+    const notificarInput = document.getElementById('notificarInput');
+    const acreditarCompletoInput = document.getElementById('acreditarCompletoInput');
+    const funcionIdCancelar = document.getElementById('funcionIdCancelar');
+    
+    if (btnCancelarFuncion) {
+        btnCancelarFuncion.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const pelicula = this.getAttribute('data-pelicula');
+            const fecha = this.getAttribute('data-fecha');
+            const sala = this.getAttribute('data-sala');
+            const cine = this.getAttribute('data-cine');
+            const boletos = this.getAttribute('data-boletos');
+            
+            modalPelicula.textContent = pelicula;
+            modalFecha.textContent = fecha;
+            modalSala.textContent = `Sala ${sala}`;
+            modalCine.textContent = cine;
+            modalBoletos.textContent = boletos;
+            
+            if (parseInt(boletos) > 0) {
+                modalBoletos.className = 'text-danger fw-bold';
+            } else {
+                modalBoletos.className = 'text-success fw-bold';
+            }
+            
+            funcionIdCancelar.value = id;
+            
+            // Resetear valores del modal
+            motivoCancelacion.value = '';
+            notificarClientesCancelacion.checked = false;
+            acreditarSaldoCompleto.checked = false;
+            
+            modalCancelarFuncion.show();
+        });
+    }
+    
+    // Configurar formulario de cancelación de función
+    if (formCancelarFuncion) {
+        formCancelarFuncion.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!motivoCancelacion.value) {
+                alert('Por favor selecciona un motivo de cancelación.');
+                motivoCancelacion.focus();
+                return;
+            }
+            
+            // Asignar valores a los campos ocultos
+            motivoInput.value = motivoCancelacion.value;
+            notificarInput.value = notificarClientesCancelacion.checked ? 'true' : 'false';
+            acreditarCompletoInput.value = acreditarSaldoCompleto.checked ? 'true' : 'false';
+            
+            // Enviar formulario
+            this.submit();
+        });
+    }
+    
+    // Modal de cancelación de boleto individual
+    const btnsCancelarBoleto = document.querySelectorAll('.btn-cancelar-boleto');
+    const modalCancelarBoleto = new bootstrap.Modal(document.getElementById('modalCancelarBoleto'));
+    const modalUsuarioBoleto = document.getElementById('modalUsuarioBoleto');
+    const modalAsientoBoleto = document.getElementById('modalAsientoBoleto');
+    const modalPrecioBoleto = document.getElementById('modalPrecioBoleto');
+    const formCancelarBoleto = document.getElementById('formCancelarBoleto');
+    const boletoIdCancelar = document.getElementById('boletoIdCancelar');
+    const devolverSaldo = document.getElementById('devolverSaldo');
+    const motivoBoleto = document.getElementById('motivoBoleto');
+    
+    btnsCancelarBoleto.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const usuario = this.getAttribute('data-usuario');
+            const asiento = this.getAttribute('data-asiento');
+            const precio = this.getAttribute('data-precio');
+            
+            modalUsuarioBoleto.textContent = usuario;
+            modalAsientoBoleto.textContent = asiento;
+            modalPrecioBoleto.textContent = `$${precio}`;
+            
+            boletoIdCancelar.value = id;
+            
+            // Resetear valores del modal
+            devolverSaldo.checked = true;
+            motivoBoleto.value = '';
+            
+            modalCancelarBoleto.show();
+        });
+    });
+    
+    // Configurar formulario de cancelación de boleto
+    if (formCancelarBoleto) {
+        formCancelarBoleto.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Aquí podrías agregar validaciones adicionales si es necesario
+            // Por ejemplo, confirmar con el usuario
+            
+            if (confirm('¿Estás seguro de cancelar este boleto? Esta acción no se puede deshacer.')) {
+                this.submit();
+            }
+        });
+    }
+    
+    // Modal de marcar como realizada
+    const btnMarcarRealizada = document.querySelector('.btn-marcar-realizada');
+    const modalMarcarRealizada = new bootstrap.Modal(document.getElementById('modalMarcarRealizada'));
+    const modalPeliculaRealizada = document.getElementById('modalPeliculaRealizada');
+    const modalFechaRealizada = document.getElementById('modalFechaRealizada');
+    const formMarcarRealizada = document.getElementById('formMarcarRealizada');
+    const funcionIdRealizada = document.getElementById('funcionIdRealizada');
+    const marcarBoletosNoUsados = document.getElementById('marcarBoletosNoUsados');
+    const marcarBoletosInput = document.getElementById('marcarBoletosInput');
+    
+    if (btnMarcarRealizada) {
+        btnMarcarRealizada.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const pelicula = this.getAttribute('data-pelicula');
+            const fecha = this.getAttribute('data-fecha');
+            
+            modalPeliculaRealizada.textContent = pelicula;
+            modalFechaRealizada.textContent = fecha;
+            
+            funcionIdRealizada.value = id;
+            
+            // Resetear valores del modal
+            marcarBoletosNoUsados.checked = true;
+            
+            modalMarcarRealizada.show();
+        });
+    }
+    
+    // Configurar formulario de marcar como realizada
+    if (formMarcarRealizada) {
+        formMarcarRealizada.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Asignar valor al campo oculto
+            marcarBoletosInput.value = marcarBoletosNoUsados.checked ? 'true' : 'false';
+            
+            if (confirm('¿Estás seguro de marcar esta función como realizada?')) {
+                this.submit();
+            }
+        });
+    }
+    
+    // Botón para actualizar estado (pausar/reactivar)
+    const btnActualizarEstado = document.querySelector('.btn-actualizar-estado');
+    if (btnActualizarEstado) {
+        btnActualizarEstado.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const estadoActual = this.getAttribute('data-estado-actual');
+            
+            let mensaje, nuevoEstado;
+            if (estadoActual === 'activo') {
+                mensaje = '¿Estás seguro de pausar la venta de boletos para esta función?';
+                nuevoEstado = 'pausar';
+            } else {
+                mensaje = '¿Estás seguro de reactivar esta función?';
+                nuevoEstado = 'reactivar';
+            }
+            
+            if (confirm(mensaje)) {
+                // Crear un formulario dinámico para enviar la solicitud
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("funcion_actualizar_estado", id=0) }}'.replace('0', id);
+                
+                const inputEstado = document.createElement('input');
+                inputEstado.type = 'hidden';
+                inputEstado.name = 'accion';
+                inputEstado.value = nuevoEstado;
+                form.appendChild(inputEstado);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+    
+    // Efectos visuales para las barras de progreso
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        
+        setTimeout(() => {
+            bar.style.transition = 'width 1s ease-in-out';
+            bar.style.width = width;
+        }, 100);
+    });
+    
+    // Contador de tiempo restante (si la función es futura)
+    const tiempoRestanteElement = document.querySelector('.badge.bg-success');
+    if (tiempoRestanteElement && tiempoRestanteElement.textContent.includes('Programada')) {
+        function actualizarContador() {
+            const ahora = new Date();
+            const fechaFuncion = new Date('{{ funcion.FechaHora.strftime("%Y-%m-%d %H:%M:%S") }}');
+            
+            const diferencia = fechaFuncion - ahora;
+            
+            if (diferencia > 0) {
+                const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+                
+                let texto = 'Programada - ';
+                if (dias > 0) {
+                    texto += `${dias}d ${horas}h`;
+                } else if (horas > 0) {
+                    texto += `${horas}h ${minutos}m`;
+                } else {
+                    texto += `${minutos}m ${segundos}s`;
+                }
+                
+                tiempoRestanteElement.textContent = texto;
+            } else {
+                tiempoRestanteElement.textContent = '¡Comienza ahora!';
+                tiempoRestanteElement.className = 'badge bg-warning';
+            }
+        }
+        
+        // Actualizar cada segundo
+        setInterval(actualizarContador, 1000);
+        actualizarContador(); // Ejecutar inmediatamente
+    }
+    
+    // Tooltips para elementos de información
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Animación para los badges de estado
+    const badgesEstado = document.querySelectorAll('.badge');
+    badgesEstado.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+            this.style.transition = 'transform 0.2s';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Efecto para las filas de la tabla
+    const filasTabla = document.querySelectorAll('tbody tr');
+    filasTabla.forEach(fila => {
+        fila.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+        });
+        
+        fila.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+    
+    // Confirmación antes de enviar formularios importantes
+    const formsImportantes = document.querySelectorAll('form[action*="cancelar"], form[action*="eliminar"]');
+    formsImportantes.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!confirm('¿Estás seguro de realizar esta acción? Esta acción no se puede deshacer.')) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Función para actualizar estadísticas en tiempo real (simulación)
+    function actualizarEstadisticas() {
+        // Esta función se puede expandir para actualizar estadísticas en tiempo real
+        // si implementas WebSockets o AJAX
+        console.log('Estadísticas actualizadas:', new Date().toLocaleTimeString());
+    }
+    
+    // Actualizar cada 30 segundos (solo si la función está activa y es futura)
+    {% if funcion.Activo and funcion.FechaHora > ahora %}
+    setInterval(actualizarEstadisticas, 30000);
+    {% endif %}
+    
+    // Botón para exportar datos de la función
+    const btnExportar = document.querySelector('.btn-exportar');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', function() {
+            const funcionId = this.getAttribute('data-id');
+            const tipo = this.getAttribute('data-tipo') || 'excel';
+            
+            // Mostrar modal de confirmación
+            if (confirm(`¿Exportar datos de esta función en formato ${tipo.toUpperCase()}?`)) {
+                window.location.href = `{{ url_for("funcion_exportar", id=0) }}`.replace('0', funcionId) + `?tipo=${tipo}`;
+            }
+        });
+    }
+    
+    // Función para copiar ID de función al portapapeles
+    const btnCopiarId = document.querySelector('.btn-copiar-id');
+    if (btnCopiarId) {
+        btnCopiarId.addEventListener('click', function() {
+            const funcionId = '{{ funcion.Id }}';
+            navigator.clipboard.writeText(funcionId)
+                .then(() => {
+                    // Mostrar notificación de éxito
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-check"></i> Copiado!';
+                    this.classList.remove('btn-outline-secondary');
+                    this.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-outline-secondary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Error al copiar:', err);
+                    alert('Error al copiar el ID');
+                });
+        });
+    }
+});
+</script>
+{% endblock %}

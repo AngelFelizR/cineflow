@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Asiento - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Asiento
+                </h1>
+                <a href="{{ url_for('asiento_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Crear Nuevo Asiento</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('asiento_crear') }}" class="needs-validation" novalidate>
+                        <!-- Sala -->
+                        <div class="mb-4">
+                            <label for="IdSala" class="form-label">
+                                <i class="bi bi-door-open me-1"></i>Sala *
+                            </label>
+                            <select class="form-select" id="IdSala" name="IdSala" required>
+                                <option value="">Seleccionar sala...</option>
+                                {% for sala in salas %}
+                                <option value="{{ sala.Id }}" 
+                                        data-capacidad="{{ sala.capacidad_actual }}"
+                                        data-asientos="{{ sala.asientos|map(attribute='CodigoAsiento')|list|tojson }}">
+                                    Sala {{ sala.NumeroDeSala }} - {{ sala.cine.Cine }} 
+                                    ({{ sala.asientos|length }} asientos de {{ sala.capacidad_maxima }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona una sala.
+                            </div>
+                            
+                            <!-- Información de la sala seleccionada -->
+                            <div id="salaInfo" class="mt-3 d-none">
+                                <div class="card border-info bg-dark">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 id="salaTitulo" class="text-info"></h6>
+                                                <p class="small text-light-60 mb-1" id="salaCine"></p>
+                                                <p class="small text-light-60 mb-0" id="salaTipo"></p>
+                                            </div>
+                                            <div class="col-md-6 text-end">
+                                                <div class="display-6" id="capacidadActual"></div>
+                                                <small class="text-light-60">Asientos actuales</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Código de Asiento -->
+                        <div class="mb-4">
+                            <label for="CodigoAsiento" class="form-label">
+                                <i class="bi bi-123 me-1"></i>Código de Asiento *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="CodigoAsiento" 
+                                   name="CodigoAsiento" 
+                                   required
+                                   pattern="[A-Z][0-9]{1,2}"
+                                   maxlength="3"
+                                   placeholder="Ej: A1, B12, C5">
+                            <div class="form-text">
+                                Formato: Letra (A-Z) seguida de número (1-99). Ejemplos: A1, B12, C25
+                            </div>
+                            <div class="invalid-feedback">
+                                El código debe tener formato letra+número (ej: A1, B12).
+                            </div>
+                            
+                            <!-- Asientos existentes en la sala -->
+                            <div id="asientosExistentes" class="mt-3 d-none">
+                                <h6 class="text-light-60">Asientos existentes en esta sala:</h6>
+                                <div id="listaAsientos" class="d-flex flex-wrap gap-2"></div>
+                                <div class="alert alert-warning mt-2 d-none" id="alertaDuplicado">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Este código de asiento ya existe en esta sala.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="Activo" name="Activo" checked>
+                                <label class="form-check-label" for="Activo">
+                                    Asiento activo
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Los asientos inactivos no estarán disponibles para venta.
+                            </div>
+                        </div>
+
+                        <!-- Validación de unicidad -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <small>
+                                Cada código de asiento debe ser único dentro de una sala.
+                                El sistema verificará automáticamente que no exista duplicado.
+                            </small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('asiento_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-1"></i> Crear Asiento
+                                </button>
+                                <a href="{{ url_for('asiento_importar') }}" class="btn btn-primary ms-2">
+                                    <i class="bi bi-upload me-1"></i> Importar Múltiples
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>El código de asiento debe ser único dentro de cada sala.</li>
+                        <li>Recomendación: usar formato estándar (fila + número). Ej: A1, A2, B1, B2.</li>
+                        <li>Para crear múltiples asientos rápidamente, usa la opción "Importar Múltiples".</li>
+                        <li>Los asientos inactivos no aparecerán en la selección de asientos.</li>
+                        <li>Una vez creado un asiento, no se puede cambiar de sala.</li>
+                        <li>Para cambiar un asiento de sala, elimínalo y créalo en la nueva sala.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const salaSelect = document.getElementById('IdSala');
+    const codigoInput = document.getElementById('CodigoAsiento');
+    const salaInfo = document.getElementById('salaInfo');
+    const asientosExistentes = document.getElementById('asientosExistentes');
+    const listaAsientos = document.getElementById('listaAsientos');
+    const alertaDuplicado = document.getElementById('alertaDuplicado');
+    
+    // Información de salas (precargada desde el servidor)
+    const salasData = {
+        {% for sala in salas %}
+        {{ sala.Id }}: {
+            numero: "{{ sala.NumeroDeSala }}",
+            cine: "{{ sala.cine.Cine }}",
+            tipo: "{{ sala.tipo_sala.Tipo }}",
+            capacidadActual: {{ sala.asientos|length }},
+            capacidadMaxima: {{ sala.capacidad_maxima }},
+            asientos: {{ sala.asientos|map(attribute='CodigoAsiento')|list|tojson }}
+        },
+        {% endfor %}
+    };
+    
+    // Cuando se selecciona una sala
+    salaSelect.addEventListener('change', function() {
+        const salaId = this.value;
+        
+        if (salaId && salasData[salaId]) {
+            const data = salasData[salaId];
+            
+            // Mostrar información de la sala
+            document.getElementById('salaTitulo').textContent = `Sala ${data.numero}`;
+            document.getElementById('salaCine').textContent = data.cine;
+            document.getElementById('salaTipo').textContent = `Tipo: ${data.tipo}`;
+            document.getElementById('capacidadActual').textContent = data.capacidadActual;
+            salaInfo.classList.remove('d-none');
+            
+            // Mostrar asientos existentes
+            listaAsientos.innerHTML = '';
+            if (data.asientos && data.asientos.length > 0) {
+                asientosExistentes.classList.remove('d-none');
+                data.asientos.forEach(codigo => {
+                    const span = document.createElement('span');
+                    span.className = 'badge bg-secondary';
+                    span.textContent = codigo;
+                    listaAsientos.appendChild(span);
+                });
+            } else {
+                asientosExistentes.classList.add('d-none');
+            }
+            
+            // Verificar duplicados cuando se ingresa un código
+            verificarDuplicado(salaId, codigoInput.value);
+        } else {
+            salaInfo.classList.add('d-none');
+            asientosExistentes.classList.add('d-none');
+        }
+    });
+    
+    // Cuando se escribe un código de asiento
+    codigoInput.addEventListener('input', function() {
+        const salaId = salaSelect.value;
+        if (salaId) {
+            verificarDuplicado(salaId, this.value.toUpperCase());
+            this.value = this.value.toUpperCase();
+        }
+    });
+    
+    // Validar formato del código
+    codigoInput.addEventListener('blur', function() {
+        const codigo = this.value;
+        const regex = /^[A-Z][0-9]{1,2}$/;
+        
+        if (codigo && !regex.test(codigo)) {
+            this.setCustomValidity('Formato inválido. Use letra (A-Z) seguida de número (1-99). Ej: A1, B12');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    function verificarDuplicado(salaId, codigo) {
+        if (!salaId || !codigo) {
+            alertaDuplicado.classList.add('d-none');
+            return;
+        }
+        
+        const data = salasData[salaId];
+        if (data && data.asientos && data.asientos.includes(codigo.toUpperCase())) {
+            alertaDuplicado.classList.remove('d-none');
+            codigoInput.setCustomValidity('Este código ya existe en esta sala');
+        } else {
+            alertaDuplicado.classList.add('d-none');
+            codigoInput.setCustomValidity('');
+        }
+    }
+    
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            // Validar que no sea un asiento duplicado
+            const salaId = salaSelect.value;
+            const codigo = codigoInput.value.toUpperCase();
+            
+            if (salaId && codigo) {
+                const data = salasData[salaId];
+                if (data && data.asientos && data.asientos.includes(codigo)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    alert('Este código de asiento ya existe en esta sala. Por favor ingresa un código diferente.');
+                    return;
+                }
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}

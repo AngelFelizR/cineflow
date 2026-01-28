@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Usuario - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-person-badge me-2"></i>Detalle de Usuario
+                </h1>
+                <div>
+                    <a href="{{ url_for('usuario_lista') }}" class="btn btn-outline-warning me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                    </a>
+                    <a href="{{ url_for('usuario_editar', id=usuario.Id) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Información -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Información General</h5>
+                    <span class="badge {% if usuario.rol.Activo %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if usuario.rol.Activo %}Activo{% else %}Inactivo{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- ID -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label text-light-60">ID</label>
+                            <div class="form-control bg-dark text-light">{{ usuario.Id }}</div>
+                        </div>
+                        
+                        <!-- Rol -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label text-light-60">Rol</label>
+                            <div class="form-control bg-dark">
+                                <span class="badge {% if usuario.rol.Rol == 'Administrador' %}bg-danger{% elif usuario.rol.Rol == 'Cliente' %}bg-success{% else %}bg-info{% endif %}">
+                                    {{ usuario.rol.Rol }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label text-light-60">Estado</label>
+                            <div class="form-control bg-dark">
+                                {% if usuario.rol.Activo %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha Registro -->
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label text-light-60">Registrado</label>
+                            <div class="form-control bg-dark text-light">
+                                {% if usuario.FechaCreacion %}
+                                {{ usuario.FechaCreacion.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información Personal -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">
+                        <i class="bi bi-person-circle me-1"></i> Información Personal
+                    </h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light-60">Nombre Completo</label>
+                            <div class="form-control bg-dark text-light">
+                                <strong>{{ usuario.Nombre }} {{ usuario.Apellidos }}</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light-60">Correo Electrónico</label>
+                            <div class="form-control bg-dark text-light">{{ usuario.CorreoElectronico }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light-60">Teléfono</label>
+                            <div class="form-control bg-dark text-light">{{ usuario.Telefono or 'No especificado' }}</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-light-60">Fecha de Nacimiento</label>
+                            <div class="form-control bg-dark text-light">
+                                {% if usuario.FechaNacimiento %}
+                                {{ usuario.FechaNacimiento.strftime('%d/%m/%Y') }}
+                                ({{ edad }} años)
+                                {% else %}
+                                No especificada
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Boletos del Usuario -->
+                    {% if usuario.boletos %}
+                    <div class="mt-4">
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-ticket-perforated me-1"></i>Historial de Boletos
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>ID Boleto</th>
+                                        <th>Película</th>
+                                        <th>Fecha Función</th>
+                                        <th>Asiento</th>
+                                        <th>Precio</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for boleto in usuario.boletos|sort(attribute='FechaCreacion', reverse=true)|slice(0, 5) %}
+                                    <tr>
+                                        <td>{{ boleto.Id }}</td>
+                                        <td>
+                                            {% if boleto.funcion and boleto.funcion.pelicula %}
+                                            {{ boleto.funcion.pelicula.Titulo|truncate(20) }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if boleto.funcion %}
+                                            {{ boleto.funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if boleto.asiento %}
+                                            {{ boleto.asiento.CodigoAsiento }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>${{ "%.2f"|format(boleto.ValorPagado|float) }}</td>
+                                        <td>
+                                            {% if boleto.cancelado %}
+                                            <span class="badge bg-danger">Cancelado</span>
+                                            {% elif boleto.usado %}
+                                            <span class="badge bg-success">Usado</span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark">Válido</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if usuario.boletos|length > 5 %}
+                        <div class="text-center mt-2">
+                            <small class="text-light-60">
+                                Mostrando 5 de {{ usuario.boletos|length }} boletos.
+                                <a href="{{ url_for('boleto_lista') }}?usuario={{ usuario.Id }}" class="text-warning">
+                                    Ver todos
+                                </a>
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer dark-card-header">
+                    <small class="text-light-60">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ID del usuario: {{ usuario.Id }} • 
+                        Última actualización: {{ "Hoy" if usuario.FechaCreacion else "N/A" }}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear me-1"></i> Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <a href="{{ url_for('usuario_editar', id=usuario.Id) }}" 
+                           class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> Editar
+                        </a>
+                        
+                        <a href="{{ url_for('usuario_cambiar_contrasena', id=usuario.Id) }}" 
+                           class="btn btn-outline-info ms-2">
+                            <i class="bi bi-key me-1"></i> Cambiar Contraseña
+                        </a>
+                        
+                        {% if usuario.rol.Activo %}
+                        <button type="button" 
+                                class="btn btn-danger btn-eliminar ms-2" 
+                                data-id="{{ usuario.Id }}"
+                                data-nombre="{{ usuario.Nombre }} {{ usuario.Apellidos }}">
+                            <i class="bi bi-trash-fill me-1"></i> Desactivar Usuario
+                        </button>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('usuario_reactivar', id=usuario.Id) }}" 
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-success ms-2">
+                                <i class="bi bi-check-circle me-1"></i> Reactivar
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('usuario_lista') }}" 
+                           class="btn btn-secondary ms-2">
+                            <i class="bi bi-list-ul me-1"></i> Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Desactivación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    Desactivación de Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-1"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="fw-bold mb-1">¿Está seguro de desactivar este usuario?</h6>
+                        <p class="mb-0">Usuario: <span id="nombreUsuario" class="fw-bold text-warning"></span></p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-dark border-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <small>
+                                <strong>Esta acción:</strong><br>
+                                • El usuario no podrá iniciar sesión<br>
+                                • Sus datos se mantendrán en el sistema<br>
+                                • Los boletos y transacciones se preservarán<br>
+                                • Se puede reactivar en cualquier momento
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if usuario.boletos and usuario.boletos|length > 0 %}
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Atención:</strong> Este usuario tiene {{ usuario.boletos|length }} boleto(s) activo(s).
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar Desactivación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar modal de desactivación
+    const btnsEliminar = document.querySelectorAll('.btn-eliminar');
+    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    const nombreUsuario = document.getElementById('nombreUsuario');
+    const formEliminar = document.getElementById('formEliminar');
+    
+    btnsEliminar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const nombre = this.getAttribute('data-nombre');
+            
+            nombreUsuario.textContent = nombre;
+            nombreUsuario.style.color = '#ff6b6b';
+            nombreUsuario.style.fontWeight = 'bold';
+            
+            formEliminar.action = "{{ url_for('usuario_eliminar', id=0) }}".replace('0', id);
+            
+            modalEliminar.show();
+        });
+    });
+});
+</script>
+{% endblock %}

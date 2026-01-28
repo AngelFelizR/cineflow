@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Boleto - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Vender Boleto Manualmente
+                </h1>
+                <a href="{{ url_for('boleto_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Boleto</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('boleto_crear') }}" class="needs-validation" novalidate>
+                        
+                        <!-- Selección de Función -->
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-calendar-event me-1"></i> Seleccionar Función
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="funcion_id" class="form-label">Función *</label>
+                                    <select class="form-select" id="funcion_id" name="IdFuncion" required>
+                                        <option value="">Seleccione una función</option>
+                                        {% for funcion in funciones %}
+                                        <option value="{{ funcion.Id }}" 
+                                                data-sala-id="{{ funcion.sala.Id }}"
+                                                data-cine-id="{{ funcion.sala.cine.Id }}"
+                                                data-precio-adulto="{{ funcion.sala.tipo_sala.PrecioAdulto }}"
+                                                data-precio-nino="{{ funcion.sala.tipo_sala.PrecioNino }}">
+                                            {{ funcion.pelicula.Titulo }} - 
+                                            {{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }} - 
+                                            {{ funcion.sala.cine.Cine }} (Sala {{ funcion.sala.NumeroDeSala }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Seleccione la función para la que se venderá el boleto
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="asiento_id" class="form-label">Asiento *</label>
+                                    <select class="form-select" id="asiento_id" name="IdAsiento" required disabled>
+                                        <option value="">Primero seleccione una función</option>
+                                    </select>
+                                    <div class="form-text" id="asientos-info">
+                                        Los asientos disponibles aparecerán después de seleccionar la función
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información de Usuario -->
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-person me-1"></i> Información del Cliente
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="usuario_id" class="form-label">Cliente *</label>
+                                    <select class="form-select" id="usuario_id" name="IdUsuario" required>
+                                        <option value="">Seleccione un cliente</option>
+                                        {% for usuario in usuarios %}
+                                        <option value="{{ usuario.Id }}">
+                                            {{ usuario.Nombre }} {{ usuario.Apellidos }} - {{ usuario.CorreoElectronico }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Seleccione el cliente que comprará el boleto
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo_boleto" class="form-label">Tipo de Boleto *</label>
+                                    <select class="form-select" id="tipo_boleto" name="IdTipoBoleto" required>
+                                        <option value="">Seleccione tipo</option>
+                                        {% for tipo in tipos_boleto %}
+                                        <option value="{{ tipo.Id }}" data-precio="{{ tipo.TipoBoleto == 'Adulto' ? 'adulto' : 'nino' }}">
+                                            {{ tipo.TipoBoleto }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        El precio se calculará automáticamente según el tipo seleccionado
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen y Precio -->
+                        <div class="card border-warning mb-4">
+                            <div class="card-header bg-dark text-warning">
+                                <h6 class="mb-0"><i class="bi bi-cash-coin me-1"></i> Resumen de Compra</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <strong>Película:</strong> 
+                                            <span id="resumen-pelicula" class="text-light-60">No seleccionada</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Función:</strong> 
+                                            <span id="resumen-funcion" class="text-light-60">No seleccionada</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Cine:</strong> 
+                                            <span id="resumen-cine" class="text-light-60">No seleccionado</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <strong>Sala:</strong> 
+                                            <span id="resumen-sala" class="text-light-60">No seleccionada</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Asiento:</strong> 
+                                            <span id="resumen-asiento" class="text-light-60">No seleccionado</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>Tipo:</strong> 
+                                            <span id="resumen-tipo" class="text-light-60">No seleccionado</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr class="border-warning">
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">Total a Pagar:</h5>
+                                        <small class="text-light-60">Precio según tipo de sala y boleto</small>
+                                    </div>
+                                    <div>
+                                        <h3 class="mb-0 text-warning" id="precio-total">$0.00</h3>
+                                        <input type="hidden" name="ValorPagado" id="input-precio-total" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Método de Pago -->
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-credit-card me-1"></i> Método de Pago
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="metodo_pago" class="form-label">Método de Pago *</label>
+                                    <select class="form-select" id="metodo_pago" name="metodo_pago" required>
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                                        <option value="transferencia">Transferencia Bancaria</option>
+                                        <option value="saldo">Saldo del Usuario</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="observaciones" class="form-label">Observaciones</label>
+                                    <textarea class="form-control" id="observaciones" name="observaciones" 
+                                              rows="2" placeholder="Observaciones adicionales..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('boleto_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Confirmar Venta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let precioAdulto = 0;
+    let precioNino = 0;
+    let asientosDisponibles = {};
+
+    // Elementos del DOM
+    const funcionSelect = document.getElementById('funcion_id');
+    const asientoSelect = document.getElementById('asiento_id');
+    const tipoBoletoSelect = document.getElementById('tipo_boleto');
+    const asientosInfo = document.getElementById('asientos-info');
+    
+    // Elementos de resumen
+    const resumenPelicula = document.getElementById('resumen-pelicula');
+    const resumenFuncion = document.getElementById('resumen-funcion');
+    const resumenCine = document.getElementById('resumen-cine');
+    const resumenSala = document.getElementById('resumen-sala');
+    const resumenAsiento = document.getElementById('resumen-asiento');
+    const resumenTipo = document.getElementById('resumen-tipo');
+    const precioTotal = document.getElementById('precio-total');
+    const inputPrecioTotal = document.getElementById('input-precio-total');
+
+    // Cuando se selecciona una función
+    funcionSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            // Habilitar selector de asientos
+            asientoSelect.disabled = false;
+            
+            // Obtener precios
+            precioAdulto = parseFloat(selectedOption.getAttribute('data-precio-adulto'));
+            precioNino = parseFloat(selectedOption.getAttribute('data-precio-nino'));
+            
+            // Actualizar resumen
+            const textoCompleto = selectedOption.textContent;
+            const partes = textoCompleto.split(' - ');
+            
+            resumenPelicula.textContent = partes[0];
+            resumenFuncion.textContent = partes[1];
+            resumenCine.textContent = partes[2];
+            resumenSala.textContent = selectedOption.getAttribute('data-sala-id');
+            
+            // Cargar asientos disponibles
+            cargarAsientosDisponibles(selectedOption.value);
+            
+        } else {
+            // Deshabilitar selector de asientos
+            asientoSelect.disabled = true;
+            asientoSelect.innerHTML = '<option value="">Primero seleccione una función</option>';
+            asientosInfo.textContent = 'Los asientos disponibles aparecerán después de seleccionar la función';
+            
+            // Limpiar resumen
+            limpiarResumen();
+        }
+        
+        actualizarPrecio();
+    });
+
+    // Cuando se selecciona un asiento
+    asientoSelect.addEventListener('change', function() {
+        if (this.value) {
+            const selectedOption = this.options[this.selectedIndex];
+            resumenAsiento.textContent = selectedOption.textContent;
+        } else {
+            resumenAsiento.textContent = 'No seleccionado';
+        }
+    });
+
+    // Cuando se selecciona un tipo de boleto
+    tipoBoletoSelect.addEventListener('change', function() {
+        if (this.value) {
+            const selectedOption = this.options[this.selectedIndex];
+            resumenTipo.textContent = selectedOption.textContent;
+        } else {
+            resumenTipo.textContent = 'No seleccionado';
+        }
+        actualizarPrecio();
+    });
+
+    // Función para cargar asientos disponibles
+    function cargarAsientosDisponibles(funcionId) {
+        asientoSelect.innerHTML = '<option value="">Cargando asientos...</option>';
+        asientosInfo.textContent = 'Cargando asientos disponibles...';
+        
+        // Simular carga de asientos (en producción, esto sería una llamada AJAX)
+        setTimeout(() => {
+            // Esto es un ejemplo - en producción deberías hacer una petición AJAX
+            fetch(`/api/funcion/${funcionId}/asientos-disponibles`)
+                .then(response => response.json())
+                .then(data => {
+                    asientoSelect.innerHTML = '<option value="">Seleccione un asiento</option>';
+                    
+                    if (data.length > 0) {
+                        data.forEach(asiento => {
+                            const option = document.createElement('option');
+                            option.value = asiento.id;
+                            option.textContent = asiento.codigo_asiento;
+                            asientoSelect.appendChild(option);
+                        });
+                        asientosInfo.textContent = `${data.length} asientos disponibles`;
+                    } else {
+                        asientoSelect.innerHTML = '<option value="">No hay asientos disponibles</option>';
+                        asientosInfo.textContent = 'No hay asientos disponibles para esta función';
+                        asientoSelect.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar asientos:', error);
+                    asientoSelect.innerHTML = '<option value="">Error al cargar asientos</option>';
+                    asientosInfo.textContent = 'Error al cargar los asientos disponibles';
+                });
+        }, 500);
+    }
+
+    // Función para actualizar el precio
+    function actualizarPrecio() {
+        let precio = 0;
+        
+        if (tipoBoletoSelect.value) {
+            const tipoSeleccionado = tipoBoletoSelect.options[tipoBoletoSelect.selectedIndex];
+            const tipoPrecio = tipoSeleccionado.getAttribute('data-precio');
+            
+            if (tipoPrecio === 'adulto') {
+                precio = precioAdulto;
+            } else if (tipoPrecio === 'nino') {
+                precio = precioNino;
+            }
+        }
+        
+        precioTotal.textContent = `$${precio.toFixed(2)}`;
+        inputPrecioTotal.value = precio.toFixed(2);
+    }
+
+    // Función para limpiar el resumen
+    function limpiarResumen() {
+        resumenPelicula.textContent = 'No seleccionada';
+        resumenFuncion.textContent = 'No seleccionada';
+        resumenCine.textContent = 'No seleccionado';
+        resumenSala.textContent = 'No seleccionada';
+        resumenAsiento.textContent = 'No seleccionado';
+        resumenTipo.textContent = 'No seleccionado';
+        precioTotal.textContent = '$0.00';
+        inputPrecioTotal.value = '0';
+    }
+
+    // Validación de formulario
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

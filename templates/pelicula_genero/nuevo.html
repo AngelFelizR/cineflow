@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Relación Película-Género - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Relación Película-Género
+                </h1>
+                <a href="{{ url_for('pelicula_genero_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Crear Nueva Relación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('pelicula_genero_crear') }}" class="needs-validation" novalidate>
+                        <!-- Película -->
+                        <div class="mb-4">
+                            <label for="IdPelicula" class="form-label">
+                                <i class="bi bi-film me-1"></i>Película *
+                            </label>
+                            <select class="form-select" id="IdPelicula" name="IdPelicula" required>
+                                <option value="">Seleccionar película...</option>
+                                {% for pelicula in peliculas %}
+                                <option value="{{ pelicula.Id }}" 
+                                        data-generos="{{ pelicula.generos|map(attribute='genero.Id')|list|tojson }}">
+                                    {{ pelicula.Titulo }} ({{ pelicula.DuracionMinutos }} min)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona una película.
+                            </div>
+                            
+                            <!-- Información de la película seleccionada -->
+                            <div id="peliculaInfo" class="mt-3 d-none">
+                                <div class="card border-info bg-dark">
+                                    <div class="card-body">
+                                        <h6 id="peliculaTitulo" class="text-info"></h6>
+                                        <p id="peliculaDescripcion" class="small text-light-60 mb-1"></p>
+                                        <p class="small mb-0">
+                                            <span id="peliculaClasificacion" class="badge bg-info me-2"></span>
+                                            <span id="peliculaIdioma" class="badge bg-secondary"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Género -->
+                        <div class="mb-4">
+                            <label for="IdGenero" class="form-label">
+                                <i class="bi bi-tags me-1"></i>Género *
+                            </label>
+                            <select class="form-select" id="IdGenero" name="IdGenero" required>
+                                <option value="">Seleccionar género...</option>
+                                {% for genero in generos %}
+                                <option value="{{ genero.Id }}">{{ genero.Genero }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona un género.
+                            </div>
+                            
+                            <!-- Géneros actuales de la película -->
+                            <div id="generosActuales" class="mt-3 d-none">
+                                <h6 class="text-light-60">Géneros actuales de esta película:</h6>
+                                <div id="listaGeneros" class="d-flex flex-wrap gap-2"></div>
+                                <div class="alert alert-warning mt-2 d-none" id="alertaDuplicado">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Este género ya está asignado a la película.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validación de unicidad -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <small>
+                                Una película no puede tener el mismo género asignado más de una vez.
+                                El sistema verificará que esta combinación sea única.
+                            </small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('pelicula_genero_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Crear Relación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Cada película puede tener múltiples géneros.</li>
+                        <li>No se pueden crear relaciones duplicadas (misma película + mismo género).</li>
+                        <li>Al asignar un género, la película aparecerá en los filtros de ese género.</li>
+                        <li>Se recomienda asignar entre 1 y 3 géneros por película para una mejor categorización.</li>
+                        <li>Puedes editar los géneros de una película desde la página de edición de la película.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const peliculaSelect = document.getElementById('IdPelicula');
+    const generoSelect = document.getElementById('IdGenero');
+    const peliculaInfo = document.getElementById('peliculaInfo');
+    const generosActuales = document.getElementById('generosActuales');
+    const listaGeneros = document.getElementById('listaGeneros');
+    const alertaDuplicado = document.getElementById('alertaDuplicado');
+    
+    // Información de películas (precargada desde el servidor)
+    const peliculasData = {
+        {% for pelicula in peliculas %}
+        {{ pelicula.Id }}: {
+            titulo: "{{ pelicula.Titulo }}",
+            descripcion: "{{ pelicula.DescripcionCorta|escapejs }}",
+            clasificacion: "{{ pelicula.clasificacion.Clasificacion }}",
+            idioma: "{{ pelicula.idioma.Idioma }}",
+            generos: {{ pelicula.generos|map(attribute='genero.Id')|list|tojson }}
+        },
+        {% endfor %}
+    };
+    
+    // Cuando se selecciona una película
+    peliculaSelect.addEventListener('change', function() {
+        const peliculaId = this.value;
+        
+        if (peliculaId && peliculasData[peliculaId]) {
+            const data = peliculasData[peliculaId];
+            
+            // Mostrar información de la película
+            document.getElementById('peliculaTitulo').textContent = data.titulo;
+            document.getElementById('peliculaDescripcion').textContent = data.descripcion;
+            document.getElementById('peliculaClasificacion').textContent = data.clasificacion;
+            document.getElementById('peliculaIdioma').textContent = data.idioma;
+            peliculaInfo.classList.remove('d-none');
+            
+            // Mostrar géneros actuales
+            listaGeneros.innerHTML = '';
+            if (data.generos && data.generos.length > 0) {
+                generosActuales.classList.remove('d-none');
+                data.generos.forEach(generoId => {
+                    // Encontrar el nombre del género
+                    const generoOption = generoSelect.querySelector(`option[value="${generoId}"]`);
+                    if (generoOption) {
+                        const span = document.createElement('span');
+                        span.className = 'badge bg-primary';
+                        span.textContent = generoOption.textContent;
+                        listaGeneros.appendChild(span);
+                    }
+                });
+            } else {
+                generosActuales.classList.add('d-none');
+            }
+            
+            // Verificar duplicados cuando se selecciona un género
+            verificarDuplicado(peliculaId, generoSelect.value);
+        } else {
+            peliculaInfo.classList.add('d-none');
+            generosActuales.classList.add('d-none');
+        }
+    });
+    
+    // Cuando se selecciona un género
+    generoSelect.addEventListener('change', function() {
+        const peliculaId = peliculaSelect.value;
+        if (peliculaId) {
+            verificarDuplicado(peliculaId, this.value);
+        }
+    });
+    
+    function verificarDuplicado(peliculaId, generoId) {
+        if (!peliculaId || !generoId) {
+            alertaDuplicado.classList.add('d-none');
+            return;
+        }
+        
+        const data = peliculasData[peliculaId];
+        if (data && data.generos && data.generos.includes(parseInt(generoId))) {
+            alertaDuplicado.classList.remove('d-none');
+        } else {
+            alertaDuplicado.classList.add('d-none');
+        }
+    }
+    
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            // Validar que no sea una relación duplicada
+            const peliculaId = peliculaSelect.value;
+            const generoId = generoSelect.value;
+            
+            if (peliculaId && generoId) {
+                const data = peliculasData[peliculaId];
+                if (data && data.generos && data.generos.includes(parseInt(generoId))) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    alert('Esta película ya tiene asignado este género. Por favor selecciona un género diferente.');
+                    return;
+                }
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}

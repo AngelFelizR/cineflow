@@ -7,6 +7,7 @@ from controllers.funcion_controller import FuncionController
 from controllers.boleto_controller import BoletoController
 from controllers.dashboard_controller import DashboardController
 from controllers.clasificacion_controller import ClasificacionController
+from controllers.idioma_controller import IdiomaController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from datetime import datetime, date, timedelta
@@ -818,10 +819,83 @@ def clasificacion_eliminar(id):
     
     return redirect(url_for('clasificacion_lista'))
 
+# ==================== RUTAS CRUD PARA IDIOMA ====================
+
 @app.route('/admin/idiomas')
 @admin_required
 def idioma_lista():
-    return render_template('idioma/lista.html')
+    """Lista todos los idiomas"""
+    idiomas = IdiomaController.obtener_todos()
+    return render_template('idioma/lista.html', idiomas=idiomas)
+
+@app.route('/admin/idiomas/nuevo')
+@admin_required
+def idioma_nuevo():
+    """Formulario para nuevo idioma"""
+    return render_template('idioma/nuevo.html')
+
+@app.route('/admin/idiomas/crear', methods=['POST'])
+@admin_required
+def idioma_crear():
+    """Crea un nuevo idioma"""
+    success, message, idioma = IdiomaController.crear(request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('idioma_lista'))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('idioma_nuevo'))
+
+@app.route('/admin/idiomas/<int:id>')
+@admin_required
+def idioma_detalle(id):
+    """Muestra el detalle de un idioma"""
+    idioma = IdiomaController.obtener_por_id(id)
+    
+    if not idioma:
+        flash('Idioma no encontrado', 'danger')
+        return redirect(url_for('idioma_lista'))
+    
+    return render_template('idioma/detalle.html', idioma=idioma)
+
+@app.route('/admin/idiomas/<int:id>/editar')
+@admin_required
+def idioma_editar(id):
+    """Formulario para editar idioma"""
+    idioma = IdiomaController.obtener_por_id(id)
+    
+    if not idioma:
+        flash('Idioma no encontrado', 'danger')
+        return redirect(url_for('idioma_lista'))
+    
+    return render_template('idioma/editar.html', idioma=idioma)
+
+@app.route('/admin/idiomas/<int:id>/actualizar', methods=['POST'])
+@admin_required
+def idioma_actualizar(id):
+    """Actualiza un idioma existente"""
+    success, message, idioma = IdiomaController.actualizar(id, request.form)
+    
+    if success:
+        flash(message, 'success')
+        return redirect(url_for('idioma_detalle', id=id))
+    else:
+        flash(message, 'danger')
+        return redirect(url_for('idioma_editar', id=id))
+
+@app.route('/admin/idiomas/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def idioma_eliminar(id):
+    """Elimina (desactiva) un idioma"""
+    success, message = IdiomaController.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('idioma_lista'))
 
 @app.route('/admin/generos')
 @admin_required

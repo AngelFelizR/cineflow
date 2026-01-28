@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Asiento - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Columna Principal -->
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-person-badge me-2"></i>Detalle de Asiento
+                </h1>
+                <div>
+                    <a href="{{ url_for('asiento_lista') }}" class="btn btn-outline-warning me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                    </a>
+                    <a href="{{ url_for('asiento_editar', id=asiento.Id) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Información -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Información del Asiento</h5>
+                    <span class="badge {% if asiento.Activo %}bg-success{% else %}bg-danger{% endif %}" style="font-size: 1em;">
+                        {% if asiento.Activo %}ACTIVO{% else %}INACTIVO{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Código del Asiento -->
+                        <div class="col-md-4 mb-4 text-center">
+                            <div class="display-1 text-warning mb-2">{{ asiento.CodigoAsiento }}</div>
+                            <span class="badge bg-secondary">Código del Asiento</span>
+                        </div>
+                        
+                        <!-- Información Detallada -->
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">ID</label>
+                                    <div class="form-control bg-dark text-light">{{ asiento.Id }}</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-light-60">ID Sala</label>
+                                    <div class="form-control bg-dark text-light">{{ asiento.IdSala }}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de la Sala -->
+                            <div class="card border-info bg-dark mb-3">
+                                <div class="card-header bg-info text-dark py-2">
+                                    <i class="bi bi-door-open me-1"></i> Información de la Sala
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5 class="text-info">Sala {{ asiento.sala.NumeroDeSala }}</h5>
+                                            <p class="mb-1">
+                                                <strong>Cine:</strong> {{ asiento.sala.cine.Cine }}
+                                            </p>
+                                            <p class="mb-1">
+                                                <strong>Dirección:</strong> {{ asiento.sala.cine.Direccion }}
+                                            </p>
+                                            <p class="mb-0">
+                                                <strong>Tipo:</strong> 
+                                                <span class="badge bg-info">{{ asiento.sala.tipo_sala.Tipo }}</span>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <div class="display-6">{{ asientos_en_sala }}</div>
+                                            <small class="text-light-60">Asientos en esta sala</small>
+                                            <div class="mt-2">
+                                                <a href="{{ url_for('sala_detalle', id=asiento.IdSala) }}" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-eye me-1"></i> Ver Sala
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Información de Precios -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="card bg-dark border-warning">
+                                        <div class="card-body text-center">
+                                            <h6 class="text-light-60">Precio Adulto</h6>
+                                            <div class="display-6 text-warning">
+                                                ${{ asiento.sala.tipo_sala.PrecioAdulto }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-dark border-primary">
+                                        <div class="card-body text-center">
+                                            <h6 class="text-light-60">Precio Niño</h6>
+                                            <div class="display-6 text-primary">
+                                                ${{ asiento.sala.tipo_sala.PrecioNino }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer dark-card-header">
+                    <small class="text-light-60">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ID del asiento: {{ asiento.Id }} | 
+                        Creado: {{ asiento.FechaCreacion if asiento.FechaCreacion else 'N/A' }}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Sección de Boletos -->
+            {% if boletos %}
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-ticket-perforated me-1"></i> 
+                        Boletos Asociados ({{ total_boletos }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID Boleto</th>
+                                    <th>Película</th>
+                                    <th>Función</th>
+                                    <th>Usuario</th>
+                                    <th>Fecha Compra</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for boleto in boletos %}
+                                <tr>
+                                    <td>{{ boleto.Id }}</td>
+                                    <td>
+                                        {% if boleto.funcion and boleto.funcion.pelicula %}
+                                        {{ boleto.funcion.pelicula.Titulo }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if boleto.funcion %}
+                                        {{ boleto.funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if boleto.usuario %}
+                                        {{ boleto.usuario.Nombre }} {{ boleto.usuario.Apellidos }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ boleto.FechaCreacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if boleto.cancelado %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        {% elif boleto.usado %}
+                                        <span class="badge bg-success">Usado</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Vendido</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if total_boletos > boletos|length %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('boleto_lista') }}?asiento_id={{ asiento.Id }}" 
+                           class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye me-1"></i> Ver todos los boletos
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Lateral -->
+        <div class="col-lg-4">
+            <!-- Estadísticas -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart me-1"></i> Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="display-6">{{ total_boletos }}</div>
+                            <small class="text-light-60">Boletos Totales</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="display-6">{{ boletos_activos }}</div>
+                            <small class="text-light-60">Boletos Activos</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="display-6">{{ boletos_cancelados }}</div>
+                            <small class="text-light-60">Cancelados</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="display-6">{{ boletos_usados }}</div>
+                            <small class="text-light-60">Usados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear me-1"></i> Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('asiento_editar', id=asiento.Id) }}" 
+                           class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> Editar Asiento
+                        </a>
+                        
+                        {% if asiento.Activo %}
+                        <button type="button" 
+                                class="btn btn-outline-danger btn-eliminar" 
+                                data-id="{{ asiento.Id }}"
+                                data-codigo="{{ asiento.CodigoAsiento }}"
+                                data-sala="{{ asiento.sala.NumeroDeSala }}"
+                                data-cine="{{ asiento.sala.cine.Cine }}">
+                            <i class="bi bi-trash-fill me-1"></i> Eliminar Asiento
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-success">
+                            <i class="bi bi-check-circle me-1"></i> Reactivar Asiento
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('asiento_lista') }}?sala_id={{ asiento.IdSala }}" 
+                           class="btn btn-info">
+                            <i class="bi bi-door-open me-1"></i> Ver Asientos de esta Sala
+                        </a>
+                        
+                        <a href="{{ url_for('sala_detalle', id=asiento.IdSala) }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-building me-1"></i> Ver Sala Completa
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Técnica -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-code-slash me-1"></i> Información Técnica</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0">
+                        <dt class="text-light-60">ID Asiento</dt>
+                        <dd>{{ asiento.Id }}</dd>
+                        
+                        <dt class="text-light-60">ID Sala</dt>
+                        <dd>{{ asiento.IdSala }}</dd>
+                        
+                        <dt class="text-light-60">Código</dt>
+                        <dd>{{ asiento.CodigoAsiento }}</dd>
+                        
+                        <dt class="text-light-60">Estado en BD</dt>
+                        <dd>{% if asiento.Activo %}1 (Activo){% else %}0 (Inactivo){% endif %}</dd>
+                        
+                        <dt class="text-light-60">Última Modificación</dt>
+                        <dd>{{ asiento.FechaModificacion if asiento.FechaModificacion else 'N/A' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    Eliminación de Asiento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-1"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="fw-bold mb-1">¿Está seguro de eliminar este asiento?</h6>
+                        <p class="mb-1">Asiento: <strong id="codigoAsiento" class="text-warning"></strong></p>
+                        <p class="mb-1">Sala: <strong id="salaInfo" class="text-info"></strong></p>
+                        <p class="mb-0">Cine: <strong id="cineInfo" class="text-primary"></strong></p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-dark border-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <small>
+                                <strong>Esta acción:</strong><br>
+                                {% if total_boletos > 0 %}
+                                • Afectará <strong class="text-danger">{{ total_boletos }} boleto(s)</strong><br>
+                                • Los boletos futuros se cancelarán<br>
+                                • Los boletos pasados mantendrán el registro<br>
+                                {% endif %}
+                                • La capacidad de la sala se reducirá<br>
+                                • No se podrá deshacer<br>
+                                • Considere desactivar en lugar de eliminar
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar Eliminación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnsEliminar = document.querySelectorAll('.btn-eliminar');
+    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    const codigoAsiento = document.getElementById('codigoAsiento');
+    const salaInfo = document.getElementById('salaInfo');
+    const cineInfo = document.getElementById('cineInfo');
+    const formEliminar = document.getElementById('formEliminar');
+    
+    btnsEliminar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const codigo = this.getAttribute('data-codigo');
+            const sala = this.getAttribute('data-sala');
+            const cine = this.getAttribute('data-cine');
+            
+            codigoAsiento.textContent = codigo;
+            salaInfo.textContent = `Sala ${sala}`;
+            cineInfo.textContent = cine;
+            
+            formEliminar.action = "{{ url_for('asiento_eliminar', id=0) }}".replace('0', id);
+            modalEliminar.show();
+        });
+    });
+});
+</script>
+{% endblock %}

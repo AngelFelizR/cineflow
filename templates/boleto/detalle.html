@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Boleto #{{ boleto.Id }} - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2">
+                        <i class="bi bi-ticket-perforated me-2"></i>Boleto #{{ boleto.Id }}
+                    </h1>
+                    <p class="text-light-60 mb-0">Detalle completo del boleto</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('boleto_lista') }}" class="btn btn-outline-warning me-2">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                    </a>
+                    {% if not boleto.usado and not boleto.cancelado %}
+                    <a href="{{ url_for('boleto_editar', id=boleto.Id) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i> Editar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tarjeta Principal -->
+            <div class="card dark-card mb-4">
+                <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Información General</h5>
+                    <span class="badge {% if boleto.cancelado %}bg-danger{% elif boleto.usado %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {% if boleto.cancelado %}Cancelado
+                        {% elif boleto.usado %}Usado
+                        {% else %}Activo
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Columna Izquierda: Información de la Función -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-film me-1"></i> Información de la Función
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Película</label>
+                                <div class="form-control bg-dark text-light">
+                                    <strong>{{ boleto.funcion.pelicula.Titulo if boleto.funcion and boleto.funcion.pelicula else 'N/A' }}</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Fecha y Hora</label>
+                                <div class="form-control bg-dark text-light">
+                                    {% if boleto.funcion %}
+                                    {{ boleto.funcion.FechaHora.strftime('%A, %d de %B de %Y - %H:%M') }}
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label text-light-60">Cine</label>
+                                    <div class="form-control bg-dark text-light">
+                                        {{ boleto.funcion.sala.cine.Cine if boleto.funcion and boleto.funcion.sala and boleto.funcion.sala.cine else 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label text-light-60">Sala</label>
+                                    <div class="form-control bg-dark text-light">
+                                        {% if boleto.funcion and boleto.funcion.sala %}
+                                        {{ boleto.funcion.sala.NumeroDeSala }} ({{ boleto.funcion.sala.tipo_sala.Tipo if boleto.funcion.sala.tipo_sala else 'N/A' }})
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Asiento</label>
+                                <div class="form-control bg-dark text-light text-center fs-4">
+                                    <strong>{{ boleto.asiento.CodigoAsiento if boleto.asiento else 'N/A' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Columna Derecha: Información del Boleto y Cliente -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-person me-1"></i> Información del Cliente y Boleto
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Cliente</label>
+                                <div class="form-control bg-dark text-light">
+                                    <strong>{{ boleto.usuario.Nombre }} {{ boleto.usuario.Apellidos }}</strong>
+                                    <br>
+                                    <small class="text-light-60">{{ boleto.usuario.CorreoElectronico }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label text-light-60">Tipo de Boleto</label>
+                                    <div class="form-control bg-dark text-light">
+                                        <span class="badge {% if boleto.tipo_boleto.TipoBoleto == 'Adulto' %}bg-primary{% else %}bg-info{% endif %}">
+                                            {{ boleto.tipo_boleto.TipoBoleto if boleto.tipo_boleto else 'N/A' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label text-light-60">Precio</label>
+                                    <div class="form-control bg-dark text-light fs-5 text-warning text-center">
+                                        <strong>${{ "%.2f"|format(boleto.ValorPagado) }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Fecha de Compra</label>
+                                <div class="form-control bg-dark text-light">
+                                    {{ boleto.FechaCreacion.strftime('%d/%m/%Y %H:%M:%S') }}
+                                </div>
+                            </div>
+                            
+                            {% if boleto.cancelado and boleto.cancelacion_info %}
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Información de Cancelación</label>
+                                <div class="form-control bg-dark text-light">
+                                    <strong>Fecha:</strong> {{ boleto.cancelacion_info.FechaCancelacion.strftime('%d/%m/%Y %H:%M:%S') }}<br>
+                                    <strong>Valor Acreditado:</strong> ${{ "%.2f"|format(boleto.cancelacion_info.ValorAcreditado) }}<br>
+                                    <strong>Canjeado:</strong> {% if boleto.cancelacion_info.Canjeado %}Sí{% else %}No{% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if boleto.usado and boleto.uso_info %}
+                            <div class="mb-3">
+                                <label class="form-label text-light-60">Información de Uso</label>
+                                <div class="form-control bg-dark text-light">
+                                    <strong>Fecha de Uso:</strong> {{ boleto.uso_info.FechaUso.strftime('%d/%m/%Y %H:%M:%S') }}<br>
+                                    <strong>Encargado:</strong> {{ boleto.uso_info.encargado.Nombre if boleto.uso_info.encargado else 'N/A' }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjetas Informativas -->
+            <div class="row">
+                <!-- Información de la Película -->
+                <div class="col-md-6 mb-4">
+                    <div class="card dark-card h-100">
+                        <div class="card-header dark-card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Detalles de la Película</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if boleto.funcion and boleto.funcion.pelicula %}
+                            <div class="mb-2">
+                                <strong>Duración:</strong> 
+                                <span class="text-light-60">{{ boleto.funcion.pelicula.DuracionMinutos }} minutos</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Idioma:</strong> 
+                                <span class="text-light-60">{{ boleto.funcion.pelicula.idioma.Idioma if boleto.funcion.pelicula.idioma else 'N/A' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Clasificación:</strong> 
+                                <span class="badge bg-secondary">{{ boleto.funcion.pelicula.clasificacion.Clasificacion if boleto.funcion.pelicula.clasificacion else 'N/A' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Géneros:</strong> 
+                                <div class="mt-1">
+                                    {% if boleto.funcion.pelicula.generos %}
+                                        {% for genero in boleto.funcion.pelicula.generos %}
+                                        <span class="badge bg-info me-1">{{ genero.genero.Genero if genero.genero else 'N/A' }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-light-60">N/A</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-light-60 text-center py-3">No hay información disponible de la película</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del Cine -->
+                <div class="col-md-6 mb-4">
+                    <div class="card dark-card h-100">
+                        <div class="card-header dark-card-header">
+                            <h6 class="mb-0"><i class="bi bi-geo-alt me-1"></i> Información del Cine</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if boleto.funcion and boleto.funcion.sala and boleto.funcion.sala.cine %}
+                            <div class="mb-2">
+                                <strong>Dirección:</strong> 
+                                <span class="text-light-60">{{ boleto.funcion.sala.cine.Direccion }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Teléfono:</strong> 
+                                <span class="text-light-60">{{ boleto.funcion.sala.cine.Telefono }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Tipo de Sala:</strong> 
+                                <span class="badge bg-warning text-dark">{{ boleto.funcion.sala.tipo_sala.Tipo if boleto.funcion.sala.tipo_sala else 'N/A' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Precios:</strong> 
+                                <div class="mt-1">
+                                    <span class="badge bg-primary me-2">Adulto: ${{ "%.2f"|format(boleto.funcion.sala.tipo_sala.PrecioAdulto) if boleto.funcion.sala.tipo_sala else '0.00' }}</span>
+                                    <span class="badge bg-info">Niño: ${{ "%.2f"|format(boleto.funcion.sala.tipo_sala.PrecioNino) if boleto.funcion.sala.tipo_sala else '0.00' }}</span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <p class="text-light-60 text-center py-3">No hay información disponible del cine</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones y Estado -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear me-1"></i> Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group">
+                        <a href="{{ url_for('boleto_lista') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Volver a la Lista
+                        </a>
+                        
+                        {% if not boleto.usado and not boleto.cancelado %}
+                        <a href="{{ url_for('boleto_editar', id=boleto.Id) }}" class="btn btn-warning ms-2">
+                            <i class="bi bi-pencil-square me-1"></i> Editar Boleto
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-success ms-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalUsarBoleto">
+                            <i class="bi bi-check-circle me-1"></i> Marcar como Usado
+                        </button>
+                        
+                        <button type="button" 
+                                class="btn btn-danger ms-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalCancelarBoleto">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar Boleto
+                        </button>
+                        {% elif boleto.cancelado %}
+                        <span class="ms-3 align-self-center">
+                            <i class="bi bi-info-circle text-warning me-1"></i>
+                            Este boleto fue cancelado el {{ boleto.cancelacion_info.FechaCancelacion.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% elif boleto.usado %}
+                        <span class="ms-3 align-self-center">
+                            <i class="bi bi-check-circle text-success me-1"></i>
+                            Este boleto fue usado el {{ boleto.uso_info.FechaUso.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Marcar como Usado -->
+{% if not boleto.usado and not boleto.cancelado %}
+<div class="modal fade" id="modalUsarBoleto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-success">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Marcar Boleto como Usado
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-success">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <h6 class="alert-heading mb-2">Confirmar Uso del Boleto</h6>
+                            <p class="mb-0">¿Está seguro de marcar este boleto como usado?</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-warning">
+                    <div class="card-header bg-dark text-warning py-2">
+                        <i class="bi bi-ticket-perforated me-1"></i>
+                        Información del Boleto
+                    </div>
+                    <div class="card-body bg-dark py-3">
+                        <ul class="mb-0">
+                            <li><strong>Boleto:</strong> #{{ boleto.Id }}</li>
+                            <li><strong>Película:</strong> {{ boleto.funcion.pelicula.Titulo if boleto.funcion and boleto.funcion.pelicula else 'N/A' }}</li>
+                            <li><strong>Función:</strong> {{ boleto.funcion.FechaHora.strftime('%d/%m/%Y %H:%M') if boleto.funcion else 'N/A' }}</li>
+                            <li><strong>Asiento:</strong> {{ boleto.asiento.CodigoAsiento if boleto.asiento else 'N/A' }}</li>
+                            <li><strong>Cliente:</strong> {{ boleto.usuario.Nombre }} {{ boleto.usuario.Apellidos }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('boleto_usar', id=boleto.Id) }}" class="mt-3">
+                    <div class="mb-3">
+                        <label for="observaciones_uso" class="form-label">Observaciones (opcional)</label>
+                        <textarea class="form-control" id="observaciones_uso" name="observaciones" 
+                                  rows="3" placeholder="Observaciones sobre el uso del boleto..."></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmar_uso" required>
+                        <label class="form-check-label" for="confirmar_uso">
+                            Confirmo que este boleto ha sido utilizado para ingresar a la función
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i> Sí, Marcar como Usado
+                        </button>
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para Cancelar Boleto -->
+{% if not boleto.usado and not boleto.cancelado %}
+<div class="modal fade" id="modalCancelarBoleto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-x-circle-fill me-2"></i>
+                    Cancelar Boleto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-danger">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <h6 class="alert-heading mb-2">¡Atención!</h6>
+                            <p class="mb-0">¿Está seguro de cancelar este boleto?</p>
+                            <p class="fw-bold text-danger mt-1">Esta acción no se puede deshacer</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-warning">
+                    <div class="card-header bg-dark text-warning py-2">
+                        <i class="bi bi-cash-coin me-1"></i>
+                        Política de Cancelación
+                    </div>
+                    <div class="card-body bg-dark py-3">
+                        {% set tiempo_restante = boleto.funcion.FechaHora - now if boleto.funcion else timedelta(0) %}
+                        {% set horas_restantes = tiempo_restante.total_seconds() / 3600 %}
+                        
+                        {% if horas_restantes >= 2 %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>100% de reembolso</strong> - Cancelación con más de 2 horas de anticipación
+                        </div>
+                        {% elif horas_restantes > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>50% de reembolso</strong> - Cancelación con menos de 2 horas de anticipación
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-x-circle me-2"></i>
+                            <strong>No se puede cancelar</strong> - La función ya ha comenzado
+                        </div>
+                        {% endif %}
+                        
+                        <p class="mb-0 small">
+                            <strong>Tiempo restante:</strong> {{ "%.1f"|format(horas_restantes) }} horas<br>
+                            <strong>Valor del boleto:</strong> ${{ "%.2f"|format(boleto.ValorPagado) }}<br>
+                            <strong>Reembolso estimado:</strong> 
+                            {% if horas_restantes >= 2 %}
+                                ${{ "%.2f"|format(boleto.ValorPagado) }}
+                            {% elif horas_restantes > 0 %}
+                                ${{ "%.2f"|format(boleto.ValorPagado * 0.5) }}
+                            {% else %}
+                                $0.00
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                {% if horas_restantes > 0 %}
+                <form method="POST" action="{{ url_for('boleto_cancelar_admin', id=boleto.Id) }}" class="mt-3">
+                    <div class="mb-3">
+                        <label for="motivo_cancelacion" class="form-label">Motivo de cancelación *</label>
+                        <textarea class="form-control" id="motivo_cancelacion" name="motivo_cancelacion" 
+                                  rows="3" required placeholder="Ingrese el motivo detallado de la cancelación..."></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmar_cancelacion" required>
+                        <label class="form-check-label" for="confirmar_cancelacion">
+                            Confirmo que deseo cancelar este boleto y entiendo las consecuencias
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-check-circle me-1"></i> Sí, Cancelar Boleto
+                        </button>
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> No, Mantener Boleto
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-danger mt-3">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Este boleto no se puede cancelar porque la función ya ha comenzado.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Animación para badges
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+            this.style.transition = 'transform 0.2s';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+{% endblock %}

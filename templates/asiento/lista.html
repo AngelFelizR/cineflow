@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Asientos - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="bi bi-person-badge me-2"></i>Asientos
+        </h1>
+        <div>
+            <a href="{{ url_for('asiento_nuevo') }}" class="btn btn-warning">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Asiento
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ total_asientos }}</h5>
+                    <p class="card-text text-light-60">Total Asientos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ asientos_activos }}</h5>
+                    <p class="card-text text-light-60">Asientos Activos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ salas_con_asientos }}</h5>
+                    <p class="card-text text-light-60">Salas con Asientos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ promedio_asientos }}</h5>
+                    <p class="card-text text-light-60">Promedio por Sala</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card dark-card mb-4">
+        <div class="card-header dark-card-header">
+            <h6 class="mb-0"><i class="bi bi-funnel me-1"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="sala_id" class="form-label">Filtrar por Sala</label>
+                    <select class="form-select" id="sala_id" name="sala_id">
+                        <option value="">Todas las salas</option>
+                        {% for sala in salas_filtro %}
+                        <option value="{{ sala.Id }}" {% if sala_id == sala.Id|string %}selected{% endif %}>
+                            Sala {{ sala.NumeroDeSala }} - {{ sala.cine.Cine }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="estado" class="form-label">Filtrar por Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        <option value="activo" {% if estado == 'activo' %}selected{% endif %}>Activos</option>
+                        <option value="inactivo" {% if estado == 'inactivo' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="por_pagina" class="form-label">Por página</label>
+                    <select class="form-select" id="por_pagina" name="por_pagina">
+                        <option value="25" {% if por_pagina == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if por_pagina == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if por_pagina == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-filter me-1"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Asientos -->
+    <div class="card dark-card">
+        <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Asientos</h5>
+            <span class="badge bg-warning text-dark">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+        </div>
+        <div class="card-body">
+            {% if asientos %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Sala</th>
+                            <th>Cine</th>
+                            <th>Tipo Sala</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asiento in asientos %}
+                        <tr>
+                            <td>{{ asiento.Id }}</td>
+                            <td>
+                                <span class="badge bg-secondary" style="font-size: 1em;">
+                                    {{ asiento.CodigoAsiento }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-door-open text-warning"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <strong>Sala {{ asiento.sala.NumeroDeSala }}</strong>
+                                        <small class="text-light-60 d-block">ID: {{ asiento.IdSala }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if asiento.sala.cine %}
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-building text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <strong>{{ asiento.sala.cine.Cine }}</strong>
+                                        <small class="text-light-60 d-block">{{ asiento.sala.cine.Direccion[:30] }}...</small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-light-60">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if asiento.sala.tipo_sala %}
+                                <span class="badge bg-info">{{ asiento.sala.tipo_sala.Tipo }}</span>
+                                {% else %}
+                                <span class="text-light-60">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if asiento.Activo %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('asiento_detalle', id=asiento.Id) }}" 
+                                       class="btn btn-info" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('asiento_editar', id=asiento.Id) }}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm btn-eliminar" 
+                                            data-id="{{ asiento.Id }}"
+                                            data-codigo="{{ asiento.CodigoAsiento }}"
+                                            data-sala="{{ asiento.sala.NumeroDeSala if asiento.sala else 'N/A' }}"
+                                            data-cine="{{ asiento.sala.cine.Cine if asiento.sala and asiento.sala.cine else 'N/A' }}"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center mt-3">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.prev_num }}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ page }}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.next_num }}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-person-badge" style="font-size: 3rem; color: var(--accent-color);"></i>
+                <h4 class="mt-3">No hay asientos registrados</h4>
+                <p class="text-light-60">Comienza creando un nuevo asiento o importando asientos para una sala.</p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <a href="{{ url_for('asiento_nuevo') }}" class="btn btn-warning">
+                        <i class="bi bi-plus-circle me-1"></i> Nuevo Asiento
+                    </a>
+                    <a href="{{ url_for('asiento_importar') }}" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> Importar Asientos
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer dark-card-header d-flex justify-content-between">
+            <small class="text-light-60">
+                Mostrando {{ pagination.items|length }} de {{ pagination.total }} asientos
+            </small>
+            <small class="text-light-60">
+                {{ asientos_activos }} activos / {{ total_asientos - asientos_activos }} inactivos
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-dark text-light border-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">¿Eliminar Asiento?</h6>
+                            <p class="mb-1">Asiento: <strong id="codigoAsiento" class="text-danger"></strong></p>
+                            <p class="mb-1">Sala: <strong id="salaInfo" class="text-info"></strong></p>
+                            <p class="mb-1">Cine: <strong id="cineInfo" class="text-primary"></strong></p>
+                            <p class="mb-0 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-danger mt-3">
+                    <div class="card-header bg-danger text-white py-2">
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Advertencia
+                    </div>
+                    <div class="card-body bg-dark py-3">
+                        <ul class="mb-0 small">
+                            <li>No se podrá eliminar si tiene boletos vendidos</li>
+                            <li>Los boletos futuros que usen este asiento se cancelarán</li>
+                            <li>La capacidad de la sala se reducirá</li>
+                            <li>Esta acción afectará las funciones futuras</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark border-warning">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i> Sí, Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar modal de eliminación
+    const btnsEliminar = document.querySelectorAll('.btn-eliminar');
+    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    const codigoAsiento = document.getElementById('codigoAsiento');
+    const salaInfo = document.getElementById('salaInfo');
+    const cineInfo = document.getElementById('cineInfo');
+    const formEliminar = document.getElementById('formEliminar');
+    
+    btnsEliminar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const codigo = this.getAttribute('data-codigo');
+            const sala = this.getAttribute('data-sala');
+            const cine = this.getAttribute('data-cine');
+            
+            codigoAsiento.textContent = codigo;
+            salaInfo.textContent = sala;
+            cineInfo.textContent = cine;
+            
+            formEliminar.action = "{{ url_for('asiento_eliminar', id=0) }}".replace('0', id);
+            modalEliminar.show();
+        });
+    });
+});
+</script>
+{% endblock %}

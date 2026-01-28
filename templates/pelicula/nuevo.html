@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Película - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Película
+                </h1>
+                <a href="{{ url_for('pelicula_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información de la Película</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('pelicula_crear') }}" class="needs-validation" novalidate enctype="multipart/form-data">
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="Titulo" class="form-label">
+                                <i class="bi bi-card-heading me-1"></i>Título *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="Titulo" 
+                                   name="Titulo" 
+                                   required
+                                   minlength="2"
+                                   maxlength="150"
+                                   placeholder="Ej: Avengers: Endgame">
+                            <div class="form-text">
+                                Título completo de la película (máx. 150 caracteres)
+                            </div>
+                            <div class="invalid-feedback">
+                                El título es requerido y debe tener al menos 2 caracteres.
+                            </div>
+                        </div>
+
+                        <!-- Descripción Corta -->
+                        <div class="mb-3">
+                            <label for="DescripcionCorta" class="form-label">
+                                <i class="bi bi-chat-left-text me-1"></i>Descripción Corta *
+                            </label>
+                            <textarea class="form-control" 
+                                      id="DescripcionCorta" 
+                                      name="DescripcionCorta" 
+                                      rows="2"
+                                      required
+                                      maxlength="255"
+                                      placeholder="Breve descripción para carteleras y listados..."></textarea>
+                            <div class="form-text">
+                                Descripción breve que aparecerá en listados (máx. 255 caracteres)
+                            </div>
+                            <div class="invalid-feedback">
+                                La descripción corta es requerida.
+                            </div>
+                        </div>
+
+                        <!-- Descripción Larga -->
+                        <div class="mb-3">
+                            <label for="DescripcionLarga" class="form-label">
+                                <i class="bi bi-card-text me-1"></i>Descripción Larga *
+                            </label>
+                            <textarea class="form-control" 
+                                      id="DescripcionLarga" 
+                                      name="DescripcionLarga" 
+                                      rows="4"
+                                      required
+                                      placeholder="Sinopsis completa de la película..."></textarea>
+                            <div class="form-text">
+                                Sinopsis detallada para la página de la película
+                            </div>
+                            <div class="invalid-feedback">
+                                La descripción larga es requerida.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Duración -->
+                            <div class="col-md-4 mb-3">
+                                <label for="DuracionMinutos" class="form-label">
+                                    <i class="bi bi-clock me-1"></i>Duración (minutos) *
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="DuracionMinutos" 
+                                       name="DuracionMinutos" 
+                                       required
+                                       min="1"
+                                       max="999"
+                                       placeholder="Ej: 120">
+                                <div class="invalid-feedback">
+                                    La duración es requerida y debe ser entre 1 y 999 minutos.
+                                </div>
+                            </div>
+
+                            <!-- Clasificación -->
+                            <div class="col-md-4 mb-3">
+                                <label for="IdClasificacion" class="form-label">
+                                    <i class="bi bi-tag me-1"></i>Clasificación *
+                                </label>
+                                <select class="form-select" id="IdClasificacion" name="IdClasificacion" required>
+                                    <option value="">Seleccionar clasificación...</option>
+                                    {% for clasificacion in clasificaciones %}
+                                    <option value="{{ clasificacion.Id }}">{{ clasificacion.Clasificacion }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona una clasificación.
+                                </div>
+                            </div>
+
+                            <!-- Idioma -->
+                            <div class="col-md-4 mb-3">
+                                <label for="IdIdioma" class="form-label">
+                                    <i class="bi bi-translate me-1"></i>Idioma *
+                                </label>
+                                <select class="form-select" id="IdIdioma" name="IdIdioma" required>
+                                    <option value="">Seleccionar idioma...</option>
+                                    {% for idioma in idiomas %}
+                                    <option value="{{ idioma.Id }}">{{ idioma.Idioma }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona un idioma.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Géneros -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-collection me-1"></i>Géneros *
+                            </label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for genero in generos %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           name="generos" 
+                                           value="{{ genero.Id }}" 
+                                           id="genero{{ genero.Id }}">
+                                    <label class="form-check-label" for="genero{{ genero.Id }}">
+                                        {{ genero.Genero }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">
+                                Selecciona al menos un género (puedes seleccionar múltiples)
+                            </div>
+                        </div>
+
+                        <!-- Enlaces -->
+                        <div class="mb-3">
+                            <label for="LinkToBanner" class="form-label">
+                                <i class="bi bi-image me-1"></i>URL del Banner *
+                            </label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="LinkToBanner" 
+                                   name="LinkToBanner" 
+                                   required
+                                   placeholder="https://ejemplo.com/banner.jpg">
+                            <div class="form-text">
+                                URL de la imagen del banner (formato JPG/PNG, recomendado 1000x1500px)
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="LinkToBajante" class="form-label">
+                                <i class="bi bi-image me-1"></i>URL del Bajante
+                            </label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="LinkToBajante" 
+                                   name="LinkToBajante" 
+                                   placeholder="https://ejemplo.com/bajante.jpg">
+                            <div class="form-text">
+                                URL de la imagen del bajante (formato JPG/PNG)
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="LinkToTrailer" class="form-label">
+                                <i class="bi bi-play-btn me-1"></i>URL del Tráiler *
+                            </label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="LinkToTrailer" 
+                                   name="LinkToTrailer" 
+                                   required
+                                   placeholder="https://youtube.com/watch?v=...">
+                            <div class="form-text">
+                                URL del tráiler en YouTube o Vimeo
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('pelicula_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Película
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>El banner debe ser una imagen de alta calidad (recomendado 1000x1500px).</li>
+                        <li>El tráiler debe ser un enlace público de YouTube o Vimeo.</li>
+                        <li>Una vez creada la película, podrás programar funciones.</li>
+                        <li>Los géneros se pueden editar después de crear la película.</li>
+                        <li>La película no aparecerá en cartelera hasta que se programen funciones.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            // Validar que al menos un género esté seleccionado
+            const generosSeleccionados = form.querySelectorAll('input[name="generos"]:checked');
+            if (generosSeleccionados.length === 0) {
+                event.preventDefault();
+                event.stopPropagation();
+                alert('Por favor selecciona al menos un género.');
+                return;
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Validar URL de YouTube/Vimeo
+    const trailerInput = document.getElementById('LinkToTrailer');
+    if (trailerInput) {
+        trailerInput.addEventListener('blur', function() {
+            const url = this.value;
+            if (url && !url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('vimeo.com')) {
+                this.setCustomValidity('Por favor ingresa una URL válida de YouTube o Vimeo.');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

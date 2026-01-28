@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Uso de Boleto - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Registrar Uso de Boleto
+                </h1>
+                <a href="{{ url_for('boleto_usado_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Boleto Usado</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('boleto_usado_crear') }}" class="needs-validation" novalidate>
+                        <!-- Boleto -->
+                        <div class="mb-3">
+                            <label for="id_boleto" class="form-label">
+                                <i class="bi bi-ticket-perforated me-1"></i>Boleto *
+                            </label>
+                            <select class="form-select" id="id_boleto" name="IdBoleto" required>
+                                <option value="">Seleccionar boleto...</option>
+                                {% for boleto in boletos_disponibles %}
+                                <option value="{{ boleto.Id }}">
+                                    #{{ boleto.Id }} - 
+                                    {{ boleto.funcion.pelicula.Titulo|truncate(30) }} - 
+                                    {{ boleto.funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }} - 
+                                    Asiento: {{ boleto.asiento.CodigoAsiento }}
+                                    {% if boleto.usuario %}
+                                    ({{ boleto.usuario.Nombre }} {{ boleto.usuario.Apellidos|truncate(10) }})
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Selecciona el boleto que se va a registrar como usado
+                            </div>
+                            <div class="invalid-feedback">
+                                Debes seleccionar un boleto.
+                            </div>
+                        </div>
+
+                        <!-- Encargado -->
+                        <div class="mb-3">
+                            <label for="id_encargado" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Encargado *
+                            </label>
+                            <select class="form-select" id="id_encargado" name="IdEncargado" required>
+                                <option value="">Seleccionar encargado...</option>
+                                {% for encargado in encargados %}
+                                <option value="{{ encargado.Id }}">
+                                    {{ encargado.Nombre }} {{ encargado.Apellidos }} - {{ encargado.CorreoElectronico }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Selecciona el encargado que registra el uso del boleto
+                            </div>
+                            <div class="invalid-feedback">
+                                Debes seleccionar un encargado.
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Uso -->
+                        <div class="mb-3">
+                            <label for="fecha_uso" class="form-label">
+                                <i class="bi bi-calendar-event me-1"></i>Fecha y Hora de Uso
+                            </label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="fecha_uso" 
+                                   name="FechaUso"
+                                   value="{{ datetime_now }}">
+                            <div class="form-text">
+                                Dejar en blanco para usar la fecha y hora actual
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('boleto_usado_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Registrar Uso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Solo se pueden registrar boletos que no han sido usados previamente.</li>
+                        <li>El boleto no debe estar cancelado para poder registrarlo como usado.</li>
+                        <li>Una vez registrado como usado, el boleto no podrá ser cancelado ni reembolsado.</li>
+                        <li>El encargado debe tener permisos de "Encargado de Entrada" o "Administrador".</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Establecer fecha/hora actual por defecto si está vacío
+    const fechaUsoInput = document.getElementById('fecha_uso');
+    if (!fechaUsoInput.value) {
+        const now = new Date();
+        // Ajustar formato para datetime-local (YYYY-MM-DDTHH:MM)
+        const localDatetime = now.toISOString().slice(0, 16);
+        fechaUsoInput.value = localDatetime;
+    }
+});
+</script>
+{% endblock %}

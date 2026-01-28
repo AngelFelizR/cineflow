@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Funciones - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="bi bi-calendar3 me-2"></i>Funciones
+        </h1>
+        <div>
+            <a href="{{ url_for('funcion_nuevo') }}" class="btn btn-warning">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Función
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ total_funciones }}</h5>
+                    <p class="card-text text-light-60">Total Funciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ funciones_activas }}</h5>
+                    <p class="card-text text-light-60">Funciones Activas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ funciones_futuras }}</h5>
+                    <p class="card-text text-light-60">Funciones Futuras</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dark-card text-center">
+                <div class="card-body">
+                    <h5 class="card-title display-6">{{ promedio_boletos }}</h5>
+                    <p class="card-text text-light-60">Promedio Boletos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card dark-card mb-4">
+        <div class="card-header dark-card-header">
+            <h6 class="mb-0"><i class="bi bi-funnel me-1"></i> Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                    <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{ fecha_desde }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                    <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="pelicula_id" class="form-label">Película</label>
+                    <select class="form-select" id="pelicula_id" name="pelicula_id">
+                        <option value="">Todas</option>
+                        {% for pelicula in peliculas_filtro %}
+                        <option value="{{ pelicula.Id }}" {% if pelicula_id == pelicula.Id|string %}selected{% endif %}>
+                            {{ pelicula.Titulo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sala_id" class="form-label">Sala</label>
+                    <select class="form-select" id="sala_id" name="sala_id">
+                        <option value="">Todas</option>
+                        {% for sala in salas_filtro %}
+                        <option value="{{ sala.Id }}" {% if sala_id == sala.Id|string %}selected{% endif %}>
+                            Sala {{ sala.NumeroDeSala }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option value="activo" {% if estado == 'activo' %}selected{% endif %}>Activas</option>
+                        <option value="inactivo" {% if estado == 'inactivo' %}selected{% endif %}>Inactivas</option>
+                        <option value="pasado" {% if estado == 'pasado' %}selected{% endif %}>Pasadas</option>
+                        <option value="futuro" {% if estado == 'futuro' %}selected{% endif %}>Futuras</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="por_pagina" class="form-label">Por página</label>
+                    <select class="form-select" id="por_pagina" name="por_pagina">
+                        <option value="25" {% if por_pagina == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if por_pagina == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if por_pagina == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-filter me-1"></i> Aplicar Filtros
+                        </button>
+                        <a href="{{ url_for('funcion_lista') }}" class="btn btn-outline-light">
+                            <i class="bi bi-x-circle me-1"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Funciones -->
+    <div class="card dark-card">
+        <div class="card-header dark-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Lista de Funciones</h5>
+            <span class="badge bg-warning text-dark">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+        </div>
+        <div class="card-body">
+            {% if funciones %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha y Hora</th>
+                            <th>Película</th>
+                            <th>Sala</th>
+                            <th>Cine</th>
+                            <th>Boletos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for funcion in funciones %}
+                        <tr>
+                            <td>{{ funcion.Id }}</td>
+                            <td>
+                                <strong>{{ funcion.FechaHora.strftime('%d/%m/%Y') }}</strong><br>
+                                <small class="text-light-60">{{ funcion.FechaHora.strftime('%H:%M') }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if funcion.pelicula.LinkToBanner %}
+                                    <img src="{{ funcion.pelicula.LinkToBanner }}" 
+                                         alt="{{ funcion.pelicula.Titulo }}" 
+                                         class="img-thumbnail me-2" 
+                                         style="width: 40px; height: 60px; object-fit: cover;">
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ funcion.pelicula.Titulo }}</strong><br>
+                                        <small class="text-light-60">{{ funcion.pelicula.DuracionMinutos }} min</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-door-open text-warning"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <strong>Sala {{ funcion.sala.NumeroDeSala }}</strong><br>
+                                        <small class="text-light-60">{{ funcion.sala.tipo_sala.Tipo }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if funcion.sala.cine %}
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-building text-info"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <strong>{{ funcion.sala.cine.Cine }}</strong><br>
+                                        <small class="text-light-60">{{ funcion.sala.cine.Direccion[:20] }}...</small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-light-60">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    <div class="display-6">{{ funcion.total_boletos }}</div>
+                                    <small class="text-light-60">
+                                        {{ funcion.boletos_vendidos }} vendidos<br>
+                                        {{ funcion.asientos_disponibles }} disponibles
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if funcion.Activo %}
+                                    {% if funcion.FechaHora > ahora %}
+                                    <span class="badge bg-success">Programada</span>
+                                    {% else %}
+                                    <span class="badge bg-info">Realizada</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-light-60">
+                                    {{ funcion.ocupacion|round(1) }}% ocupación
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('funcion_detalle', id=funcion.Id) }}" 
+                                       class="btn btn-info" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('funcion_editar', id=funcion.Id) }}" 
+                                       class="btn btn-warning" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    {% if funcion.FechaHora > ahora and funcion.Activo %}
+                                    <a href="{{ url_for('seleccion_asientos', funcion_id=funcion.Id) }}" 
+                                       class="btn btn-primary" title="Ver asientos" target="_blank">
+                                        <i class="bi bi-ticket"></i>
+                                    </a>
+                                    {% endif %}
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm btn-eliminar" 
+                                            data-id="{{ funcion.Id }}"
+                                            data-pelicula="{{ funcion.pelicula.Titulo }}"
+                                            data-fecha="{{ funcion.FechaHora.strftime('%d/%m/%Y %H:%M') }}"
+                                            data-sala="{{ funcion.sala.NumeroDeSala if funcion.sala else 'N/A' }}"
+                                            data-cine="{{ funcion.sala.cine.Cine if funcion.sala and funcion.sala.cine else 'N/A' }}"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center mt-3">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.prev_num }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if pelicula_id %}&pelicula_id={{ pelicula_id }}{% endif %}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ page }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if pelicula_id %}&pelicula_id={{ pelicula_id }}{% endif %}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.next_num }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if pelicula_id %}&pelicula_id={{ pelicula_id }}{% endif %}{% if sala_id %}&sala_id={{ sala_id }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if por_pagina %}&por_pagina={{ por_pagina }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar3" style="font-size: 3rem; color: var(--accent-color);"></i>
+                <h4 class="mt-3">No hay funciones registradas</h4>
+                <p class="text-light-60">Comienza creando una nueva función.</p>
+                <a href="{{ url_for('funcion_nuevo') }}" class="btn btn-warning mt-2">
+                    <i class="bi bi-plus-circle me-1"></i> Crear Función
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer dark-card-header d-flex justify-content-between">
+            <small class="text-light-60">
+                Mostrando {{ pagination.items|length }} de {{ pagination.total }} funciones
+            </small>
+            <small class="text-light-60">
+                {{ funciones_futuras }} futuras / {{ funciones_pasadas }} pasadas
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-dark text-light border-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Cancelación de Función
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="alert-heading mb-2">¿Cancelar Función?</h6>
+                            <p class="mb-1">Película: <strong id="nombrePelicula" class="text-info"></strong></p>
+                            <p class="mb-1">Fecha y Hora: <strong id="fechaFuncion" class="text-warning"></strong></p>
+                            <p class="mb-1">Sala: <strong id="salaInfo" class="text-primary"></strong></p>
+                            <p class="mb-1">Cine: <strong id="cineInfo" class="text-success"></strong></p>
+                            <p class="mb-0 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Esta acción no se puede deshacer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-danger mt-3">
+                    <div class="card-header bg-danger text-white py-2">
+                        <i class="bi bi-shield-exclamation me-1"></i>
+                        Impacto de la Cancelación
+                    </div>
+                    <div class="card-body bg-dark py-3">
+                        <ul class="mb-0 small">
+                            <li><strong id="boletosVendidos" class="text-warning"></strong> boleto(s) vendido(s) serán cancelados</li>
+                            <li>Los clientes recibirán saldo acreditado según política de cancelación</li>
+                            <li>La función no aparecerá en la cartelera</li>
+                            <li>Los asientos quedarán disponibles para otras funciones</li>
+                            <li>Esta acción se registrará en el sistema</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="notificarClientes">
+                    <label class="form-check-label" for="notificarClientes">
+                        Notificar a los clientes por correo electrónico
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark border-warning">
+                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </button>
+                <form id="formEliminar" method="POST" style="display: inline;">
+                    <input type="hidden" id="notificarInput" name="notificar_clientes" value="false">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i> Sí, Cancelar Función
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar modal de eliminación
+    const btnsEliminar = document.querySelectorAll('.btn-eliminar');
+    const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
+    const nombrePelicula = document.getElementById('nombrePelicula');
+    const fechaFuncion = document.getElementById('fechaFuncion');
+    const salaInfo = document.getElementById('salaInfo');
+    const cineInfo = document.getElementById('cineInfo');
+    const boletosVendidos = document.getElementById('boletosVendidos');
+    const notificarClientes = document.getElementById('notificarClientes');
+    const notificarInput = document.getElementById('notificarInput');
+    const formEliminar = document.getElementById('formEliminar');
+    
+    // Datos adicionales de funciones (precargados desde el servidor)
+    const funcionesData = {
+        {% for funcion in funciones %}
+        {{ funcion.Id }}: {
+            boletos_vendidos: {{ funcion.boletos_vendidos }}
+        },
+        {% endfor %}
+    };
+    
+    btnsEliminar.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const pelicula = this.getAttribute('data-pelicula');
+            const fecha = this.getAttribute('data-fecha');
+            const sala = this.getAttribute('data-sala');
+            const cine = this.getAttribute('data-cine');
+            
+            nombrePelicula.textContent = pelicula;
+            fechaFuncion.textContent = fecha;
+            salaInfo.textContent = `Sala ${sala}`;
+            cineInfo.textContent = cine;
+            
+            // Obtener cantidad de boletos vendidos
+            const data = funcionesData[id];
+            if (data) {
+                boletosVendidos.textContent = data.boletos_vendidos;
+                if (data.boletos_vendidos > 0) {
+                    boletosVendidos.className = 'text-danger';
+                } else {
+                    boletosVendidos.className = 'text-success';
+                }
+            }
+            
+            // Configurar formulario
+            formEliminar.action = "{{ url_for('funcion_eliminar', id=0) }}".replace('0', id);
+            
+            // Actualizar checkbox de notificación
+            notificarClientes.addEventListener('change', function() {
+                notificarInput.value = this.checked ? 'true' : 'false';
+            });
+            
+            modalEliminar.show();
+        });
+    });
+});
+</script>
+{% endblock %}

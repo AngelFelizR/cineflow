@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Registro de Boleto Usado - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Registro de Boleto Usado
+                </h1>
+                <a href="{{ url_for('boleto_usado_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Editando: Boleto #{{ boleto_usado.IdBoleto }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('boleto_usado_actualizar', id=boleto_usado.Id) }}" 
+                          class="needs-validation" novalidate>
+                        
+                        <!-- Información del Boleto (solo lectura) -->
+                        <div class="mb-3">
+                            <label class="form-label">Boleto</label>
+                            <div class="form-control bg-dark text-light">
+                                #{{ boleto_usado.IdBoleto }}
+                                {% if boleto_usado.boleto and boleto_usado.boleto.funcion and boleto_usado.boleto.funcion.pelicula %}
+                                - {{ boleto_usado.boleto.funcion.pelicula.Titulo }}
+                                {% endif %}
+                            </div>
+                            <div class="form-text">
+                                El boleto no puede ser cambiado una vez registrado el uso
+                            </div>
+                        </div>
+
+                        <!-- Encargado -->
+                        <div class="mb-3">
+                            <label for="id_encargado" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Encargado *
+                            </label>
+                            <select class="form-select" id="id_encargado" name="IdEncargado" required>
+                                <option value="">Seleccionar encargado...</option>
+                                {% for encargado in encargados %}
+                                <option value="{{ encargado.Id }}" 
+                                        {% if boleto_usado.IdEncargado == encargado.Id %}selected{% endif %}>
+                                    {{ encargado.Nombre }} {{ encargado.Apellidos }} - {{ encargado.CorreoElectronico }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Selecciona el encargado que registra el uso del boleto
+                            </div>
+                            <div class="invalid-feedback">
+                                Debes seleccionar un encargado.
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Uso -->
+                        <div class="mb-3">
+                            <label for="fecha_uso" class="form-label">
+                                <i class="bi bi-calendar-event me-1"></i>Fecha y Hora de Uso *
+                            </label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="fecha_uso" 
+                                   name="FechaUso"
+                                   value="{{ boleto_usado.FechaUso.strftime('%Y-%m-%dT%H:%M') if boleto_usado.FechaUso else datetime_now }}"
+                                   required>
+                            <div class="form-text">
+                                Fecha y hora en que se registró el uso del boleto
+                            </div>
+                            <div class="invalid-feedback">
+                                La fecha de uso es requerida.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('boleto_usado_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-1"></i> Actualizar
+                                </button>
+                                <a href="{{ url_for('boleto_usado_detalle', id=boleto_usado.Id) }}" 
+                                   class="btn btn-info ms-2">
+                                    <i class="bi bi-eye me-1"></i> Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}

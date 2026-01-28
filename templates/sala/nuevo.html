@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Sala - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Sala
+                </h1>
+                <a href="{{ url_for('sala_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información de la Sala</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('sala_crear') }}" class="needs-validation" novalidate>
+                        <!-- Campo Cine -->
+                        <div class="mb-3">
+                            <label for="IdCine" class="form-label">
+                                <i class="bi bi-building me-1"></i>Cine *
+                            </label>
+                            <select class="form-select" id="IdCine" name="IdCine" required>
+                                <option value="">Seleccionar cine...</option>
+                                {% for cine in cines %}
+                                <option value="{{ cine.Id }}">{{ cine.Cine }} - {{ cine.Direccion }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona un cine.
+                            </div>
+                        </div>
+
+                        <!-- Campo Tipo de Sala -->
+                        <div class="mb-3">
+                            <label for="IdTipo" class="form-label">
+                                <i class="bi bi-tv me-1"></i>Tipo de Sala *
+                            </label>
+                            <select class="form-select" id="IdTipo" name="IdTipo" required>
+                                <option value="">Seleccionar tipo de sala...</option>
+                                {% for tipo in tipos_sala %}
+                                <option value="{{ tipo.Id }}">{{ tipo.Tipo }} (Adulto: ${{ tipo.PrecioAdulto }}, Niño: ${{ tipo.PrecioNino }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona un tipo de sala.
+                            </div>
+                        </div>
+
+                        <!-- Campo Número de Sala -->
+                        <div class="mb-3">
+                            <label for="NumeroDeSala" class="form-label">
+                                <i class="bi bi-123 me-1"></i>Número de Sala *
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="NumeroDeSala" 
+                                   name="NumeroDeSala" 
+                                   required
+                                   min="1"
+                                   max="99"
+                                   placeholder="Ej: 1, 2, 3...">
+                            <div class="form-text">
+                                Número único dentro del cine (1-99)
+                            </div>
+                            <div class="invalid-feedback">
+                                El número de sala es requerido y debe ser entre 1 y 99.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('sala_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i> Guardar Sala
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>El número de sala debe ser único dentro de cada cine.</li>
+                        <li>Al crear la sala, se deberán agregar los asientos por separado.</li>
+                        <li>El tipo de sala determina los precios para adultos y niños.</li>
+                        <li>Una vez creada la sala, podrás agregar funciones y asientos.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Validar que el número de sala sea único por cine
+    const cineSelect = document.getElementById('IdCine');
+    const numeroSalaInput = document.getElementById('NumeroDeSala');
+    
+    if (cineSelect && numeroSalaInput) {
+        function validarSalaUnica() {
+            const cineId = cineSelect.value;
+            const numeroSala = numeroSalaInput.value;
+            
+            if (cineId && numeroSala) {
+                // Aquí podrías agregar validación AJAX para verificar si la sala ya existe
+                // Por ahora es validación básica
+                if (parseInt(numeroSala) < 1 || parseInt(numeroSala) > 99) {
+                    numeroSalaInput.setCustomValidity('El número debe estar entre 1 y 99');
+                } else {
+                    numeroSalaInput.setCustomValidity('');
+                }
+            }
+        }
+        
+        cineSelect.addEventListener('change', validarSalaUnica);
+        numeroSalaInput.addEventListener('input', validarSalaUnica);
+    }
+});
+</script>
+{% endblock %}

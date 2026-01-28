@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Cine - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Cine
+                </h1>
+                <a href="{{ url_for('cine_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Información del Cine</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('cine_crear') }}" class="needs-validation" novalidate>
+                        <div class="row">
+                            <!-- Nombre del Cine -->
+                            <div class="col-md-6 mb-3">
+                                <label for="cine" class="form-label">
+                                    <i class="bi bi-building me-1"></i>Nombre del Cine *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cine" 
+                                       name="Cine" 
+                                       required
+                                       minlength="2"
+                                       maxlength="100"
+                                       placeholder="Ej: CineFlow Plaza Central, CineFlow Galerías, etc.">
+                                <div class="form-text">
+                                    Nombre único del cine (máx. 100 caracteres)
+                                </div>
+                                <div class="invalid-feedback">
+                                    El nombre del cine es requerido y debe tener al menos 2 caracteres.
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono" class="form-label">
+                                    <i class="bi bi-telephone me-1"></i>Teléfono *
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="telefono" 
+                                       name="Telefono" 
+                                       required
+                                       minlength="8"
+                                       maxlength="20"
+                                       placeholder="Ej: +52 33 1234 5678">
+                                <div class="form-text">
+                                    Teléfono de contacto único (mín. 8 caracteres)
+                                </div>
+                                <div class="invalid-feedback">
+                                    El teléfono es requerido y debe tener al menos 8 caracteres.
+                                </div>
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="col-12 mb-3">
+                                <label for="direccion" class="form-label">
+                                    <i class="bi bi-geo-alt me-1"></i>Dirección *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="direccion" 
+                                       name="Direccion" 
+                                       required
+                                       minlength="5"
+                                       maxlength="255"
+                                       placeholder="Ej: Av. Principal #123, Col. Centro, Ciudad, C.P. 00000">
+                                <div class="form-text">
+                                    Dirección completa única (mín. 5 caracteres)
+                                </div>
+                                <div class="invalid-feedback">
+                                    La dirección es requerida y debe tener al menos 5 caracteres.
+                                </div>
+                            </div>
+
+                            <!-- Google Maps Iframe -->
+                            <div class="col-12 mb-3">
+                                <label for="googleMapIframeSrc" class="form-label">
+                                    <i class="bi bi-google me-1"></i>Iframe de Google Maps *
+                                </label>
+                                <textarea class="form-control font-monospace" 
+                                          id="googleMapIframeSrc" 
+                                          name="GoogleMapIframeSrc" 
+                                          rows="6"
+                                          required
+                                          placeholder='&lt;iframe src="https://www.google.com/maps/embed?pb=..." width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"&gt;&lt;/iframe&gt;'></textarea>
+                                <div class="form-text">
+                                    <div class="alert alert-info border-info py-2 mb-0 mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        <strong>¿Cómo obtener el iframe?</strong>
+                                        <ol class="mb-0 mt-1 small">
+                                            <li>Ve a <a href="https://maps.google.com" target="_blank" class="text-warning">Google Maps</a></li>
+                                            <li>Busca la ubicación de tu cine</li>
+                                            <li>Haz clic en "Compartir" → "Insertar un mapa" → "Copiar HTML"</li>
+                                            <li>Pega el código completo aquí</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                <div class="invalid-feedback">
+                                    El iframe de Google Maps es requerido.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('cine_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="reset" class="btn btn-outline-light me-2">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-1"></i> Guardar Cine
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Un cine puede tener múltiples salas de diferentes tipos.</li>
+                        <li>No se permiten cines con el mismo nombre ni dirección.</li>
+                        <li>El teléfono debe ser único para cada cine.</li>
+                        <li>El iframe de Google Maps es esencial para que los clientes encuentren el cine.</li>
+                        <li>Antes de eliminar un cine, asegúrate de que no tenga salas activas.</li>
+                        <li>Se recomienda mantener todos los cines activos para ventas.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Vista Previa del Iframe -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-eye me-1"></i> Vista Previa del Mapa</h6>
+                </div>
+                <div class="card-body">
+                    <div id="vistaPreviaMapa" class="text-center p-4 border border-secondary rounded">
+                        <i class="bi bi-map text-light-60" style="font-size: 3rem;"></i>
+                        <p class="mt-2 text-light-60 mb-0">El mapa aparecerá aquí después de ingresar el iframe</p>
+                    </div>
+                    <div class="alert alert-dark mt-3">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>Consejo:</strong> Asegúrate de que el iframe tenga un ancho responsive (ej: width="100%") para que se vea bien en todos los dispositivos.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Vista previa del iframe de Google Maps
+    const iframeTextarea = document.getElementById('googleMapIframeSrc');
+    const vistaPrevia = document.getElementById('vistaPreviaMapa');
+    
+    iframeTextarea.addEventListener('input', function() {
+        const iframeCode = this.value.trim();
+        
+        if (iframeCode && iframeCode.includes('<iframe')) {
+            // Limpiar la vista previa
+            vistaPrevia.innerHTML = '';
+            
+            // Crear contenedor para el iframe
+            const iframeContainer = document.createElement('div');
+            iframeContainer.className = 'ratio ratio-16x9';
+            
+            // Extraer solo el src del iframe para seguridad
+            const srcMatch = iframeCode.match(/src="([^"]+)"/);
+            
+            if (srcMatch) {
+                const src = srcMatch[1];
+                const iframe = document.createElement('iframe');
+                iframe.src = src;
+                iframe.width = '100%';
+                iframe.height = '300';
+                iframe.style.border = '1px solid var(--dark-border)';
+                iframe.style.borderRadius = '5px';
+                iframe.allowFullscreen = true;
+                iframe.loading = 'lazy';
+                iframe.referrerPolicy = 'no-referrer-when-downgrade';
+                
+                iframeContainer.appendChild(iframe);
+                vistaPrevia.appendChild(iframeContainer);
+            } else {
+                vistaPrevia.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        El iframe no contiene un enlace válido. Asegúrate de copiar el código completo.
+                    </div>
+                `;
+            }
+        } else {
+            vistaPrevia.innerHTML = `
+                <i class="bi bi-map text-light-60" style="font-size: 3rem;"></i>
+                <p class="mt-2 text-light-60 mb-0">El mapa aparecerá aquí después de ingresar el iframe</p>
+            `;
+        }
+    });
+
+    // Formatear teléfono
+    const telefonoInput = document.getElementById('telefono');
+    telefonoInput.addEventListener('input', function() {
+        let value = this.value.replace(/\D/g, '');
+        
+        if (value.length > 0) {
+            value = '+' + value;
+        }
+        
+        this.value = value;
+    });
+});
+</script>
+{% endblock %}

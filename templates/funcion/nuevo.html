@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Función - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Función
+                </h1>
+                <a href="{{ url_for('funcion_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Programar Nueva Función</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('funcion_crear') }}" class="needs-validation" novalidate>
+                        <!-- Película -->
+                        <div class="mb-4">
+                            <label for="IdPelicula" class="form-label">
+                                <i class="bi bi-film me-1"></i>Película *
+                            </label>
+                            <select class="form-select" id="IdPelicula" name="IdPelicula" required>
+                                <option value="">Seleccionar película...</option>
+                                {% for pelicula in peliculas %}
+                                <option value="{{ pelicula.Id }}" 
+                                        data-duracion="{{ pelicula.DuracionMinutos }}"
+                                        {% if pelicula_id and pelicula.Id == pelicula_id|int %}selected{% endif %}>
+                                    {{ pelicula.Titulo }} ({{ pelicula.DuracionMinutos }} min)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona una película.
+                            </div>
+                            
+                            <!-- Información de la película seleccionada -->
+                            <div id="peliculaInfo" class="mt-3 d-none">
+                                <div class="card border-info bg-dark">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                {% if pelicula_seleccionada and pelicula_seleccionada.LinkToBanner %}
+                                                <img src="{{ pelicula_seleccionada.LinkToBanner }}" 
+                                                     alt="{{ pelicula_seleccionada.Titulo }}" 
+                                                     class="img-fluid rounded">
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-9">
+                                                <h6 id="peliculaTitulo" class="text-info"></h6>
+                                                <p id="peliculaDescripcion" class="small text-light-60 mb-1"></p>
+                                                <p class="small mb-0">
+                                                    <span id="peliculaDuracion" class="badge bg-secondary me-2"></span>
+                                                    <span id="peliculaClasificacion" class="badge bg-info me-2"></span>
+                                                    <span id="peliculaIdioma" class="badge bg-warning"></span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sala -->
+                        <div class="mb-4">
+                            <label for="IdSala" class="form-label">
+                                <i class="bi bi-door-open me-1"></i>Sala *
+                            </label>
+                            <select class="form-select" id="IdSala" name="IdSala" required>
+                                <option value="">Seleccionar sala...</option>
+                                {% for sala in salas %}
+                                <option value="{{ sala.Id }}" 
+                                        data-cine="{{ sala.cine.Cine }}"
+                                        data-tipo="{{ sala.tipo_sala.Tipo }}"
+                                        data-capacidad="{{ sala.capacidad }}"
+                                        data-precio-adulto="{{ sala.tipo_sala.PrecioAdulto }}"
+                                        data-precio-nino="{{ sala.tipo_sala.PrecioNino }}"
+                                        {% if sala_id and sala.Id == sala_id|int %}selected{% endif %}>
+                                    Sala {{ sala.NumeroDeSala }} - {{ sala.cine.Cine }} 
+                                    ({{ sala.tipo_sala.Tipo }}, {{ sala.capacidad }} asientos)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Por favor selecciona una sala.
+                            </div>
+                            
+                            <!-- Información de la sala seleccionada -->
+                            <div id="salaInfo" class="mt-3 d-none">
+                                <div class="card border-warning bg-dark">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <h6 id="salaTitulo" class="text-warning"></h6>
+                                                <p class="small text-light-60 mb-1" id="salaCine"></p>
+                                                <p class="small text-light-60 mb-0" id="salaTipo"></p>
+                                            </div>
+                                            <div class="col-md-4 text-center">
+                                                <div class="display-6" id="salaCapacidad"></div>
+                                                <small class="text-light-60">Capacidad</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <small class="text-light-60">Adulto</small>
+                                                        <div class="text-warning" id="precioAdulto"></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <small class="text-light-60">Niño</small>
+                                                        <div class="text-primary" id="precioNino"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fecha y Hora -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="Fecha" class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Fecha *
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="Fecha" 
+                                       name="Fecha" 
+                                       required
+                                       min="{{ fecha_minima }}"
+                                       max="{{ fecha_maxima }}">
+                                <div class="form-text">
+                                    Selecciona una fecha entre {{ fecha_minima }} y {{ fecha_maxima }}
+                                </div>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona una fecha válida.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="Hora" class="form-label">
+                                    <i class="bi bi-clock me-1"></i>Hora *
+                                </label>
+                                <select class="form-select" id="Hora" name="Hora" required>
+                                    <option value="">Seleccionar hora...</option>
+                                    {% for hora in horas_disponibles %}
+                                    <option value="{{ hora }}">{{ hora }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Las funciones deben comenzar en punto o media hora.
+                                </div>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona una hora.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validación de horarios -->
+                        <div id="validacionHorarios" class="d-none">
+                            <div class="alert alert-warning" id="alertaSolapamiento">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                <span id="mensajeSolapamiento"></span>
+                            </div>
+                            <div class="alert alert-success d-none" id="confirmacionHorario">
+                                <i class="bi bi-check-circle me-1"></i>
+                                <span>Horario disponible. La película terminará a las <strong id="horaFin"></strong>.</span>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="Activo" name="Activo" checked>
+                                <label class="form-check-label" for="Activo">
+                                    Función activa
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Las funciones inactivas no aparecerán en la cartelera.
+                            </div>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="card border-success bg-dark mb-4 d-none" id="resumenFuncion">
+                            <div class="card-header bg-success text-dark">
+                                <h6 class="mb-0"><i class="bi bi-card-checklist me-1"></i> Resumen de la Función</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Película:</strong> <span id="resumenPelicula"></span></p>
+                                        <p><strong>Sala:</strong> <span id="resumenSala"></span></p>
+                                        <p><strong>Cine:</strong> <span id="resumenCine"></span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Fecha:</strong> <span id="resumenFecha"></span></p>
+                                        <p><strong>Hora Inicio:</strong> <span id="resumenHoraInicio"></span></p>
+                                        <p><strong>Hora Fin:</strong> <span id="resumenHoraFin"></span></p>
+                                        <p><strong>Duración:</strong> <span id="resumenDuracion"></span> minutos</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('funcion_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning" id="btnCrear" disabled>
+                                    <i class="bi bi-check-circle me-1"></i> Crear Función
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Entre funciones debe haber al menos 30 minutos para limpieza y preparación.</li>
+                        <li>Verifica que no haya funciones solapadas en la misma sala.</li>
+                        <li>Considera el tiempo de duración de la película + 30 minutos de margen.</li>
+                        <li>Las funciones se muestran en la cartelera desde 7 días antes.</li>
+                        <li>Puedes programar funciones hasta 3 meses en el futuro.</li>
+                        <li>Una vez creada la función, los asientos estarán disponibles para venta.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Conflictos de Horario -->
+<div class="modal fade" id="modalConflictos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Conflicto de Horarios
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-dark text-light">
+                <p>Se detectaron las siguientes funciones en conflicto:</p>
+                <div id="listaConflictos" class="mb-3"></div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <small>
+                        Para crear esta función, debes seleccionar un horario diferente 
+                        o cancelar/modificar las funciones existentes.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i> Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const peliculaSelect = document.getElementById('IdPelicula');
+    const salaSelect = document.getElementById('IdSala');
+    const fechaInput = document.getElementById('Fecha');
+    const horaSelect = document.getElementById('Hora');
+    const peliculaInfo = document.getElementById('peliculaInfo');
+    const salaInfo = document.getElementById('salaInfo');
+    const validacionHorarios = document.getElementById('validacionHorarios');
+    const alertaSolapamiento = document.getElementById('alertaSolapamiento');
+    const confirmacionHorario = document.getElementById('confirmacionHorario');
+    const resumenFuncion = document.getElementById('resumenFuncion');
+    const btnCrear = document.getElementById('btnCrear');
+    const modalConflictos = new bootstrap.Modal(document.getElementById('modalConflictos'));
+    
+    // Información de películas (precargada)
+    const peliculasData = {
+        {% for pelicula in peliculas %}
+        {{ pelicula.Id }}: {
+            titulo: "{{ pelicula.Titulo|escapejs }}",
+            descripcion: "{{ pelicula.DescripcionCorta|escapejs }}",
+            duracion: {{ pelicula.DuracionMinutos }},
+            clasificacion: "{{ pelicula.clasificacion.Clasificacion }}",
+            idioma: "{{ pelicula.idioma.Idioma }}",
+            linkToBanner: "{{ pelicula.LinkToBanner|default('', true) }}"
+        },
+        {% endfor %}
+    };
+    
+    // Información de salas (precargada)
+    const salasData = {
+        {% for sala in salas %}
+        {{ sala.Id }}: {
+            numero: "{{ sala.NumeroDeSala }}",
+            cine: "{{ sala.cine.Cine }}",
+            tipo: "{{ sala.tipo_sala.Tipo }}",
+            capacidad: {{ sala.capacidad }},
+            precioAdulto: "{{ sala.tipo_sala.PrecioAdulto }}",
+            precioNino: "{{ sala.tipo_sala.PrecioNino }}"
+        },
+        {% endfor %}
+    };
+    
+    // Cuando se selecciona una película
+    peliculaSelect.addEventListener('change', function() {
+        const peliculaId = this.value;
+        
+        if (peliculaId && peliculasData[peliculaId]) {
+            const data = peliculasData[peliculaId];
+            
+            // Mostrar información de la película
+            document.getElementById('peliculaTitulo').textContent = data.titulo;
+            document.getElementById('peliculaDescripcion').textContent = data.descripcion;
+            document.getElementById('peliculaDuracion').textContent = `${data.duracion} min`;
+            document.getElementById('peliculaClasificacion').textContent = data.clasificacion;
+            document.getElementById('peliculaIdioma').textContent = data.idioma;
+            peliculaInfo.classList.remove('d-none');
+            
+            // Actualizar resumen si está disponible
+            actualizarResumen();
+        } else {
+            peliculaInfo.classList.add('d-none');
+        }
+    });
+    
+    // Cuando se selecciona una sala
+    salaSelect.addEventListener('change', function() {
+        const salaId = this.value;
+        
+        if (salaId && salasData[salaId]) {
+            const data = salasData[salaId];
+            
+            // Mostrar información de la sala
+            document.getElementById('salaTitulo').textContent = `Sala ${data.numero}`;
+            document.getElementById('salaCine').textContent = data.cine;
+            document.getElementById('salaTipo').textContent = `Tipo: ${data.tipo}`;
+            document.getElementById('salaCapacidad').textContent = data.capacidad;
+            document.getElementById('precioAdulto').textContent = `$${data.precioAdulto}`;
+            document.getElementById('precioNino').textContent = `$${data.precioNino}`;
+            salaInfo.classList.remove('d-none');
+            
+            // Actualizar resumen si está disponible
+            actualizarResumen();
+            
+            // Si hay fecha y hora, verificar conflictos
+            if (fechaInput.value && horaSelect.value) {
+                verificarConflictos();
+            }
+        } else {
+            salaInfo.classList.add('d-none');
+        }
+    });
+    
+    // Cuando se cambia la fecha u hora
+    fechaInput.addEventListener('change', verificarConflictos);
+    horaSelect.addEventListener('change', verificarConflictos);
+    
+    function actualizarResumen() {
+        const peliculaId = peliculaSelect.value;
+        const salaId = salaSelect.value;
+        const fecha = fechaInput.value;
+        const hora = horaSelect.value;
+        
+        if (peliculaId && salaId && fecha && hora) {
+            const peliculaData = peliculasData[peliculaId];
+            const salaData = salasData[salaId];
+            
+            if (peliculaData && salaData) {
+                // Calcular hora de fin
+                const [horaInicio, minutoInicio] = hora.split(':').map(Number);
+                let horaFin = horaInicio + Math.floor((minutoInicio + peliculaData.duracion + 30) / 60);
+                let minutoFin = (minutoInicio + peliculaData.duracion + 30) % 60;
+                
+                // Formatear hora de fin
+                const horaFinFormateada = `${horaFin.toString().padStart(2, '0')}:${minutoFin.toString().padStart(2, '0')}`;
+                
+                // Actualizar resumen
+                document.getElementById('resumenPelicula').textContent = peliculaData.titulo;
+                document.getElementById('resumenSala').textContent = `Sala ${salaData.numero}`;
+                document.getElementById('resumenCine').textContent = salaData.cine;
+                document.getElementById('resumenFecha').textContent = new Date(fecha).toLocaleDateString('es-ES');
+                document.getElementById('resumenHoraInicio').textContent = hora;
+                document.getElementById('resumenHoraFin').textContent = horaFinFormateada;
+                document.getElementById('resumenDuracion').textContent = peliculaData.duracion;
+                
+                resumenFuncion.classList.remove('d-none');
+                validacionHorarios.classList.remove('d-none');
+                document.getElementById('horaFin').textContent = horaFinFormateada;
+                
+                return true;
+            }
+        }
+        
+        resumenFuncion.classList.add('d-none');
+        validacionHorarios.classList.add('d-none');
+        return false;
+    }
+    
+    async function verificarConflictos() {
+        if (!actualizarResumen()) {
+            btnCrear.disabled = true;
+            return;
+        }
+        
+        const salaId = salaSelect.value;
+        const fecha = fechaInput.value;
+        const hora = horaSelect.value;
+        const peliculaId = peliculaSelect.value;
+        
+        if (!salaId || !fecha || !hora || !peliculaId) {
+            return;
+        }
+        
+        try {
+            // Aquí harías una llamada AJAX para verificar conflictos
+            // Por ahora simulemos una respuesta
+            const conflictos = []; // Esto vendría del servidor
+            
+            if (conflictos.length > 0) {
+                alertaSolapamiento.classList.remove('d-none');
+                confirmacionHorario.classList.add('d-none');
+                btnCrear.disabled = true;
+                
+                // Mostrar conflictos en modal
+                const listaConflictos = document.getElementById('listaConflictos');
+                listaConflictos.innerHTML = conflictos.map(conflicto => 
+                    `<div class="alert alert-danger small mb-2">
+                        <strong>${conflicto.pelicula}</strong><br>
+                        ${conflicto.fecha} ${conflicto.hora_inicio} - ${conflicto.hora_fin}
+                    </div>`
+                ).join('');
+                
+                modalConflictos.show();
+            } else {
+                alertaSolapamiento.classList.add('d-none');
+                confirmacionHorario.classList.remove('d-none');
+                btnCrear.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error al verificar conflictos:', error);
+        }
+    }
+    
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Verificar conflictos final antes de enviar
+            const tieneResumen = actualizarResumen();
+            
+            if (!tieneResumen) {
+                alert('Por favor completa todos los campos requeridos.');
+                return;
+            }
+            
+            if (btnCrear.disabled) {
+                alert('Existen conflictos de horario que deben resolverse antes de crear la función.');
+                return;
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                // Confirmación final
+                const confirmacion = confirm('¿Estás seguro de crear esta función?');
+                if (confirmacion) {
+                    form.submit();
+                }
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}

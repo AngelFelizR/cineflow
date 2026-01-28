@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Asiento - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Asiento
+                </h1>
+                <a href="{{ url_for('asiento_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Editando: Asiento {{ asiento.CodigoAsiento }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('asiento_actualizar', id=asiento.Id) }}" 
+                          class="needs-validation" novalidate>
+                        <!-- Información de Sala (solo lectura) -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-door-open me-1"></i>Sala
+                            </label>
+                            <div class="form-control bg-dark text-light" readonly>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-door-open text-warning"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-2">
+                                        <strong>Sala {{ asiento.sala.NumeroDeSala }}</strong>
+                                        <small class="text-light-60 d-block">{{ asiento.sala.cine.Cine }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-light-60">El asiento no se puede cambiar de sala.</small>
+                        </div>
+
+                        <!-- Código de Asiento -->
+                        <div class="mb-3">
+                            <label for="CodigoAsiento" class="form-label">
+                                <i class="bi bi-123 me-1"></i>Código de Asiento *
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="CodigoAsiento" 
+                                   name="CodigoAsiento" 
+                                   value="{{ asiento.CodigoAsiento }}"
+                                   required
+                                   pattern="[A-Z][0-9]{1,2}"
+                                   maxlength="3">
+                            <div class="form-text">
+                                Formato: Letra (A-Z) seguida de número (1-99). Ejemplos: A1, B12, C25
+                            </div>
+                            <div class="invalid-feedback">
+                                El código debe tener formato letra+número (ej: A1, B12).
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="Activo" name="Activo" 
+                                       {% if asiento.Activo %}checked{% endif %}>
+                                <label class="form-check-label" for="Activo">
+                                    Asiento activo
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Los asientos inactivos no estarán disponibles para venta.
+                            </div>
+                        </div>
+
+                        <!-- Información de Boletos -->
+                        {% if total_boletos > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <small>
+                                Este asiento tiene <strong>{{ total_boletos }} boleto(s)</strong> asociados.
+                                Al desactivarlo, los boletos futuros no podrán usar este asiento.
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('asiento_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle me-1"></i> Actualizar
+                                </button>
+                                <a href="{{ url_for('asiento_detalle', id=asiento.Id) }}" 
+                                   class="btn btn-info ms-2">
+                                    <i class="bi bi-eye me-1"></i> Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card dark-card mt-3">
+                <div class="card-header dark-card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-1"></i> Información del Asiento</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-light-60">ID</dt>
+                        <dd class="col-sm-8">{{ asiento.Id }}</dd>
+                        
+                        <dt class="col-sm-4 text-light-60">ID Sala</dt>
+                        <dd class="col-sm-8">{{ asiento.IdSala }}</dd>
+                        
+                        <dt class="col-sm-4 text-light-60">Cine</dt>
+                        <dd class="col-sm-8">{{ asiento.sala.cine.Cine }}</dd>
+                        
+                        <dt class="col-sm-4 text-light-60">Tipo de Sala</dt>
+                        <dd class="col-sm-8">{{ asiento.sala.tipo_sala.Tipo }}</dd>
+                        
+                        <dt class="col-sm-4 text-light-60">Boletos Asociados</dt>
+                        <dd class="col-sm-8">
+                            {% if total_boletos > 0 %}
+                            <span class="badge bg-warning">{{ total_boletos }} boleto(s)</span>
+                            {% else %}
+                            <span class="badge bg-secondary">0 boletos</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formulario
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Validar formato del código
+    const codigoInput = document.getElementById('CodigoAsiento');
+    if (codigoInput) {
+        codigoInput.addEventListener('blur', function() {
+            const codigo = this.value;
+            const regex = /^[A-Z][0-9]{1,2}$/;
+            
+            if (codigo && !regex.test(codigo)) {
+                this.setCustomValidity('Formato inválido. Use letra (A-Z) seguida de número (1-99). Ej: A1, B12');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Convertir a mayúsculas automáticamente
+        codigoInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

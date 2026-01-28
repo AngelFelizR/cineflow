@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Rol - CineFlow{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Rol
+                </h1>
+                <a href="{{ url_for('rol_lista') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Card del Formulario -->
+            <div class="card dark-card">
+                <div class="card-header dark-card-header">
+                    <h5 class="mb-0">Editando: {{ rol.Rol }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('rol_actualizar', id=rol.Id) }}" 
+                          class="needs-validation" novalidate>
+                        <!-- Campo Rol -->
+                        <div class="mb-3">
+                            <label for="rol" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>Rol *
+                            </label>
+                            {% if rol.Rol in ['Administrador', 'Cliente', 'Encargado de Entrada'] %}
+                            <input type="text" 
+                                   class="form-control bg-secondary text-light" 
+                                   id="rol" 
+                                   name="Rol" 
+                                   value="{{ rol.Rol }}"
+                                   readonly
+                                   placeholder="Rol del sistema - no editable">
+                            <div class="form-text text-warning">
+                                <i class="bi bi-shield-lock me-1"></i> Este es un rol del sistema y no se puede editar.
+                            </div>
+                            {% else %}
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="rol" 
+                                   name="Rol" 
+                                   value="{{ rol.Rol }}"
+                                   required
+                                   minlength="2"
+                                   maxlength="50"
+                                   placeholder="Ej: Supervisor, Cajero, Manager, etc.">
+                            <div class="form-text">
+                                Ingresa el nombre del rol (máx. 50 caracteres)
+                            </div>
+                            <div class="invalid-feedback">
+                                El rol es requerido y debe tener al menos 2 caracteres.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-toggle-on me-1"></i>Estado
+                            </label>
+                            {% if rol.Rol in ['Administrador', 'Cliente', 'Encargado de Entrada'] %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="activo" name="Activo" 
+                                       checked
+                                       disabled>
+                                <label class="form-check-label text-muted" for="activo">
+                                    Rol del sistema - siempre activo
+                                </label>
+                            </div>
+                            {% else %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="activo" name="Activo" 
+                                       {% if rol.Activo %}checked{% endif %}>
+                                <label class="form-check-label" for="activo">
+                                    Rol activo
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Si se desactiva, no podrá ser asignado a nuevos usuarios.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('rol_lista') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning" 
+                                        {% if rol.Rol in ['Administrador', 'Cliente', 'Encargado de Entrada'] %}disabled{% endif %}>
+                                    <i class="bi bi-check-circle me-1"></i> Actualizar
+                                </button>
+                                <a href="{{ url_for('rol_detalle', id=rol.Id) }}" 
+                                   class="btn btn-info ms-2">
+                                    <i class="bi bi-eye me-1"></i> Ver Detalle
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Validar que no se use nombre de rol del sistema (solo si no es rol del sistema)
+    const rolInput = document.getElementById('rol');
+    if (rolInput && !rolInput.readOnly) {
+        rolInput.addEventListener('blur', function() {
+            const sistemaRoles = ['administrador', 'cliente', 'encargado de entrada', 'admin', 'customer', 'staff'];
+            const valor = this.value.toLowerCase().trim();
+            
+            if (sistemaRoles.includes(valor)) {
+                this.setCustomValidity('Este nombre está reservado para roles del sistema. Use otro nombre.');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
