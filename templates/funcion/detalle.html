@@ -161,7 +161,7 @@
                                         </div>
                                         <div class="col-md-3">
                                             <div class="display-6 {% if porcentaje_ocupacion > 80 %}text-danger{% elif porcentaje_ocupacion > 50 %}text-warning{% else %}text-success{% endif %}">
-                                                {{ porcentaje_ocupacion|round(1) }}%
+                                                {{ "%.1f"|format(porcentaje_ocupacion) }}%
                                             </div>
                                             <small class="text-light-60">Ocupación</small>
                                         </div>

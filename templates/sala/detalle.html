@@ -95,7 +95,7 @@
                             <label class="form-label text-light-60">Asientos</label>
                             <div class="form-control bg-dark text-light">
                                 {% if sala.asientos %}
-                                <span class="badge bg-info">{{ sala.asientos|length }}</span> asientos configurados
+                                <span class="badge bg-info">{{ sala.capacidad }}</span> asientos configurados
                                 {% else %}
                                 <span class="badge bg-secondary">0</span> asientos
                                 {% endif %}

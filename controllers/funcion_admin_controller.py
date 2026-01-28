@@ -1,6 +1,6 @@
 # controllers/funcion_admin_controller.py
 from database import db
-from models import Funcion, Pelicula, Sala, Cine, TipoSala
+from models import Funcion, Pelicula, Sala, Cine, TipoSala, Asiento, Boleto, BoletoCancelado, BoletoUsado
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from flask import flash
@@ -122,22 +122,30 @@ class FuncionAdminController:
             inicio_funcion = fecha_hora
             fin_funcion = fecha_hora + timedelta(minutes=duracion_total)
             
-            funciones_solapadas = session.query(Funcion).\
+            # CORRECCIÓN: Obtener las funciones existentes y verificar solapamiento en Python
+            funciones_existentes = session.query(Funcion).\
                 join(Pelicula, Funcion.IdPelicula == Pelicula.Id).\
                 filter(Funcion.IdSala == int(data['IdSala'])).\
-                filter(Funcion.Activo == True).\
-                filter(
-                    (Funcion.FechaHora <= inicio_funcion) & 
-                    (Funcion.FechaHora + timedelta(minutes=Pelicula.DuracionMinutos + 30) > inicio_funcion)
-                    |
-                    (Funcion.FechaHora >= inicio_funcion) & 
-                    (Funcion.FechaHora < fin_funcion)
-                ).first()
+                filter(Funcion.Activo == True).all()
             
-            if funciones_solapadas:
+            solapamiento = False
+            for funcion_existente in funciones_existentes:
+                # Calcular duración de la función existente
+                duracion_existente = funcion_existente.pelicula.DuracionMinutos + 30
+                
+                # Calcular inicio y fin de la función existente
+                inicio_existente = funcion_existente.FechaHora
+                fin_existente = inicio_existente + timedelta(minutes=duracion_existente)
+                
+                # Verificar solapamiento
+                if (inicio_funcion < fin_existente) and (fin_funcion > inicio_existente):
+                    solapamiento = True
+                    break
+            
+            if solapamiento:
                 return False, 'La sala ya tiene una función programada en ese horario', None
             
-            # Crear nueva
+            # Crear nueva función
             nueva_funcion = Funcion(
                 IdPelicula=int(data['IdPelicula']),
                 IdSala=int(data['IdSala']),
@@ -209,20 +217,28 @@ class FuncionAdminController:
             inicio_funcion = fecha_hora
             fin_funcion = fecha_hora + timedelta(minutes=duracion_total)
             
-            funciones_solapadas = session.query(Funcion).\
+            # CORRECCIÓN: Obtener funciones existentes (excluyendo esta) y verificar en Python
+            funciones_existentes = session.query(Funcion).\
                 join(Pelicula, Funcion.IdPelicula == Pelicula.Id).\
                 filter(Funcion.IdSala == int(data['IdSala'])).\
                 filter(Funcion.Activo == True).\
-                filter(Funcion.Id != id).\
-                filter(
-                    (Funcion.FechaHora <= inicio_funcion) & 
-                    (Funcion.FechaHora + timedelta(minutes=Pelicula.DuracionMinutos + 30) > inicio_funcion)
-                    |
-                    (Funcion.FechaHora >= inicio_funcion) & 
-                    (Funcion.FechaHora < fin_funcion)
-                ).first()
+                filter(Funcion.Id != id).all()
             
-            if funciones_solapadas:
+            solapamiento = False
+            for funcion_existente in funciones_existentes:
+                # Calcular duración de la función existente
+                duracion_existente = funcion_existente.pelicula.DuracionMinutos + 30
+                
+                # Calcular inicio y fin de la función existente
+                inicio_existente = funcion_existente.FechaHora
+                fin_existente = inicio_existente + timedelta(minutes=duracion_existente)
+                
+                # Verificar solapamiento
+                if (inicio_funcion < fin_existente) and (fin_funcion > inicio_existente):
+                    solapamiento = True
+                    break
+            
+            if solapamiento:
                 return False, 'La sala ya tiene otra función programada en ese horario', None
             
             # Actualizar
@@ -254,7 +270,6 @@ class FuncionAdminController:
                 return False, 'Función no encontrada'
             
             # Verificar si hay boletos vendidos para esta función
-            from models import Boleto
             boletos = session.query(Boleto).\
                 filter(Boleto.IdFuncion == id).count()
             
@@ -270,5 +285,125 @@ class FuncionAdminController:
         except Exception as e:
             session.rollback()
             return False, f'Error al eliminar función: {str(e)}'
+        finally:
+            session.close()
+    
+    @staticmethod
+    def obtener_estadisticas_boletos(funcion_id):
+        """Obtiene estadísticas de boletos para una función"""
+        session = db.get_session()
+        try:            
+            # Boletos vendidos para esta función
+            boletos = session.query(Boleto).\
+                options(
+                    joinedload(Boleto.usuario),
+                    joinedload(Boleto.asiento),
+                    joinedload(Boleto.tipo_boleto)
+                ).\
+                filter(Boleto.IdFuncion == funcion_id).all()
+            
+            # Contar por tipo
+            boletos_vendidos = len(boletos)
+            boletos_adultos = sum(1 for b in boletos if b.tipo_boleto and b.tipo_boleto.TipoBoleto == 'Adulto')
+            boletos_ninos = sum(1 for b in boletos if b.tipo_boleto and b.tipo_boleto.TipoBoleto == 'Niño')
+            
+            # Boletos cancelados
+            boletos_cancelados = session.query(BoletoCancelado).\
+                join(Boleto, BoletoCancelado.IdBoleto == Boleto.Id).\
+                filter(Boleto.IdFuncion == funcion_id).count()
+            
+            # Boletos usados
+            boletos_usados = session.query(BoletoUsado).\
+                join(Boleto, BoletoUsado.IdBoleto == Boleto.Id).\
+                filter(Boleto.IdFuncion == funcion_id).count()
+            
+            # Calcular ingresos
+            ingresos_totales = sum(b.ValorPagado for b in boletos)
+            ingresos_adultos = sum(b.ValorPagado for b in boletos if b.tipo_boleto and b.tipo_boleto.TipoBoleto == 'Adulto')
+            ingresos_ninos = sum(b.ValorPagado for b in boletos if b.tipo_boleto and b.tipo_boleto.TipoBoleto == 'Niño')
+            
+            # Calcular capacidad de la sala
+            funcion = session.query(Funcion).\
+                options(joinedload(Funcion.sala)).\
+                filter(Funcion.Id == funcion_id).first()
+            
+            capacidad_total = 0
+            if funcion and funcion.sala:
+                # Contar asientos activos directamente
+                capacidad_total = session.query(Asiento).\
+                    filter(Asiento.IdSala == funcion.sala.Id, Asiento.Activo == True).count()
+                
+            asientos_disponibles = capacidad_total - boletos_vendidos
+            porcentaje_ocupacion = (boletos_vendidos / capacidad_total * 100) if capacidad_total > 0 else 0
+            
+            # Porcentajes
+            porcentaje_adultos = (boletos_adultos / boletos_vendidos * 100) if boletos_vendidos > 0 else 0
+            porcentaje_ninos = (boletos_ninos / boletos_vendidos * 100) if boletos_vendidos > 0 else 0
+            
+            return {
+                'boletos': boletos,
+                'boletos_vendidos': boletos_vendidos,
+                'boletos_adultos': boletos_adultos,
+                'boletos_ninos': boletos_ninos,
+                'boletos_cancelados': boletos_cancelados,
+                'boletos_usados': boletos_usados,
+                'ingresos_totales': ingresos_totales,
+                'ingresos_adultos': ingresos_adultos,
+                'ingresos_ninos': ingresos_ninos,
+                'capacidad_total': capacidad_total,
+                'asientos_disponibles': asientos_disponibles,
+                'porcentaje_ocupacion': porcentaje_ocupacion,
+                'porcentaje_adultos': porcentaje_adultos,
+                'porcentaje_ninos': porcentaje_ninos
+            }
+            
+        except Exception as e:
+            print(f"Error al obtener estadísticas de boletos: {e}")
+            return None
+        finally:
+            session.close()
+    
+    @staticmethod
+    def obtener_funciones_con_estadisticas(funciones_list):
+        """Agrega estadísticas a una lista de funciones"""
+        session = db.get_session()
+        try:
+            for funcion in funciones_list:
+                # Contar boletos vendidos
+                total_boletos = session.query(Boleto).\
+                    filter(Boleto.IdFuncion == funcion.Id).count()
+                
+                # Obtener capacidad de la sala - SOLUCIÓN SIMPLE
+                capacidad = 0
+                if funcion.sala:
+                    capacidad = session.query(Asiento).\
+                        filter(Asiento.IdSala == funcion.sala.Id, Asiento.Activo == True).count()
+                
+                # Calcular ocupación
+                if capacidad > 0:
+                    ocupacion = (total_boletos / capacidad * 100)
+                else:
+                    ocupacion = 0
+                
+                # Agregar estadísticas
+                funcion.total_boletos = total_boletos
+                funcion.boletos_vendidos = total_boletos
+                funcion.asientos_disponibles = max(0, capacidad - total_boletos)
+                funcion.ocupacion = round(ocupacion, 2)
+            
+            return funciones_list
+            
+        except Exception as e:
+            print(f"Error al obtener estadísticas de funciones: {e}")
+            for funcion in funciones_list:
+                if not hasattr(funcion, 'total_boletos'):
+                    funcion.total_boletos = 0
+                if not hasattr(funcion, 'boletos_vendidos'):
+                    funcion.boletos_vendidos = 0
+                if not hasattr(funcion, 'asientos_disponibles'):
+                    funcion.asientos_disponibles = 0
+                if not hasattr(funcion, 'ocupacion'):
+                    funcion.ocupacion = 0.0
+            return funciones_list
         finally:
             session.close()

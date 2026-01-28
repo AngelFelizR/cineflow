@@ -1,6 +1,7 @@
 # controllers/sala_controller.py
 from database import db
-from models import Sala, Cine, TipoSala
+from models import Sala, Cine, TipoSala, Asiento, Funcion
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from flask import flash
@@ -170,7 +171,6 @@ class SalaController:
                 return False, 'Sala no encontrada'
             
             # Verificar si hay funciones usando esta sala
-            from models import Funcion
             funciones = session.query(Funcion).\
                 filter(Funcion.IdSala == id).\
                 filter(Funcion.Activo == True).count()
@@ -179,7 +179,6 @@ class SalaController:
                 return False, f'No se puede eliminar la sala porque tiene {funciones} función(es) programada(s)'
             
             # Verificar si hay asientos en esta sala
-            from models import Asiento
             asientos = session.query(Asiento).\
                 filter(Asiento.IdSala == id).\
                 filter(Asiento.Activo == True).count()
@@ -196,5 +195,47 @@ class SalaController:
         except Exception as e:
             session.rollback()
             return False, f'Error al eliminar sala: {str(e)}'
+        finally:
+            session.close()
+
+    @staticmethod
+    def obtener_todas_con_capacidad():
+        """Obtiene todas las salas activas con su capacidad calculada"""
+        session = db.get_session()
+        try:
+            # Obtener salas con cine y tipo_sala cargados
+            salas = session.query(Sala).\
+                options(joinedload(Sala.cine), joinedload(Sala.tipo_sala)).\
+                filter(Sala.Activo == True).\
+                order_by(Sala.NumeroDeSala).all()
+            
+            # Obtener conteos de asientos por sala
+            sala_ids = [sala.Id for sala in salas]
+            capacidad_dict = {}
+            
+            if sala_ids:
+                counts = session.query(
+                    Asiento.IdSala,
+                    func.count(Asiento.Id).label('cantidad')
+                ).filter(
+                    Asiento.IdSala.in_(sala_ids),
+                    Asiento.Activo == True
+                ).group_by(Asiento.IdSala).all()
+                
+                # Convertir a diccionario para búsqueda rápida
+                capacidad_dict = {sala_id: cantidad for sala_id, cantidad in counts}
+            
+            # Asignar capacidad a cada sala
+            for sala in salas:
+                sala.capacidad = capacidad_dict.get(sala.Id, 0)
+            
+            return salas
+        except Exception as e:
+            print(f"Error al obtener salas con capacidad: {e}")
+            # En caso de error, asignar capacidad 0
+            for sala in salas:
+                if hasattr(sala, 'capacidad'):
+                    sala.capacidad = 0
+            return salas
         finally:
             session.close()

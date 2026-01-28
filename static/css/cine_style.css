@@ -630,3 +630,20 @@ main {
         border-width: 1px !important;
     }
 }
+
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+}
+
+.btn-warning:disabled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+}
+
+.btn-warning:disabled:hover {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+}

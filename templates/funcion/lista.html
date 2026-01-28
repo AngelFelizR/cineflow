@@ -224,7 +224,7 @@
                                 {% endif %}
                                 <br>
                                 <small class="text-light-60">
-                                    {{ funcion.ocupacion|round(1) }}% ocupación
+                                    {{ "%.1f"|format(funcion.ocupacion) }}% ocupación
                                 </small>
                             </td>
                             <td>
@@ -309,7 +309,7 @@
         </div>
         <div class="card-footer dark-card-header d-flex justify-content-between">
             <small class="text-light-60">
-                Mostrando {{ pagination.items|length }} de {{ pagination.total }} funciones
+                Mostrando {{ (pagination.items() if pagination.items is callable else pagination.items)|length }} de {{ pagination.total }} funciones
             </small>
             <small class="text-light-60">
                 {{ funciones_futuras }} futuras / {{ funciones_pasadas }} pasadas

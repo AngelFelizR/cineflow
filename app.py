@@ -8,9 +8,10 @@ from controllers.boleto_controller import BoletoController
 from controllers.dashboard_controller import DashboardController
 from controllers.clasificacion_controller import ClasificacionController
 from controllers.idioma_controller import IdiomaController
-from controllers.pelicula_genero_controller import PeliculaGeneroController
 from controllers.genero_controller import GeneroController
 from controllers.pelicula_admin_controller import PeliculaAdminController
+from controllers.funcion_admin_controller import FuncionAdminController
+from controllers.sala_controller import SalaController
 from models import login_manager, bcrypt
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from datetime import datetime, date, timedelta
@@ -985,48 +986,358 @@ def genero_eliminar(id):
 @app.route('/admin/funciones')
 @admin_required
 def funcion_lista():
-    """Lista todas las funciones"""
-    return render_template('funcion/lista.html')
+    """Lista todas las funciones con paginación y filtros"""
+    # Obtener parámetros de paginación
+    pagina = request.args.get('pagina', 1, type=int)
+    por_pagina = request.args.get('por_pagina', 25, type=int)
+    
+    # Obtener filtros
+    filtros = {}
+    
+    # Filtro por película
+    pelicula_id = request.args.get('pelicula_id', '')
+    if pelicula_id and pelicula_id.isdigit():
+        filtros['pelicula_id'] = int(pelicula_id)
+    
+    # Filtro por sala
+    sala_id = request.args.get('sala_id', '')
+    if sala_id and sala_id.isdigit():
+        filtros['sala_id'] = int(sala_id)
+    
+    # Filtro por fecha
+    fecha_desde = request.args.get('fecha_desde', '')
+    if fecha_desde:
+        filtros['fecha_desde'] = fecha_desde
+    
+    fecha_hasta = request.args.get('fecha_hasta', '')
+    if fecha_hasta:
+        filtros['fecha_hasta'] = fecha_hasta
+    
+    # Obtener funciones usando el controlador
+    resultado = FuncionAdminController.obtener_todas_paginadas(pagina, por_pagina, filtros)
+    
+    # Agregar estadísticas a las funciones
+    funciones_con_estadisticas = FuncionAdminController.obtener_funciones_con_estadisticas(resultado['funciones'])
+    
+    # Obtener opciones para filtros
+    peliculas = PeliculaAdminController.obtener_todas_simple()
+    
+    # Obtener todas las salas para el filtro
+    todas_salas = SalaController.obtener_todas()
+    salas_filtro = [(s.Id, f"Sala {s.NumeroDeSala} - {s.cine.Cine}") for s in todas_salas]
+    
+    # Calcular estadísticas generales
+    funciones = funciones_con_estadisticas
+    funciones_activas = sum(1 for f in funciones if f.Activo)
+    funciones_futuras = sum(1 for f in funciones if f.FechaHora > datetime.now())
+    funciones_pasadas = sum(1 for f in funciones if f.FechaHora <= datetime.now())
+    
+    # Calcular promedio de boletos
+    total_boletos_funciones = sum(getattr(f, 'total_boletos', 0) for f in funciones)
+    promedio_boletos = total_boletos_funciones / len(funciones) if funciones else 0
+    
+    # Paginación para la plantilla
+    pagination = {
+        'page': resultado['pagina'],
+        'per_page': resultado['por_pagina'],
+        'total': resultado['total'],
+        'pages': resultado['paginas'],
+        'has_prev': resultado['pagina'] > 1,
+        'has_next': resultado['pagina'] < resultado['paginas'],
+        'prev_num': resultado['pagina'] - 1 if resultado['pagina'] > 1 else None,
+        'next_num': resultado['pagina'] + 1 if resultado['pagina'] < resultado['paginas'] else None,
+        'items': funciones,
+        'iter_pages': lambda: range(1, resultado['paginas'] + 1)
+    }
+    
+    # Variable 'ahora' para la plantilla
+    ahora = datetime.now()
+    
+    return render_template('funcion/lista.html',
+                         funciones=funciones,
+                         pagination=pagination,
+                         total_funciones=resultado['total'],
+                         funciones_activas=funciones_activas,
+                         funciones_futuras=funciones_futuras,
+                         funciones_pasadas=funciones_pasadas,
+                         promedio_boletos=round(promedio_boletos, 1),
+                         peliculas_filtro=[{'Id': p[0], 'Titulo': p[1]} for p in peliculas],
+                         salas_filtro=[{'Id': s[0], 'NumeroDeSala': s[1]} for s in salas_filtro],
+                         fecha_desde=filtros.get('fecha_desde', ''),
+                         fecha_hasta=filtros.get('fecha_hasta', ''),
+                         pelicula_id=filtros.get('pelicula_id', ''),
+                         sala_id=filtros.get('sala_id', ''),
+                         estado=request.args.get('estado', ''),
+                         por_pagina=por_pagina,
+                         ahora=ahora)
 
 @app.route('/admin/funciones/nuevo')
 @admin_required
 def funcion_nuevo():
     """Formulario para nueva función"""
+    # Obtener película pre-seleccionada si existe
     pelicula_id = request.args.get('pelicula_id', '')
-    return render_template('funcion/nuevo.html', pelicula_id=pelicula_id)
+    pelicula_seleccionada = None
+    
+    if pelicula_id and pelicula_id.isdigit():
+        pelicula_seleccionada = PeliculaAdminController.obtener_por_id(int(pelicula_id))
+    
+    # Obtener películas activas para el dropdown
+    peliculas = PeliculaAdminController.obtener_todas_simple()
+    
+    # Obtener salas activas CON CAPACIDAD usando el método especial
+    salas = SalaController.obtener_todas_con_capacidad()  # <-- Usa este método
+    
+    # Fechas mínima y máxima (hoy hasta 3 meses en el futuro)
+    fecha_minima = date.today().strftime('%Y-%m-%d')
+    fecha_maxima = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    # Horas disponibles (de 9:00 a 23:30 en intervalos de 30 minutos)
+    horas_disponibles = []
+    for hora in range(9, 24):
+        for minuto in [0, 30]:
+            if hora == 23 and minuto == 30:
+                continue  # Última función a las 23:00
+            horas_disponibles.append(f"{hora:02d}:{minuto:02d}")
+    
+    # NOTA: Ya no necesitas calcular capacidad aquí porque
+    # SalaController.obtener_todas_con_capacidad() ya lo hace
+    
+    return render_template('funcion/nuevo.html',
+                         pelicula_id=pelicula_id,
+                         pelicula_seleccionada=pelicula_seleccionada,
+                         peliculas=peliculas,
+                         salas=salas,
+                         fecha_minima=fecha_minima,
+                         fecha_maxima=fecha_maxima,
+                         horas_disponibles=horas_disponibles)
+
 
 @app.route('/admin/funciones/crear', methods=['POST'])
 @admin_required
 def funcion_crear():
     """Crea una nueva función"""
-    # Implementar lógica de creación
-    pass
+    try:
+        # Obtener datos del formulario
+        fecha = request.form.get('Fecha', '')
+        hora = request.form.get('Hora', '')
+        
+        if not fecha or not hora:
+            flash('La fecha y hora son requeridas', 'danger')
+            return redirect(url_for('funcion_nuevo'))
+        
+        data = {
+            'IdPelicula': request.form.get('IdPelicula'),
+            'IdSala': request.form.get('IdSala'),
+            'FechaHora': f"{fecha}T{hora}",
+            'Activo': request.form.get('Activo', 'off')
+        }
+        
+        # Crear función usando el controlador
+        success, message, funcion = FuncionAdminController.crear(data)
+        
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('funcion_detalle', id=funcion.Id))
+        else:
+            flash(message, 'danger')
+            # Mantener la película seleccionada si hay error
+            pelicula_id = request.form.get('IdPelicula', '')
+            if pelicula_id:
+                return redirect(url_for('funcion_nuevo') + f'?pelicula_id={pelicula_id}')
+            return redirect(url_for('funcion_nuevo'))
+            
+    except Exception as e:
+        flash(f'Error al crear función: {str(e)}', 'danger')
+        return redirect(url_for('funcion_nuevo'))
 
 @app.route('/admin/funciones/<int:id>')
 @admin_required
 def funcion_detalle(id):
     """Muestra el detalle de una función"""
-    return render_template('funcion/detalle.html', id=id)
+    # Obtener función usando el controlador
+    funcion = FuncionAdminController.obtener_por_id(id)
+    
+    if not funcion:
+        flash('Función no encontrada', 'danger')
+        return redirect(url_for('funcion_lista'))
+    
+    # Obtener estadísticas de boletos usando el controlador
+    estadisticas = FuncionAdminController.obtener_estadisticas_boletos(id)
+    
+    if not estadisticas:
+        flash('Error al obtener estadísticas de la función', 'warning')
+        # Crear estadísticas vacías
+        estadisticas = {
+            'boletos': [],
+            'boletos_vendidos': 0,
+            'boletos_adultos': 0,
+            'boletos_ninos': 0,
+            'boletos_cancelados': 0,
+            'boletos_usados': 0,
+            'ingresos_totales': 0.0,
+            'ingresos_adultos': 0.0,
+            'ingresos_ninos': 0.0,
+            'capacidad_total': 0,
+            'asientos_disponibles': 0,
+            'porcentaje_ocupacion': 0.0,  # Asegurar que sea float
+            'porcentaje_adultos': 0.0,    # Asegurar que sea float
+            'porcentaje_ninos': 0.0       # Asegurar que sea float
+        }
+    
+    # Asegurar que todos los porcentajes sean floats
+    for key in ['porcentaje_ocupacion', 'porcentaje_adultos', 'porcentaje_ninos']:
+        if isinstance(estadisticas[key], (int, float)):
+            estadisticas[key] = float(estadisticas[key])
+        else:
+            estadisticas[key] = 0.0
+    
+    # Calcular tiempo restante/transcurrido
+    ahora = datetime.now()
+    if funcion.FechaHora > ahora:
+        tiempo_restante = funcion.FechaHora - ahora
+        dias = tiempo_restante.days
+        horas = tiempo_restante.seconds // 3600
+        minutos = (tiempo_restante.seconds % 3600) // 60
+        tiempo_restante_str = f"{dias}d {horas}h {minutos}m"
+        tiempo_transcurrido_str = None
+    else:
+        tiempo_transcurrido = ahora - funcion.FechaHora
+        dias = tiempo_transcurrido.days
+        horas = tiempo_transcurrido.seconds // 3600
+        minutos = (tiempo_transcurrido.seconds % 3600) // 60
+        tiempo_transcurrido_str = f"{dias}d {horas}h {minutos}m"
+        tiempo_restante_str = None
+    
+    return render_template('funcion/detalle.html',
+                         funcion=funcion,
+                         boletos=estadisticas['boletos'],
+                         boletos_vendidos=estadisticas['boletos_vendidos'],
+                         boletos_adultos=estadisticas['boletos_adultos'],
+                         boletos_ninos=estadisticas['boletos_ninos'],
+                         boletos_cancelados=estadisticas['boletos_cancelados'],
+                         boletos_usados=estadisticas['boletos_usados'],
+                         ingresos_totales=estadisticas['ingresos_totales'],
+                         ingresos_adultos=estadisticas['ingresos_adultos'],
+                         ingresos_ninos=estadisticas['ingresos_ninos'],
+                         capacidad_total=estadisticas['capacidad_total'],
+                         asientos_disponibles=estadisticas['asientos_disponibles'],
+                         porcentaje_ocupacion=estadisticas['porcentaje_ocupacion'],
+                         porcentaje_adultos=estadisticas['porcentaje_adultos'],
+                         porcentaje_ninos=estadisticas['porcentaje_ninos'],
+                         tiempo_restante=tiempo_restante_str,
+                         tiempo_transcurrido=tiempo_transcurrido_str,
+                         ahora=ahora)
 
 @app.route('/admin/funciones/<int:id>/editar')
 @admin_required
 def funcion_editar(id):
     """Formulario para editar función"""
-    return render_template('funcion/editar.html', id=id)
+    # Obtener función usando el controlador
+    funcion = FuncionAdminController.obtener_por_id(id)
+    
+    if not funcion:
+        flash('Función no encontrada', 'danger')
+        return redirect(url_for('funcion_lista'))
+    
+    # Obtener salas activas usando el controlador
+    salas = SalaController.obtener_todas_con_capacidad() 
+    
+    # Obtener estadísticas de boletos
+    estadisticas = FuncionAdminController.obtener_estadisticas_boletos(id)
+    
+    if estadisticas:
+        total_boletos = estadisticas['boletos_vendidos']
+        boletos_activos = estadisticas['boletos_vendidos'] - estadisticas['boletos_cancelados'] - estadisticas['boletos_usados']
+        boletos_cancelados = estadisticas['boletos_cancelados']
+        boletos_usados = estadisticas['boletos_usados']
+        ocupacion = estadisticas['porcentaje_ocupacion']
+    else:
+        total_boletos = 0
+        boletos_activos = 0
+        boletos_cancelados = 0
+        boletos_usados = 0
+        ocupacion = 0
+    
+    # Fechas mínima y máxima (hoy hasta 3 meses en el futuro)
+    ahora = datetime.now()
+    fecha_minima = ahora.strftime('%Y-%m-%d')
+    fecha_maxima = (ahora + timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    # Horas disponibles
+    horas_disponibles = []
+    for hora in range(9, 24):
+        for minuto in [0, 30]:
+            if hora == 23 and minuto == 30:
+                continue
+            horas_disponibles.append(f"{hora:02d}:{minuto:02d}")
+    
+    return render_template('funcion/editar.html',
+                         funcion=funcion,
+                         salas=salas,
+                         total_boletos=total_boletos,
+                         boletos_activos=boletos_activos,
+                         boletos_cancelados=boletos_cancelados,
+                         boletos_usados=boletos_usados,
+                         ocupacion=ocupacion,
+                         fecha_minima=fecha_minima,
+                         fecha_maxima=fecha_maxima,
+                         horas_disponibles=horas_disponibles,
+                         ahora=ahora)
 
 @app.route('/admin/funciones/<int:id>/actualizar', methods=['POST'])
 @admin_required
 def funcion_actualizar(id):
     """Actualiza una función existente"""
-    # Implementar lógica de actualización
-    pass
+    try:
+        # Obtener datos del formulario
+        fecha = request.form.get('Fecha', '')
+        hora = request.form.get('Hora', '')
+        
+        if not fecha or not hora:
+            flash('La fecha y hora son requeridas', 'danger')
+            return redirect(url_for('funcion_editar', id=id))
+        
+        data = {
+            'IdPelicula': request.form.get('IdPelicula'),
+            'IdSala': request.form.get('IdSala'),
+            'FechaHora': f"{fecha}T{hora}",
+            'Activo': request.form.get('Activo', 'off')
+        }
+        
+        # Actualizar función usando el controlador
+        success, message, funcion = FuncionAdminController.actualizar(id, data)
+        
+        if success:
+            flash(message, 'success')
+            return redirect(url_for('funcion_detalle', id=id))
+        else:
+            flash(message, 'danger')
+            return redirect(url_for('funcion_editar', id=id))
+            
+    except Exception as e:
+        flash(f'Error al actualizar función: {str(e)}', 'danger')
+        return redirect(url_for('funcion_editar', id=id))
 
 @app.route('/admin/funciones/<int:id>/eliminar', methods=['POST'])
 @admin_required
 def funcion_eliminar(id):
     """Elimina (desactiva) una función"""
-    # Implementar lógica de eliminación
-    pass
+    success, message = FuncionAdminController.eliminar(id)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('funcion_lista'))
+
+# Esta ruta ya existe en tu app.py, pero la dejo por si acaso
+@app.route('/admin/peliculas/<int:pelicula_id>/funciones/nueva')
+@admin_required
+def funcion_nueva_por_pelicula(pelicula_id):
+    """Redirige al formulario de nueva función con la película pre-seleccionada"""
+    return redirect(url_for('funcion_nuevo') + f'?pelicula_id={pelicula_id}')
 
 # ==================== RUTAS CRUD PARA PELÍCULAS ====================
 
@@ -1213,11 +1524,7 @@ def pelicula_eliminar(id):
     
     return redirect(url_for('pelicula_lista'))
 
-@app.route('/admin/peliculas/<int:pelicula_id>/funciones/nueva')
-@admin_required
-def funcion_nueva_por_pelicula(pelicula_id):
-    """Redirige al formulario de nueva función con la película pre-seleccionada"""
-    return redirect(url_for('funcion_nuevo') + f'?pelicula_id={pelicula_id}')
+
 
 @app.route('/admin/roles')
 @admin_required
