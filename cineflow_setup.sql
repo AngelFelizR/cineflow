@@ -570,28 +570,67 @@ INSERT INTO Funciones (IdPelícula, IdSala, FechaHora) VALUES
 (10, 6, '2026-01-28 18:30:00'),
 (1, 1, '2026-01-28 20:45:00'),
 (2, 2, '2026-01-28 19:30:00'),
+-- Jueves (2026-01-29)
+(1, 1, '2026-01-29 17:00:00'),
+(2, 2, '2026-01-29 17:25:00'),
+(3, 3, '2026-01-29 18:00:00'),
+(4, 4, '2026-01-29 18:00:00'),
+(5, 5, '2026-01-29 18:00:00'),
+(6, 6, '2026-01-29 18:00:00'),
+(7, 3, '2026-01-29 20:05:00'),
+(8, 4, '2026-01-29 20:10:00'),
+(9, 5, '2026-01-29 20:10:00'),
+(10, 6, '2026-01-29 18:30:00'),
+(1, 1, '2026-01-29 20:45:00'),
+(2, 2, '2026-01-29 19:30:00'),
+-- Viernes (2026-01-30)
+(1, 1, '2026-01-30 17:00:00'),
+(2, 2, '2026-01-30 17:25:00'),
+(3, 3, '2026-01-30 18:00:00'),
+(4, 4, '2026-01-30 18:00:00'),
+(5, 5, '2026-01-30 18:00:00'),
+(6, 6, '2026-01-30 18:00:00'),
+(7, 3, '2026-01-30 20:05:00'),
+(8, 4, '2026-01-30 20:10:00'),
+(9, 5, '2026-01-30 20:10:00'),
+(10, 6, '2026-01-30 18:30:00'),
+(1, 1, '2026-01-30 20:45:00'),
+(2, 2, '2026-01-30 19:30:00'),
+-- Sábado (2026-01-31)
+(1, 1, '2026-01-31 17:00:00'),
+(2, 2, '2026-01-31 17:25:00'),
+(3, 3, '2026-01-31 18:00:00'),
+(4, 4, '2026-01-31 18:00:00'),
+(5, 5, '2026-01-31 18:00:00'),
+(6, 6, '2026-01-31 18:00:00'),
+(7, 3, '2026-01-31 20:05:00'),
+(8, 4, '2026-01-31 20:10:00'),
+(9, 5, '2026-01-31 20:10:00'),
+(10, 6, '2026-01-31 18:30:00'),
+(1, 1, '2026-01-31 20:45:00'),
+(2, 2, '2026-01-31 19:30:00'),
 -- Funciones futuras
--- Jueves (2026-03-05)
-(11, 1, '2026-03-05 18:00:00'),
-(12, 2, '2026-03-05 18:00:00'),
-(13, 3, '2026-03-05 18:00:00'),
-(11, 4, '2026-03-05 18:00:00'),
-(12, 5, '2026-03-05 18:00:00'),
-(13, 6, '2026-03-05 18:00:00'),
--- Viernes (2026-03-06)
-(11, 1, '2026-03-06 18:00:00'),
-(12, 2, '2026-03-06 18:00:00'),
-(13, 3, '2026-03-06 18:00:00'),
-(11, 4, '2026-03-06 18:00:00'),
-(12, 5, '2026-03-06 18:00:00'),
-(13, 6, '2026-03-06 18:00:00'),
--- Sabado (2026-03-07)
-(11, 1, '2026-03-07 18:00:00'),
-(12, 2, '2026-03-07 18:00:00'),
-(13, 3, '2026-03-07 18:00:00'),
-(11, 4, '2026-03-07 18:00:00'),
-(12, 5, '2026-03-07 18:00:00'),
-(13, 6, '2026-03-07 18:00:00');
+-- (2026-04-05)
+(11, 1, '2026-04-05 18:00:00'),
+(12, 2, '2026-04-05 18:00:00'),
+(13, 3, '2026-04-05 18:00:00'),
+(11, 4, '2026-04-05 18:00:00'),
+(12, 5, '2026-04-05 18:00:00'),
+(13, 6, '2026-04-05 18:00:00'),
+-- Viernes (2026-05-06)
+(11, 1, '2026-05-06 18:00:00'),
+(12, 2, '2026-05-06 18:00:00'),
+(13, 3, '2026-05-06 18:00:00'),
+(11, 4, '2026-05-06 18:00:00'),
+(12, 5, '2026-05-06 18:00:00'),
+(13, 6, '2026-05-06 18:00:00'),
+-- Sabado (2026-06-07)
+(11, 1, '2026-06-07 18:00:00'),
+(12, 2, '2026-06-07 18:00:00'),
+(13, 3, '2026-06-07 18:00:00'),
+(11, 4, '2026-06-07 18:00:00'),
+(12, 5, '2026-06-07 18:00:00'),
+(13, 6, '2026-06-07 18:00:00');
 
 
 -- Insert Boletos
@@ -725,361 +764,3 @@ INCLUDE (IdPelícula, IdSala);
 -- Índice para consultas de ocupación
 CREATE NONCLUSTERED INDEX IX_Asientos_Sala_Activo
 ON Asientos(IdSala, Activo);
-
-
--- =============== FUNCIONES PARA DASHBOARD ============================
-
-GO
-
--- # Funciones para Dashboard
-
--- Función para obtener ingresos diarios/semanales/mensuales
-CREATE OR ALTER FUNCTION dbo.fn_Dashboard_Ingresos (
-    @FechaInicio DATE,
-    @FechaFin DATE,
-    @CineIds NVARCHAR(MAX) = NULL,
-    @GeneroIds NVARCHAR(MAX) = NULL,
-    @PeliculaIds NVARCHAR(MAX) = NULL,
-    @FuncionIds NVARCHAR(MAX) = NULL,
-    @DiasSemana NVARCHAR(50) = NULL,
-    @Agrupacion NVARCHAR(10) = 'dia' -- 'dia', 'semana', 'mes'
-)
-RETURNS TABLE
-AS
-RETURN
-WITH Filtros AS (
-    SELECT 
-        f.Id AS FuncionId,
-        f.FechaHora,
-        f.IdPelícula,
-        f.IdSala,
-        s.IdCine,
-        p.TítuloPelícula,
-        pg.IdGénero
-    FROM Funciones f
-    INNER JOIN Salas s ON f.IdSala = s.Id
-    INNER JOIN Películas p ON f.IdPelícula = p.Id
-    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-    WHERE f.FechaHora >= @FechaInicio 
-        AND f.FechaHora < DATEADD(day, 1, @FechaFin)
-        AND f.Activo = 1
-        AND (@CineIds IS NULL OR s.IdCine IN (SELECT value FROM STRING_SPLIT(@CineIds, ',')))
-        AND (@GeneroIds IS NULL OR pg.IdGénero IN (SELECT value FROM STRING_SPLIT(@GeneroIds, ',')))
-        AND (@PeliculaIds IS NULL OR p.Id IN (SELECT value FROM STRING_SPLIT(@PeliculaIds, ',')))
-        AND (@FuncionIds IS NULL OR f.Id IN (SELECT value FROM STRING_SPLIT(@FuncionIds, ',')))
-        AND (@DiasSemana IS NULL OR DATEPART(weekday, f.FechaHora) IN (SELECT value FROM STRING_SPLIT(@DiasSemana, ',')))
-),
-IngresosDiarios AS (
-    SELECT 
-        CASE @Agrupacion
-            WHEN 'dia' THEN CONVERT(DATE, f.FechaHora)
-            WHEN 'semana' THEN DATEADD(day, 1 - DATEPART(weekday, f.FechaHora), CONVERT(DATE, f.FechaHora))
-            WHEN 'mes' THEN DATEFROMPARTS(YEAR(f.FechaHora), MONTH(f.FechaHora), 1)
-        END AS Periodo,
-        b.ValorPagado,
-        DATEPART(weekday, f.FechaHora) AS DiaSemana,
-        DATEPART(week, f.FechaHora) AS Semana,
-        DATEPART(month, f.FechaHora) AS Mes
-    FROM Filtros f
-    INNER JOIN Boletos b ON f.FuncionId = b.IdFunción
-    WHERE NOT EXISTS (
-        SELECT 1 FROM BoletosCancelados bc 
-        WHERE bc.IdBoleto = b.Id
-    )
-)
-SELECT 
-    Periodo,
-    SUM(ValorPagado) AS Ingresos,
-    COUNT(*) AS BoletosVendidos,
-    AVG(CASE WHEN DiaSemana IS NOT NULL THEN DiaSemana ELSE NULL END) AS DiaSemanaPromedio,
-    MAX(Semana) AS SemanaNumero,
-    MAX(Mes) AS MesNumero
-FROM IngresosDiarios
-GROUP BY Periodo
-ORDER BY Periodo;
-
-GO
-
--- Función para obtener ocupación de salas
-CREATE OR ALTER FUNCTION dbo.fn_Dashboard_Ocupacion (
-    @FechaInicio DATE,
-    @FechaFin DATE,
-    @CineIds NVARCHAR(MAX) = NULL,
-    @GeneroIds NVARCHAR(MAX) = NULL,
-    @PeliculaIds NVARCHAR(MAX) = NULL,
-    @FuncionIds NVARCHAR(MAX) = NULL,
-    @DiasSemana NVARCHAR(50) = NULL,
-    @Agrupacion NVARCHAR(10) = 'dia'
-)
-RETURNS TABLE
-AS
-RETURN
-WITH Filtros AS (
-    SELECT 
-        f.Id AS FuncionId,
-        f.FechaHora,
-        f.IdPelícula,
-        f.IdSala,
-        s.IdCine,
-        p.TítuloPelícula,
-        pg.IdGénero
-    FROM Funciones f
-    INNER JOIN Salas s ON f.IdSala = s.Id
-    INNER JOIN Películas p ON f.IdPelícula = p.Id
-    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-    WHERE f.FechaHora >= @FechaInicio 
-        AND f.FechaHora < DATEADD(day, 1, @FechaFin)
-        AND f.Activo = 1
-        AND (@CineIds IS NULL OR s.IdCine IN (SELECT value FROM STRING_SPLIT(@CineIds, ',')))
-        AND (@GeneroIds IS NULL OR pg.IdGénero IN (SELECT value FROM STRING_SPLIT(@GeneroIds, ',')))
-        AND (@PeliculaIds IS NULL OR p.Id IN (SELECT value FROM STRING_SPLIT(@PeliculaIds, ',')))
-        AND (@FuncionIds IS NULL OR f.Id IN (SELECT value FROM STRING_SPLIT(@FuncionIds, ',')))
-        AND (@DiasSemana IS NULL OR DATEPART(weekday, f.FechaHora) IN (SELECT value FROM STRING_SPLIT(@DiasSemana, ',')))
-),
-CapacidadFunciones AS (
-    SELECT 
-        f.FuncionId,
-        f.FechaHora,
-        f.IdSala,
-        COUNT(a.Id) AS CapacidadTotal
-    FROM Filtros f
-    INNER JOIN Asientos a ON f.IdSala = a.IdSala AND a.Activo = 1
-    GROUP BY f.FuncionId, f.FechaHora, f.IdSala
-),
-BoletosVendidos AS (
-    SELECT 
-        f.FuncionId,
-        COUNT(b.Id) AS BoletosVendidos
-    FROM Filtros f
-    INNER JOIN Boletos b ON f.FuncionId = b.IdFunción
-    WHERE NOT EXISTS (
-        SELECT 1 FROM BoletosCancelados bc 
-        WHERE bc.IdBoleto = b.Id
-    )
-    GROUP BY f.FuncionId
-),
-DatosAgrupados AS (
-    SELECT 
-        cf.FuncionId,
-        cf.FechaHora,
-        cf.CapacidadTotal,
-        ISNULL(bv.BoletosVendidos, 0) AS BoletosVendidos,
-        CASE @Agrupacion
-            WHEN 'dia' THEN CONVERT(DATE, cf.FechaHora)
-            WHEN 'semana' THEN DATEADD(day, 1 - DATEPART(weekday, cf.FechaHora), CONVERT(DATE, cf.FechaHora))
-            WHEN 'mes' THEN DATEFROMPARTS(YEAR(cf.FechaHora), MONTH(cf.FechaHora), 1)
-        END AS Periodo
-    FROM CapacidadFunciones cf
-    LEFT JOIN BoletosVendidos bv ON cf.FuncionId = bv.FuncionId
-)
-SELECT 
-    Periodo,
-    SUM(CapacidadTotal) AS CapacidadTotal,
-    SUM(BoletosVendidos) AS BoletosVendidos,
-    CASE 
-        WHEN SUM(CapacidadTotal) > 0 
-        THEN (SUM(BoletosVendidos) * 100.0 / SUM(CapacidadTotal)) 
-        ELSE 0 
-    END AS PorcentajeOcupacion
-FROM DatosAgrupados
-GROUP BY Periodo
-ORDER BY Periodo;
-
-GO
-
--- Función para obtener porcentaje de boletos usados
-CREATE OR ALTER FUNCTION dbo.fn_Dashboard_BoletosUsados (
-    @FechaInicio DATE,
-    @FechaFin DATE,
-    @CineIds NVARCHAR(MAX) = NULL,
-    @GeneroIds NVARCHAR(MAX) = NULL,
-    @PeliculaIds NVARCHAR(MAX) = NULL,
-    @FuncionIds NVARCHAR(MAX) = NULL,
-    @DiasSemana NVARCHAR(50) = NULL,
-    @Agrupacion NVARCHAR(10) = 'dia'
-)
-RETURNS TABLE
-AS
-RETURN
-WITH Filtros AS (
-    SELECT 
-        f.Id AS FuncionId,
-        f.FechaHora,
-        f.IdPelícula,
-        f.IdSala,
-        s.IdCine,
-        p.TítuloPelícula,
-        pg.IdGénero
-    FROM Funciones f
-    INNER JOIN Salas s ON f.IdSala = s.Id
-    INNER JOIN Películas p ON f.IdPelícula = p.Id
-    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-    WHERE f.FechaHora >= @FechaInicio 
-        AND f.FechaHora < DATEADD(day, 1, @FechaFin)
-        AND f.Activo = 1
-        AND (@CineIds IS NULL OR s.IdCine IN (SELECT value FROM STRING_SPLIT(@CineIds, ',')))
-        AND (@GeneroIds IS NULL OR pg.IdGénero IN (SELECT value FROM STRING_SPLIT(@GeneroIds, ',')))
-        AND (@PeliculaIds IS NULL OR p.Id IN (SELECT value FROM STRING_SPLIT(@PeliculaIds, ',')))
-        AND (@FuncionIds IS NULL OR f.Id IN (SELECT value FROM STRING_SPLIT(@FuncionIds, ',')))
-        AND (@DiasSemana IS NULL OR DATEPART(weekday, f.FechaHora) IN (SELECT value FROM STRING_SPLIT(@DiasSemana, ',')))
-),
-BoletosTotales AS (
-    SELECT 
-        f.FuncionId,
-        f.FechaHora,
-        COUNT(b.Id) AS BoletosTotales,
-        COUNT(bu.Id) AS BoletosUsados,
-        CASE @Agrupacion
-            WHEN 'dia' THEN CONVERT(DATE, f.FechaHora)
-            WHEN 'semana' THEN DATEADD(day, 1 - DATEPART(weekday, f.FechaHora), CONVERT(DATE, f.FechaHora))
-            WHEN 'mes' THEN DATEFROMPARTS(YEAR(f.FechaHora), MONTH(f.FechaHora), 1)
-        END AS Periodo
-    FROM Filtros f
-    INNER JOIN Boletos b ON f.FuncionId = b.IdFunción
-    LEFT JOIN BoletosUsados bu ON b.Id = bu.IdBoleto
-    WHERE NOT EXISTS (
-        SELECT 1 FROM BoletosCancelados bc 
-        WHERE bc.IdBoleto = b.Id
-    )
-    GROUP BY f.FuncionId, f.FechaHora
-)
-SELECT 
-    Periodo,
-    SUM(BoletosTotales) AS BoletosTotales,
-    SUM(BoletosUsados) AS BoletosUsados,
-    CASE 
-        WHEN SUM(BoletosTotales) > 0 
-        THEN (SUM(BoletosUsados) * 100.0 / SUM(BoletosTotales)) 
-        ELSE 0 
-    END AS PorcentajeUsados
-FROM BoletosTotales
-GROUP BY Periodo
-ORDER BY Periodo;
-
-GO
-
--- Función para obtener porcentaje de cancelaciones
-CREATE OR ALTER FUNCTION dbo.fn_Dashboard_Cancelaciones (
-    @FechaInicio DATE,
-    @FechaFin DATE,
-    @CineIds NVARCHAR(MAX) = NULL,
-    @GeneroIds NVARCHAR(MAX) = NULL,
-    @PeliculaIds NVARCHAR(MAX) = NULL,
-    @FuncionIds NVARCHAR(MAX) = NULL,
-    @DiasSemana NVARCHAR(50) = NULL,
-    @Agrupacion NVARCHAR(10) = 'dia'
-)
-RETURNS TABLE
-AS
-RETURN
-WITH Filtros AS (
-    SELECT 
-        f.Id AS FuncionId,
-        f.FechaHora,
-        f.IdPelícula,
-        f.IdSala,
-        s.IdCine,
-        p.TítuloPelícula,
-        pg.IdGénero
-    FROM Funciones f
-    INNER JOIN Salas s ON f.IdSala = s.Id
-    INNER JOIN Películas p ON f.IdPelícula = p.Id
-    LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-    WHERE f.FechaHora >= @FechaInicio 
-        AND f.FechaHora < DATEADD(day, 1, @FechaFin)
-        AND f.Activo = 1
-        AND (@CineIds IS NULL OR s.IdCine IN (SELECT value FROM STRING_SPLIT(@CineIds, ',')))
-        AND (@GeneroIds IS NULL OR pg.IdGénero IN (SELECT value FROM STRING_SPLIT(@GeneroIds, ',')))
-        AND (@PeliculaIds IS NULL OR p.Id IN (SELECT value FROM STRING_SPLIT(@PeliculaIds, ',')))
-        AND (@FuncionIds IS NULL OR f.Id IN (SELECT value FROM STRING_SPLIT(@FuncionIds, ',')))
-        AND (@DiasSemana IS NULL OR DATEPART(weekday, f.FechaHora) IN (SELECT value FROM STRING_SPLIT(@DiasSemana, ',')))
-),
-BoletosVendidos AS (
-    SELECT 
-        f.FuncionId,
-        f.FechaHora,
-        COUNT(b.Id) AS BoletosVendidos,
-        COUNT(bc.Id) AS BoletosCancelados,
-        CASE @Agrupacion
-            WHEN 'dia' THEN CONVERT(DATE, f.FechaHora)
-            WHEN 'semana' THEN DATEADD(day, 1 - DATEPART(weekday, f.FechaHora), CONVERT(DATE, f.FechaHora))
-            WHEN 'mes' THEN DATEFROMPARTS(YEAR(f.FechaHora), MONTH(f.FechaHora), 1)
-        END AS Periodo
-    FROM Filtros f
-    INNER JOIN Boletos b ON f.FuncionId = b.IdFunción
-    LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
-    GROUP BY f.FuncionId, f.FechaHora
-)
-SELECT 
-    Periodo,
-    SUM(BoletosVendidos) AS BoletosVendidos,
-    SUM(BoletosCancelados) AS BoletosCancelados,
-    CASE 
-        WHEN SUM(BoletosVendidos) > 0 
-        THEN (SUM(BoletosCancelados) * 100.0 / SUM(BoletosVendidos)) 
-        ELSE 0 
-    END AS PorcentajeCancelaciones
-FROM BoletosVendidos
-GROUP BY Periodo
-ORDER BY Periodo;
-
-GO
-
--- Función para obtener datos RAW para Excel
-CREATE OR ALTER FUNCTION dbo.fn_Dashboard_RawData (
-    @FechaInicio DATE,
-    @FechaFin DATE,
-    @CineIds NVARCHAR(MAX) = NULL,
-    @GeneroIds NVARCHAR(MAX) = NULL,
-    @PeliculaIds NVARCHAR(MAX) = NULL,
-    @FuncionIds NVARCHAR(MAX) = NULL,
-    @DiasSemana NVARCHAR(50) = NULL
-)
-RETURNS TABLE
-AS
-RETURN
-SELECT 
-    f.Id AS FuncionId,
-    f.FechaHora,
-    c.Cine,
-    c.Dirección AS DireccionCine,
-    s.NúmeroDeSala,
-    ts.Tipo AS TipoSala,
-    p.TítuloPelícula AS Pelicula,
-    cl.Clasificación,
-    i.Idioma,
-    g.Género,
-    b.Id AS BoletoId,
-    b.FechaCreacion,
-    tb.TipoBoleto,
-    b.ValorPagado,
-    CASE WHEN bc.Id IS NOT NULL THEN 1 ELSE 0 END AS Cancelado,
-    bc.FechaCancelacion,
-    bc.ValorAcreditado,
-    CASE WHEN bu.Id IS NOT NULL THEN 1 ELSE 0 END AS Usado,
-    bu.FechaUso,
-    u.Nombre + ' ' + u.Apellidos AS Cliente,
-    a.CódigoAsiento
-FROM Funciones f
-INNER JOIN Salas s ON f.IdSala = s.Id
-INNER JOIN Cines c ON s.IdCine = c.Id
-INNER JOIN TipoDeSala ts ON s.IdTipo = ts.Id
-INNER JOIN Películas p ON f.IdPelícula = p.Id
-INNER JOIN Clasificaciones cl ON p.IdClasificación = cl.Id
-INNER JOIN Idiomas i ON p.IdIdioma = i.Id
-LEFT JOIN PelículaGénero pg ON p.Id = pg.IdPelícula
-LEFT JOIN Géneros g ON pg.IdGénero = g.Id
-LEFT JOIN Boletos b ON f.Id = b.IdFunción
-LEFT JOIN TipoBoletos tb ON b.IdTipoBoleto = tb.Id
-LEFT JOIN BoletosCancelados bc ON b.Id = bc.IdBoleto
-LEFT JOIN BoletosUsados bu ON b.Id = bu.IdBoleto
-LEFT JOIN Usuarios u ON b.IdUsuario = u.Id
-LEFT JOIN Asientos a ON b.IdAsiento = a.Id
-WHERE f.FechaHora >= @FechaInicio 
-    AND f.FechaHora < DATEADD(day, 1, @FechaFin)
-    AND f.Activo = 1
-    AND (@CineIds IS NULL OR s.IdCine IN (SELECT value FROM STRING_SPLIT(@CineIds, ',')))
-    AND (@GeneroIds IS NULL OR g.Id IN (SELECT value FROM STRING_SPLIT(@GeneroIds, ',')))
-    AND (@PeliculaIds IS NULL OR p.Id IN (SELECT value FROM STRING_SPLIT(@PeliculaIds, ',')))
-    AND (@FuncionIds IS NULL OR f.Id IN (SELECT value FROM STRING_SPLIT(@FuncionIds, ',')))
-    AND (@DiasSemana IS NULL OR DATEPART(weekday, f.FechaHora) IN (SELECT value FROM STRING_SPLIT(@DiasSemana, ',')));

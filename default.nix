@@ -12,8 +12,7 @@ let
       pymssql
       pandas
       openpyxl
-      reportlab
-      xhtml2pdf;
+      reportlab;
   };
 
   system_packages = builtins.attrValues {
